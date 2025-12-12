@@ -15,12 +15,24 @@ const MapView = dynamic(() => import("@/components/map/map-view"), {
   ),
 })
 
+import { ProjectLocation } from "@/components/map/data"
+
+// ... imports
+
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null)
+  const [selectedItems, setSelectedItems] = useState<ProjectLocation[]>([])
+  const [sidebarTitle, setSidebarTitle] = useState("Detalhes")
 
-  const handlePinClick = (title: string) => {
-    setSelectedLocation(title)
+  const handlePinClick = (project: ProjectLocation) => {
+    setSelectedItems([project])
+    setSidebarTitle(project.title)
+    setSidebarOpen(true)
+  }
+
+  const handleClusterClick = (projects: ProjectLocation[]) => {
+    setSelectedItems(projects)
+    setSidebarTitle(`${projects.length} Projetos`)
     setSidebarOpen(true)
   }
 
@@ -29,18 +41,19 @@ export default function HomePage() {
       <Sidebar 
         isOpen={sidebarOpen} 
         onClose={() => setSidebarOpen(false)}
-        title={selectedLocation || "Detalhes"}
+        title={sidebarTitle}
         content={
-            selectedLocation ? (
+            selectedItems.length > 0 ? (
                 <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                        Informações sobre: <strong>{selectedLocation}</strong>
-                    </p>
-                    <div className="h-32 rounded-lg bg-muted/50 w-full" />
-                    <div className="space-y-2">
-                        <div className="h-4 w-full rounded bg-muted/50" />
-                        <div className="h-4 w-3/4 rounded bg-muted/50" />
-                    </div>
+                    {selectedItems.map(project => (
+                        <div key={project.id} className="p-4 border rounded-lg bg-muted/20">
+                            <h3 className="font-semibold text-lg">{project.title}</h3>
+                            <div className="text-sm text-muted-foreground mt-1">
+                                <p><strong>Responsável:</strong> {project.responsible}</p>
+                                <p><strong>Endereço:</strong> {project.address}</p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : undefined
         }
@@ -48,7 +61,7 @@ export default function HomePage() {
       
       <SearchBar onMenuClick={() => setSidebarOpen(true)} />
 
-      <MapView onPinClick={handlePinClick} />
+      <MapView onPinClick={handlePinClick} onClusterClick={handleClusterClick} />
     </main>
   )
 }
