@@ -16,7 +16,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/projects", label: "Projetos", icon: FolderOpen },
+    { href: "/projetos", label: "Projetos", icon: FolderOpen },
     { href: "/settings", label: "Configurações", icon: Settings },
   ]
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { MapContainer, TileLayer, Marker, ZoomControl, useMap } from "react-leaflet"
 import MarkerClusterGroup from "react-leaflet-cluster"
 import "leaflet/dist/leaflet.css"
@@ -82,10 +82,15 @@ function ResetZoomControl({ center, zoom }: { center: [number, number], zoom: nu
 interface MapViewProps {
   onPinClick: (project: ProjectLocation) => void
   onClusterClick: (projects: ProjectLocation[]) => void
+  className?: string
+  style?: React.CSSProperties
 }
 
-export default function MapView({ onPinClick, onClusterClick }: MapViewProps) {
+export default function MapView({ onPinClick, onClusterClick, className, style }: MapViewProps) {
   const [mounted, setMounted] = useState(false)
+
+  // Move hook to top level
+  const mapStyle = useMemo(() => style || { height: "100vh", width: "100%", outline: "none" }, [style])
 
   useEffect(() => {
     setMounted(true)
@@ -98,13 +103,14 @@ export default function MapView({ onPinClick, onClusterClick }: MapViewProps) {
   const zoom = 4
 
   return (
-    <>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }} className={className}>
       <MapContainer 
+        key="custom-map-view"
         center={center} 
         zoom={zoom} 
         scrollWheelZoom={true} 
         zoomControl={false}
-        style={{ height: "100vh", width: "100%", outline: "none" }}
+        style={mapStyle}
         className="z-0"
       >
         <TileLayer
@@ -118,20 +124,16 @@ export default function MapView({ onPinClick, onClusterClick }: MapViewProps) {
         <MarkerClusterGroup
           chunkedLoading
           iconCreateFunction={createClusterIcon}
-          zoomToBoundsOnClick={false} // Disable default zoom behavior
+          zoomToBoundsOnClick={false}
           eventHandlers={{
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             clusterclick: (e: any) => {
                const cluster = e.layer
-               // Stop the map from zooming (event propagation?)
-               // Actually zoomToBoundsOnClick: false handles the zoom.
-               
                const markers = cluster.getAllChildMarkers()
                const clusterProjects: ProjectLocation[] = []
                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                markers.forEach((marker: any) => {
                   const { lat, lng } = marker.getLatLng()
-                  // Using same loose matching as before
                   const found = mockProjects.find(p => Math.abs(p.lat - lat) < 0.0001 && Math.abs(p.lng - lng) < 0.0001)
                   if (found) clusterProjects.push(found)
                })
@@ -152,6 +154,6 @@ export default function MapView({ onPinClick, onClusterClick }: MapViewProps) {
           ))}
         </MarkerClusterGroup>
       </MapContainer>
-    </>
+    </div>
   )
 }

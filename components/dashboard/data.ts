@@ -1,6 +1,22 @@
 export type ProjectStatus = 'concluido' | 'em_andamento' | 'pendente' | 'cancelado';
 export type ProjectExtension = 'parcial' | 'completo';
 
+export interface ProjectPost {
+  id: string;
+  author: string;
+  avatar?: string;
+  date: string;
+  content: string;
+  role?: string;
+}
+
+export interface ProjectAttachment {
+  id: string;
+  title: string;
+  type: 'image' | 'video' | 'document';
+  url: string;
+}
+
 export interface DashboardProject {
   id: string;
   title: string;
@@ -15,6 +31,21 @@ export interface DashboardProject {
   status: ProjectStatus;
   extension: ProjectExtension;
   investmentByYear: { year: number; value: number }[];
+  
+  // New detailed fields
+  description?: string;
+  indication?: string; // Indicated by
+  startDate?: string;
+  endDate?: string;
+  requestedValue?: number;
+  approvedValue?: number;
+  thanked?: boolean;
+  reachedPeople?: number;
+  history?: ProjectPost[];
+  testimonials?: ProjectPost[];
+  acknowledgments?: ProjectPost[];
+  attachments?: ProjectAttachment[];
+  observations?: string;
 }
 
 export const mockDashboardProjects: DashboardProject[] = [
@@ -35,7 +66,28 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2023, value: 50000 },
       { year: 2024, value: 60000 },
       { year: 2025, value: 40000 },
-    ]
+    ],
+    description: "Reforma completa da estrutura da base missionária para atender melhor os alunos e a comunidade local. O projeto inclui a construção de novas salas de aula, renovação da cozinha e refeitório, e melhorias na área de lazer.",
+    indication: "Diretor Marcos Oliveira",
+    startDate: "2023-01-15",
+    endDate: "2025-06-30",
+    requestedValue: 180000,
+    approvedValue: 150000,
+    thanked: false,
+    reachedPeople: 450,
+    history: [
+       { id: "h1", author: "Pr. João Silva", date: "2023-02-10", content: "Início das obras na fundação.", role: "Responsável" },
+       { id: "h2", author: "Equipe Técnica", date: "2023-06-20", content: "Conclusão da primeira etapa (cobertura).", role: "Engenharia" },
+    ],
+    testimonials: [
+        { id: "t1", author: "Maria, Aluna", date: "2024-03-10", content: "A nova sala de aula é maravilhosa, agora temos ar condicionado!" }
+    ],
+    acknowledgments: [],
+    attachments: [
+        { id: "a1", title: "Planta Baixa", type: "document", url: "/docs/planta.pdf" },
+        { id: "a2", title: "Foto da Fachada", type: "image", url: "/images/fachada.jpg" }
+    ],
+    observations: "Atraso de 2 semanas devido às chuvas em Março de 2024."
   },
   {
     id: "2",
