@@ -174,7 +174,7 @@ export default function DashboardPage() {
   // ... derived data 
 
   return (
-    <div className="p-8 space-y-8 bg-background min-h-screen animate-in fade-in duration-500">
+    <div className="space-y-8 py-8 animate-in fade-in duration-500">
       
       {/* Search & Filters */}
       <div className="w-full border-b pb-6 space-y-4">
@@ -354,34 +354,41 @@ export default function DashboardPage() {
                         <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
                             <defs>
                                 <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                    <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                             <XAxis 
                                 dataKey="year" 
-                                stroke="hsl(var(--muted-foreground))" 
+                                stroke="var(--muted-foreground)" 
                                 fontSize={12} 
                                 tickLine={false} 
                                 axisLine={false}
+                                tick={{ fill: 'var(--muted-foreground)' }}
                             />
                             <YAxis 
-                                stroke="hsl(var(--muted-foreground))" 
+                                stroke="var(--muted-foreground)" 
                                 fontSize={12} 
                                 tickLine={false} 
                                 axisLine={false}
                                 tickFormatter={(value) => `R$ ${value / 1000}k`}
+                                tick={{ fill: 'var(--muted-foreground)' }}
                             />
                             <Tooltip 
                                 formatter={(value: number) => [formatCurrency(value), 'Investimento']}
                                 labelFormatter={(label) => `Ano: ${label}`}
-                                contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))' }}
+                                contentStyle={{ 
+                                    borderRadius: 'var(--radius)', 
+                                    border: '1px solid var(--border)', 
+                                    backgroundColor: 'var(--popover)',
+                                    color: 'var(--popover-foreground)' 
+                                }}
                             />
                             <Area 
                                 type="monotone" 
                                 dataKey="value" 
-                                stroke="hsl(var(--primary))" 
+                                stroke="var(--chart-1)" 
                                 fillOpacity={1} 
                                 fill="url(#colorInvestment)" 
                                 strokeWidth={3} 
