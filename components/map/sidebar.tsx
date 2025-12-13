@@ -9,9 +9,10 @@ interface SidebarProps {
   onClose: () => void
   title?: string
   content?: React.ReactNode
+  className?: string
 }
 
-export function Sidebar({ isOpen, onClose, title = "Detalhes", content }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, title = "Detalhes", content, className }: SidebarProps) {
   return (
     <div
       className={cn(
@@ -25,7 +26,7 @@ export function Sidebar({ isOpen, onClose, title = "Detalhes", content }: Sideba
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="p-4">
+      <div className={cn("p-4", className)}>
         {content || (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">

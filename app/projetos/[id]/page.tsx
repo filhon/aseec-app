@@ -3,18 +3,18 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { mockDashboardProjects } from "@/components/dashboard/data"
+import { ProjectMural } from "@/components/dashboard/project-mural"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { ScrollArea } from "@/components/ui/scroll-area" // Keep if used elsewhere or remove
 import { Progress } from "@/components/ui/progress"
 import { 
     ArrowLeft, Calendar, User, Users, Building2, MapPin, Tag, 
     DollarSign, CheckCircle2, AlertCircle, FileText, 
     MessageSquare, Paperclip, Image as ImageIcon, File, Video,
-    Clock, Globe, Heart
+    Clock, Globe, Heart, LayoutDashboard
 } from "lucide-react"
 
 // Since Next.js 15+, params is a Promise. 
@@ -71,9 +71,45 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Left Column - Meta & Stats */}
-                <div className="space-y-6 lg:col-span-1">
+                {/* Left Column - Overview, Meta & Stats */}
+                <div className="space-y-6 lg:col-span-1 h-fit">
                     
+                    {/* Overview - Moved to Left per user request */}
+                    <Card className="border-l-4 border-l-primary/20">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                <LayoutDashboard className="h-5 w-5 text-primary" />
+                                Visão Geral
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="text-sm text-muted-foreground leading-relaxed">
+                                {project.description || "Nenhuma descrição disponível para este projeto."}
+                            </div>
+                            
+                            {project.reachedPeople && (
+                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                                    <div className="bg-primary/10 p-2 rounded-full shrink-0">
+                                        <Users className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-bold leading-none">{project.reachedPeople.toLocaleString()}</p>
+                                        <p className="text-xs text-muted-foreground">Pessoas impactadas</p>
+                                    </div>
+                                </div>
+                            )}
+
+                             {project.observations && (
+                                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-3 rounded-lg text-xs">
+                                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-1.5">
+                                        <AlertCircle className="h-3 w-3" /> Observações
+                                    </h4>
+                                    <p className="text-yellow-700 dark:text-yellow-400 leading-snug">{project.observations}</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Basic Info */}
                     <Card>
                         <CardHeader className="pb-3">
@@ -87,7 +123,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                                 <span className="text-muted-foreground text-xs font-medium uppercase">Responsável</span>
                                 <div className="flex items-center gap-2">
                                     <User className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium">{project.responsible}</span>
+                                    <span className="font-medium truncate" title={project.responsible}>{project.responsible}</span>
                                 </div>
                             </div>
                             <Separator />
@@ -151,7 +187,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                                     </span>
                                 </div>
                                 <Progress value={75} className="h-2" /> 
-                                {/* Mock calculation: 75% for visual */}
                             </div>
 
                             {project.thanked !== undefined && (
@@ -198,156 +233,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
                 </div>
 
-                {/* Right Column - Details */}
+                {/* Right Column - Mural Feed */}
                 <div className="space-y-6 lg:col-span-2">
-                    
-                    {/* Overview */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-xl">Visão Geral</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="text-muted-foreground leading-relaxed">
-                                {project.description || "Nenhuma descrição disponível para este projeto."}
-                            </div>
-                            
-                            {project.reachedPeople && (
-                                <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30">
-                                    <div className="bg-primary/10 p-3 rounded-full">
-                                        <Users className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">{project.reachedPeople.toLocaleString()}</p>
-                                        <p className="text-sm text-muted-foreground">Pessoas alcançadas diretamente</p>
-                                    </div>
-                                </div>
-                            )}
-
-                             {project.observations && (
-                                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-4 rounded-lg text-sm">
-                                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4" /> Observações
-                                    </h4>
-                                    <p className="text-yellow-700 dark:text-yellow-400">{project.observations}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Detailed Content Tabs */}
-                    <Tabs defaultValue="history" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="history">Histórico</TabsTrigger>
-                            <TabsTrigger value="testimonials">Depoimentos</TabsTrigger>
-                            <TabsTrigger value="attachments">Anexos</TabsTrigger>
-                        </TabsList>
-                        
-                        {/* History Tab */}
-                        <TabsContent value="history" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Clock className="h-5 w-5 text-primary" />
-                                        Linha do Tempo
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <ScrollArea className="h-[400px] pr-4">
-                                        <div className="space-y-8 relative pl-6 border-l ml-3 my-2">
-                                            {project.history?.map((item) => (
-                                                <div key={item.id} className="relative">
-                                                     <span className="absolute -left-[30px] top-1 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
-                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-xs font-semibold text-muted-foreground">{item.date}</span>
-                                                        <p className="font-medium">{item.content}</p>
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                            <User className="h-3 w-3" />
-                                                            <span>{item.author}</span>
-                                                            {item.role && <Badge variant="secondary" className="text-[10px] h-4 px-1">{item.role}</Badge>}
-                                                        </div>
-                                                     </div>
-                                                </div>
-                                            ))}
-                                            {(!project.history || project.history.length === 0) && (
-                                                <p className="text-muted-foreground text-sm italic">Nenhum registro no histórico.</p>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Testimonials Tab */}
-                        <TabsContent value="testimonials" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <MessageSquare className="h-5 w-5 text-primary" />
-                                        Depoimentos & Agradecimentos
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                     <div className="grid gap-4">
-                                        {project.testimonials?.map(t => (
-                                            <div key={t.id} className="flex gap-4 p-4 border rounded-lg bg-card hover:bg-muted/30 transition-colors">
-                                                 <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-primary font-bold">
-                                                    {t.author.charAt(0)}
-                                                 </div>
-                                                 <div className="space-y-1">
-                                                     <p className="text-sm italic">"{t.content}"</p>
-                                                     <div className="flex items-center justify-between mt-2">
-                                                         <span className="text-sm font-semibold">{t.author}</span>
-                                                         <span className="text-xs text-muted-foreground">{t.date}</span>
-                                                     </div>
-                                                 </div>
-                                            </div>
-                                        ))}
-                                         {(!project.testimonials || project.testimonials.length === 0) && (
-                                            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                                                <Heart className="h-8 w-8 mb-2 opacity-50" />
-                                                <p>Nenhum depoimento registrado ainda.</p>
-                                            </div>
-                                        )}
-                                     </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Attachments Tab */}
-                         <TabsContent value="attachments" className="mt-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Paperclip className="h-5 w-5 text-primary" />
-                                        Galeria e Documentos
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {project.attachments?.map(a => (
-                                            <div key={a.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group">
-                                                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
-                                                    {a.type === 'image' && <ImageIcon className="h-5 w-5 text-blue-500" />}
-                                                    {a.type === 'video' && <Video className="h-5 w-5 text-red-500" />}
-                                                    {a.type === 'document' && <File className="h-5 w-5 text-orange-500" />}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-medium truncate group-hover:text-primary">{a.title}</p>
-                                                    <p className="text-xs text-muted-foreground capitalize">{a.type}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                          {(!project.attachments || project.attachments.length === 0) && (
-                                            <div className="col-span-full py-8 text-center text-muted-foreground">
-                                                <p>Nenhum anexo disponível.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-
+                    <ProjectMural feed={project.feed} />
                 </div>
             </div>
         </div>

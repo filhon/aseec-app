@@ -1,20 +1,26 @@
 export type ProjectStatus = 'concluido' | 'em_andamento' | 'pendente' | 'cancelado';
 export type ProjectExtension = 'parcial' | 'completo';
 
-export interface ProjectPost {
-  id: string;
-  author: string;
-  avatar?: string;
-  date: string;
-  content: string;
-  role?: string;
-}
+export type PostType = 'history' | 'testimonial' | 'acknowledgment' | 'report' | 'update' | 'general';
 
 export interface ProjectAttachment {
   id: string;
   title: string;
   type: 'image' | 'video' | 'document';
   url: string;
+}
+
+export interface ProjectPost {
+  id: string;
+  type: PostType;
+  title?: string;
+  author: string;
+  avatar?: string;
+  role?: string; // e.g. "Responsável", "Doador", "Aluno"
+  date: string; // ISO date string
+  content: string;
+  attachments?: ProjectAttachment[];
+  likes?: number;
 }
 
 export interface DashboardProject {
@@ -41,9 +47,11 @@ export interface DashboardProject {
   approvedValue?: number;
   thanked?: boolean;
   reachedPeople?: number;
-  history?: ProjectPost[];
-  testimonials?: ProjectPost[];
-  acknowledgments?: ProjectPost[];
+  
+  // Refactored to Mural/Feed
+  feed?: ProjectPost[];
+  
+  // General project files that might not be in a specific post (optional)
   attachments?: ProjectAttachment[];
   observations?: string;
 }
@@ -75,17 +83,54 @@ export const mockDashboardProjects: DashboardProject[] = [
     approvedValue: 150000,
     thanked: false,
     reachedPeople: 450,
-    history: [
-       { id: "h1", author: "Pr. João Silva", date: "2023-02-10", content: "Início das obras na fundação.", role: "Responsável" },
-       { id: "h2", author: "Equipe Técnica", date: "2023-06-20", content: "Conclusão da primeira etapa (cobertura).", role: "Engenharia" },
+    feed: [
+       { 
+         id: "p1", 
+         type: "history", 
+         title: "Início das Obras",
+         author: "Pr. João Silva", 
+         role: "Responsável",
+         date: "2023-02-10", 
+         content: "Demos início às obras de fundação das novas salas de aula. Um marco importante para o projeto!",
+         attachments: [
+             { id: "a1", title: "Fundação", type: "image", url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3" }
+         ]
+       },
+       { 
+         id: "p2", 
+         type: "history",
+         title: "Cobertura Concluída", 
+         author: "Equipe Técnica", 
+         role: "Engenharia",
+         date: "2023-06-20", 
+         content: "A cobertura do prédio principal foi finalizada hoje. Agora seguiremos para o acabamento interno.",
+         attachments: [
+             { id: "a2", title: "Telhado", type: "image", url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3" }
+         ]
+       },
+       { 
+         id: "p3", 
+         type: "testimonial", 
+         author: "Maria", 
+         role: "Aluna",
+         date: "2024-03-10", 
+         content: "A nova sala de aula é maravilhosa, agora temos ar condicionado e cadeiras novas! Muito obrigada a todos que ajudaram.",
+         likes: 12
+       },
+       {
+         id: "p4",
+         type: "acknowledgment",
+         title: "Agradecimento Especial",
+         author: "Diretoria",
+         role: "Administração",
+         date: "2024-01-15",
+         content: "Gostaríamos de agradecer à empresa Parceira LTDA pela doação dos materiais elétricos.",
+       }
     ],
-    testimonials: [
-        { id: "t1", author: "Maria, Aluna", date: "2024-03-10", content: "A nova sala de aula é maravilhosa, agora temos ar condicionado!" }
-    ],
-    acknowledgments: [],
     attachments: [
-        { id: "a1", title: "Planta Baixa", type: "document", url: "/docs/planta.pdf" },
-        { id: "a2", title: "Foto da Fachada", type: "image", url: "/images/fachada.jpg" }
+        { id: "doc1", title: "Planta Baixa Aprovada", type: "document", url: "/docs/planta.pdf" },
+        { id: "doc2", title: "Memorial Descritivo", type: "document", url: "/docs/memorial.docx" },
+        { id: "doc3", title: "Orçamento Detalhado", type: "document", url: "/docs/orcamento.xlsx" },
     ],
     observations: "Atraso de 2 semanas devido às chuvas em Março de 2024."
   },
@@ -105,6 +150,9 @@ export const mockDashboardProjects: DashboardProject[] = [
     investmentByYear: [
       { year: 2023, value: 40000 },
       { year: 2024, value: 40000 },
+    ],
+    feed: [
+       { id: "p1", type: "history", author: "Pra. Maria", date: "2023-01-05", content: "Projeto iniciado." }
     ]
   },
   {
@@ -123,7 +171,8 @@ export const mockDashboardProjects: DashboardProject[] = [
     investmentByYear: [
       { year: 2023, value: 80000 },
       { year: 2024, value: 120000 },
-    ]
+    ],
+    feed: []
   },
   {
     id: "4",
@@ -140,7 +189,8 @@ export const mockDashboardProjects: DashboardProject[] = [
     extension: "parcial",
     investmentByYear: [
         { year: 2024, value: 120000 },
-    ]
+    ],
+    feed: []
   },
   {
     id: "5",
@@ -157,6 +207,9 @@ export const mockDashboardProjects: DashboardProject[] = [
     extension: "parcial",
     investmentByYear: [
       { year: 2022, value: 50000 },
+    ],
+    feed: [
+        { id: "p1", type: "history", author: "Pedro", date: "2022-12-20", content: "Inauguração do centro comunitário com festa para as crianças." }
     ]
   },
   {
@@ -176,7 +229,8 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2023, value: 100000 },
       { year: 2024, value: 100000 },
       { year: 2025, value: 100000 },
-    ]
+    ],
+    feed: []
   },
   {
     id: "7",
@@ -193,7 +247,8 @@ export const mockDashboardProjects: DashboardProject[] = [
     extension: "completo",
     investmentByYear: [
       { year: 2023, value: 45000 },
-    ]
+    ],
+    feed: []
   },
   {
     id: "8",
@@ -211,6 +266,7 @@ export const mockDashboardProjects: DashboardProject[] = [
     investmentByYear: [
       { year: 2024, value: 250000 },
       { year: 2025, value: 250000 },
-    ]
+    ],
+    feed: []
   }
 ];
