@@ -176,7 +176,7 @@ export function ChatInterface({ isFloating = false, initialContext, onClose }: C
                   message.role === "ai" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-transparent"
                 )}>
                   {message.role === "ai" ? (
-                    <AvatarImage src="/gemini-icon.png" className="object-cover" /> 
+                    <AvatarImage src="/icon.png" className="object-cover" /> 
                   ) : null}
                   <AvatarFallback className={message.role === "ai" ? "bg-transparent" : ""}>
                     {message.role === "ai" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
