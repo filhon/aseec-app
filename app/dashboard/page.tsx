@@ -499,32 +499,34 @@ export default function DashboardPage() {
         <h2 className="text-xl font-bold tracking-tight">Projetos Listados ({filteredProjects.length})</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map(project => (
-                <Card key={project.id} className="hover:border-primary/50 transition-colors group cursor-pointer">
-                    <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                            <BadgeStatus status={project.status} />
-                            <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
-                        </div>
-                        <CardTitle className="mt-2 text-lg group-hover:text-primary transition-colors">{project.title}</CardTitle>
-                        <CardDescription className="line-clamp-1">{project.institution}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                <span>{project.responsible}</span>
+                <Link key={project.id} href={`/projetos/${project.id}`}>
+                    <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full">
+                        <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                                <BadgeStatus status={project.status} />
+                                <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4" />
-                                <span>{project.municipality}, {project.state} - {project.country}</span>
+                            <CardTitle className="mt-2 text-lg group-hover:text-primary transition-colors">{project.title}</CardTitle>
+                            <CardDescription className="line-clamp-1">{project.institution}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    <span>{project.responsible}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{project.municipality}, {project.state} - {project.country}</span>
+                                </div>
+                                <div className="pt-2 border-t mt-3 flex justify-between items-center">
+                                    <span className="font-semibold text-foreground">{formatCurrency(project.investment)}</span>
+                                    <span className="text-xs bg-secondary px-2 py-1 rounded text-secondary-foreground">{project.extension}</span>
+                                </div>
                             </div>
-                            <div className="pt-2 border-t mt-3 flex justify-between items-center">
-                                <span className="font-semibold text-foreground">{formatCurrency(project.investment)}</span>
-                                <span className="text-xs bg-secondary px-2 py-1 rounded text-secondary-foreground">{project.extension}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </Link>
             ))}
         </div>
       </div>
