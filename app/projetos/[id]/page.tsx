@@ -60,7 +60,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                             <BadgeStatus status={project.status} />
                         </div>
                         <p className="text-muted-foreground mt-1 flex items-center gap-2">
-                            <Building2 className="h-4 w-4" /> {project.institution}
+                            <Link href={`/dashboard/entidades/${slugify(project.institution)}`} className="hover:text-primary hover:underline flex items-center gap-1 transition-colors">
+                                <Building2 className="h-4 w-4" /> {project.institution}
+                            </Link>
                             <span className="text-border">|</span>
                             <MapPin className="h-4 w-4" /> {project.municipality}, {project.state}
                         </p>
@@ -269,4 +271,16 @@ function BadgeStatus({ status }: { status: string }) {
 
 function formatCurrency(value: number) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+}
+
+function slugify(text: string) {
+    return text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
 }

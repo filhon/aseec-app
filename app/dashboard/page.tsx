@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { mockDashboardProjects, DashboardProject } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -30,6 +31,18 @@ const formatCurrency = (value: number) => {
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat('pt-BR').format(value);
 }
+
+const slugify = (text: string) => {
+    return text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+  }
 
 export default function DashboardPage() {
   // --- State ---
@@ -413,7 +426,7 @@ export default function DashboardPage() {
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold flex items-center justify-between">
                         Top Países por Investimento
-                        <span className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</span>
+                        <Link href="/dashboard/paises" className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</Link>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -426,9 +439,10 @@ export default function DashboardPage() {
                             "Ucrânia": "ua"
                         }
                         const code = countryCodes[country]
+                        const slug = slugify(country)
 
                         return (
-                            <div key={country} className="flex items-center justify-between text-sm">
+                            <Link href={`/dashboard/paises/${slug}`} key={country} className="flex items-center justify-between text-sm group hover:bg-muted/50 p-2 rounded-md -mx-2 transition-colors cursor-pointer">
                                 <div className="flex items-center gap-2">
                                     <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${index < 3 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                                         {index + 1}
@@ -445,10 +459,10 @@ export default function DashboardPage() {
                                     ) : (
                                         <Globe className="w-4 h-4 text-muted-foreground" />
                                     )}
-                                    <span className="font-medium">{country}</span>
+                                    <span className="font-medium group-hover:text-primary transition-colors">{country}</span>
                                 </div>
                                 <span className="text-muted-foreground">{formatCurrency(value)}</span>
-                            </div>
+                            </Link>
                         )
                     }) : <p className="text-sm text-muted-foreground">Nenhum dado.</p>}
                 </CardContent>
@@ -459,19 +473,22 @@ export default function DashboardPage() {
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold flex items-center justify-between">
                         Top Entidades
-                        <span className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</span>
+                        <Link href="/dashboard/entidades" className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</Link>
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     {insights.topInstitutions.length > 0 ? insights.topInstitutions.map(([inst, value], index) => (
-                        <div key={inst} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                                <Building2 className="w-4 h-4 text-muted-foreground" />
-                                <span className="font-medium truncate max-w-[120px]" title={inst}>{inst}</span>
-                            </div>
-                            <span className="text-muted-foreground">{formatCurrency(value)}</span>
-                        </div>
-                    )) : <p className="text-sm text-muted-foreground">Nenhum dado.</p>}
+                     {insights.topInstitutions.length > 0 ? insights.topInstitutions.map(([inst, value], index) => {
+                         const slug = slugify(inst)
+                         return (
+                            <Link href={`/dashboard/entidades/${slug}`} key={inst} className="flex items-center justify-between text-sm group hover:bg-muted/50 p-2 rounded-md -mx-2 transition-colors cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                                    <span className="font-medium truncate max-w-[120px] group-hover:text-primary transition-colors" title={inst}>{inst}</span>
+                                </div>
+                                <span className="text-muted-foreground">{formatCurrency(value)}</span>
+                            </Link>
+                         )
+                    }) : <p className="text-sm text-muted-foreground">Nenhum dado.</p>}
                 </CardContent>
             </Card>
         </div>
