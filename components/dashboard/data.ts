@@ -21,6 +21,16 @@ export interface ProjectPost {
   content: string;
   attachments?: ProjectAttachment[];
   likes?: number;
+  prayers?: number;
+  comments?: ProjectPostComment[];
+}
+
+export interface ProjectPostComment {
+  id: string;
+  author: string;
+  avatar?: string;
+  date: string;
+  content: string;
 }
 
 export interface DashboardProject {
@@ -47,6 +57,7 @@ export interface DashboardProject {
   approvedValue?: number;
   thanked?: boolean;
   reachedPeople?: number;
+  lastVisit?: string; // ISO date string
   
   // Refactored to Mural/Feed
   feed?: ProjectPost[];

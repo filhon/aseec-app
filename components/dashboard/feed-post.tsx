@@ -1,14 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { ProjectPost, ProjectAttachment } from "./data"
-import { Card, CardContent } from "@/components/ui/card"
+import { ProjectPost, ProjectPostComment } from "./data"
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Toggle } from "@/components/ui/toggle"
+import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { 
-    Clock, MessageSquare, Heart, FileText, Image as ImageIcon, 
-    Video, File, User, Calendar, ExternalLink
+    Heart, MessageSquare, Share2, MoreHorizontal, 
+    FileText, Image as ImageIcon, Video, Paperclip, 
+    Download, Eye, Send, X, HandHeart
 } from "lucide-react"
 
 interface FeedPostProps {
@@ -16,191 +20,252 @@ interface FeedPostProps {
 }
 
 export function FeedPost({ post }: FeedPostProps) {
-    const getIcon = () => {
-        switch (post.type) {
-            case 'history': return <Clock className="h-4 w-4" />
-            case 'testimonial': return <MessageSquare className="h-4 w-4" />
-            case 'acknowledgment': return <Heart className="h-4 w-4" />
-            case 'report': return <FileText className="h-4 w-4" />
-            default: return <FileText className="h-4 w-4" />
-        }
-    }
+    const [likes, setLikes] = useState(post.likes || 0)
+    const [liked, setLiked] = useState(false)
+    
+    const [prayers, setPrayers] = useState(post.prayers || 0)
+    const [prayed, setPrayed] = useState(false)
 
-    const getBadgeColor = () => {
-        switch (post.type) {
-            case 'history': return 'bg-blue-100 text-blue-700 hover:bg-blue-100/80 dark:bg-blue-900/30 dark:text-blue-400'
-            case 'testimonial': return 'bg-purple-100 text-purple-700 hover:bg-purple-100/80 dark:bg-purple-900/30 dark:text-purple-400'
-            case 'acknowledgment': return 'bg-pink-100 text-pink-700 hover:bg-pink-100/80 dark:bg-pink-900/30 dark:text-pink-400'
-            case 'report': return 'bg-orange-100 text-orange-700 hover:bg-orange-100/80 dark:bg-orange-900/30 dark:text-orange-400'
-            default: return 'bg-gray-100 text-gray-700'
-        }
-    }
+    const [comments, setComments] = useState<ProjectPostComment[]>(post.comments || [])
+    const [showComments, setShowComments] = useState(false)
+    const [newComment, setNewComment] = useState("")
 
-    const getBorderColorClass = () => {
-        switch (post.type) {
-            case 'history': return 'border-l-blue-500'
-            case 'testimonial': return 'border-l-purple-500'
-            case 'acknowledgment': return 'border-l-pink-500'
-            case 'report': return 'border-l-orange-500'
-            case 'update': return 'border-l-green-500'
-            default: return 'border-l-gray-300'
-        }
-    }
-
-    const getLabel = () => {
-        switch (post.type) {
-            case 'history': return 'Histórico'
-            case 'testimonial': return 'Depoimento'
-            case 'acknowledgment': return 'Agradecimento'
-            case 'report': return 'Relatório'
-            case 'update': return 'Atualização'
-            default: return 'Geral'
-        }
-    }
-
-    const [previewFile, setPreviewFile] = useState<ProjectAttachment | null>(null)
+    const [previewFile, setPreviewFile] = useState<{ url: string, type: 'image' | 'video' | 'document', title: string } | null>(null)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
-    const getFileExtension = (filename: string) => {
-        return filename.split('.').pop()?.toLowerCase() || ''
+    const handleLike = (pressed: boolean) => {
+        setLiked(pressed)
+        setLikes(prev => pressed ? prev + 1 : prev - 1)
     }
 
-    const getFileIconAndColor = (att: ProjectAttachment) => {
-        // If type is explicitly image or video, use that
-        if (att.type === 'image') return { icon: <ImageIcon className="h-5 w-5" />, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", borderColor: "border-blue-200 dark:border-blue-800" }
-        if (att.type === 'video') return { icon: <Video className="h-5 w-5" />, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-red-800" }
+    const handlePray = (pressed: boolean) => {
+        setPrayed(pressed)
+        setPrayers(prev => pressed ? prev + 1 : prev - 1)
+    }
 
-        // Guess based on extension
-        const ext = getFileExtension(att.url)
-        
-        switch (ext) {
-            case 'pdf': 
-                return { icon: <FileText className="h-5 w-5" />, color: "text-red-600", bg: "bg-red-50 dark:bg-red-900/20", borderColor: "border-red-200 dark:border-red-800" }
-            case 'doc': 
-            case 'docx': 
-                return { icon: <FileText className="h-5 w-5" />, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-900/20", borderColor: "border-blue-200 dark:border-blue-800" }
-            case 'xls': 
-            case 'xlsx': 
-            case 'csv':
-                return { icon: <FileText className="h-5 w-5" />, color: "text-green-600", bg: "bg-green-50 dark:bg-green-900/20", borderColor: "border-green-200 dark:border-green-800" }
-            case 'ppt':
-            case 'pptx':
-                return { icon: <FileText className="h-5 w-5" />, color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-900/20", borderColor: "border-orange-200 dark:border-orange-800" }
-            default: 
-                return { icon: <File className="h-5 w-5" />, color: "text-gray-600", bg: "bg-gray-50 dark:bg-gray-800", borderColor: "border-gray-200 dark:border-gray-700" }
+    const handleComment = () => {
+        if (!newComment.trim()) return
+
+        const comment: ProjectPostComment = {
+            id: Math.random().toString(),
+            author: "Você",
+            avatar: "",
+            date: new Date().toISOString(),
+            content: newComment
+        }
+
+        setComments([...comments, comment])
+        setNewComment("")
+    }
+
+    const handlePreview = (file: any) => {
+        setPreviewFile({
+            url: file.url,
+            type: file.type,
+            title: file.title // Use title from ProjectAttachment
+        })
+        setIsPreviewOpen(true)
+    }
+
+    const getBadgeVariant = (type: string) => {
+        switch (type) {
+            case 'history': return "secondary"
+            case 'testimonial': return "outline"
+            case 'acknowledgment': return "default"
+            case 'report': return "destructive" // Or a specific color
+            default: return "secondary"
         }
     }
 
-    const handleAttachmentClick = (att: ProjectAttachment) => {
-        if (att.type === 'image' || att.type === 'video') {
-            setPreviewFile(att)
-            setIsPreviewOpen(true)
-        } else {
-            window.open(att.url, '_blank')
+    const getBadgeLabel = (type: string) => {
+        const labels: Record<string, string> = {
+            history: "Histórico",
+            testimonial: "Depoimento",
+            acknowledgment: "Agradecimento",
+            report: "Relatório",
+            update: "Atualização",
+            general: "Geral"
         }
+        return labels[type] || type
     }
 
     return (
-        <div className="relative pl-12 pb-4 group last:pb-0">
-            {/* Timeline Dot with Icon */}
-            <div className={`absolute left-0 top-0 p-2 rounded-full border shadow-sm bg-background z-10 text-muted-foreground hover:scale-110 transition-transform hover:border-primary/50 cursor-default`}>
-                {getIcon()}
-            </div>
-
-            <Card className={`shadow-sm hover:shadow-md transition-all border-l-4 ${getBorderColorClass()}`}>
-                <CardContent className="p-4 space-y-4">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <h4 className="text-sm font-semibold leading-none">{post.author}</h4>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                {post.role && <span>{post.role}</span>}
-                                <span>•</span>
-                                <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {post.date}
-                                </div>
-                            </div>
+        <Card className="mb-6 overflow-hidden border-none shadow-sm ring-1 ring-border/50">
+            {/* Header */}
+            <CardHeader className="flex flex-row items-start justify-between space-y-0 px-6 pt-0 pb-3">
+                <div className="flex gap-4">
+                    <Avatar className="h-10 w-10 border">
+                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.author}`} />
+                        <AvatarFallback>{post.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm leading-none">{post.author}</span>
+                            {post.role && <span className="text-xs text-muted-foreground">• {post.role}</span>}
                         </div>
-                        <Badge variant="secondary" className={`border-0 font-normal ${getBadgeColor()}`}>
-                            {getLabel()}
-                        </Badge>
+                        <p className="text-xs text-muted-foreground">{new Date(post.date).toLocaleDateString()} às {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Badge variant={getBadgeVariant(post.type)} className="capitalize font-normal text-xs px-2.5 py-0.5">
+                        {getBadgeLabel(post.type)}
+                    </Badge>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardHeader>
 
-                    {/* Content */}
-                    <div className="pl-1">
-                        {post.title && <h3 className="font-semibold text-base mb-1.5">{post.title}</h3>}
-                        <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                            {post.content}
-                        </p>
-                    </div>
+            {/* Content */}
+            <CardContent className="px-6 py-0 space-y-4">
+                {post.title && (
+                    <h3 className="font-semibold text-xl leading-snug tracking-tight">{post.title}</h3>
+                )}
+                <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-7">
+                    {post.content}
+                </div>
 
-                    {/* Attachments */}
-                    {post.attachments && post.attachments.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pl-1">
-                            {post.attachments.map(att => {
-                                const style = getFileIconAndColor(att)
-                                return (
-                                    <div 
-                                        key={att.id} 
-                                        onClick={() => handleAttachmentClick(att)}
-                                        className={`flex items-center gap-2.5 p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors group/att ${style.borderColor} bg-background`}
-                                    >
-                                        <div className={`h-8 w-8 shrink-0 rounded flex items-center justify-center ${style.bg} ${style.color}`}>
-                                            {style.icon}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium truncate group-hover/att:text-primary transition-colors">{att.title}</p>
-                                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                                <span className="uppercase tracking-wider">{att.type === 'document' ? getFileExtension(att.url) : att.type}</span>
-                                            </div>
+                {/* Attachments */}
+                {post.attachments && post.attachments.length > 0 && (
+                    <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                         {post.attachments.map((file, index) => (
+                             <div 
+                                key={index} 
+                                className="group relative aspect-video flex items-center justify-center rounded-lg border bg-muted/40 overflow-hidden cursor-pointer hover:bg-muted/60 transition-colors"
+                                onClick={() => handlePreview(file)}
+                             >
+                                {file.type === 'image' ? (
+                                    <div className="relative w-full h-full">
+                                         <img 
+                                            src={file.url} 
+                                            alt={file.title} 
+                                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                        />
+                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Eye className="h-6 w-6 text-white" />
                                         </div>
                                     </div>
-                                )
-                            })}
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 p-2 text-muted-foreground">
+                                        {file.type === 'video' ? <Video className="h-8 w-8" /> : <FileText className="h-8 w-8" />}
+                                        <span className="text-xs font-medium truncate max-w-full px-2">{file.title}</span>
+                                    </div>
+                                )}
+                             </div>
+                         ))}
+                    </div>
+                )}
+            </CardContent>
+
+            {/* Footer / Actions */}
+            <CardFooter className="p-0 flex flex-col bg-muted/5">
+                <div className="flex items-center w-full px-6 py-2 gap-1">
+                     <Toggle 
+                        pressed={liked} 
+                        onPressedChange={handleLike}
+                        variant="outline"
+                        className="h-8 gap-2 px-3 border-transparent bg-transparent hover:bg-muted hover:text-foreground data-[state=on]:bg-red-50 data-[state=on]:text-red-600 dark:data-[state=on]:bg-red-950/20"
+                    >
+                        <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
+                        <span className="text-xs font-medium">{likes > 0 ? likes : 'Curtir'}</span>
+                    </Toggle>
+
+                    <Toggle 
+                        pressed={prayed} 
+                        onPressedChange={handlePray}
+                        variant="outline"
+                        title="Orar por este projeto"
+                        className="h-8 gap-2 px-3 border-transparent bg-transparent hover:bg-muted hover:text-foreground data-[state=on]:bg-blue-50 data-[state=on]:text-blue-600 dark:data-[state=on]:bg-blue-950/20"
+                    >
+                        <HandHeart className={`h-4 w-4 ${prayed ? 'fill-current' : ''}`} />
+                        <span className="text-xs font-medium">{prayers > 0 ? prayers : 'Orar'}</span>
+                    </Toggle>
+
+                    <Toggle 
+                        pressed={showComments} 
+                        onPressedChange={setShowComments}
+                        variant="outline"
+                        className="h-8 gap-2 px-3 border-transparent bg-transparent hover:bg-muted hover:text-foreground data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    >
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="text-xs font-medium">{comments.length > 0 ? comments.length : 'Comentar'}</span>
+                    </Toggle>
+                </div>
+
+                {/* Comments Section */}
+                {showComments && (
+                    <div className="w-full border-t bg-background px-4 pt-6 pb-2 space-y-4 animate-in slide-in-from-top-1">
+                        <div className="w-full space-y-4">
+                        {comments.length > 0 && (
+                            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                                {comments.map((comment) => (
+                                    <div key={comment.id} className="flex gap-3 text-sm group">
+                                        <Avatar className="h-8 w-8 shrink-0">
+                                            <AvatarImage src={comment.avatar} />
+                                            <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 bg-muted/30 p-3 rounded-md rounded-tl-none">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-semibold text-xs text-primary">{comment.author}</span>
+                                                <span className="text-[10px] text-muted-foreground">{new Date(comment.date).toLocaleDateString()}</span>
+                                            </div>
+                                            <p className="text-muted-foreground text-xs leading-relaxed">{comment.content}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="flex gap-3 items-end">
+                            <Avatar className="h-8 w-8 shrink-0">
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">EU</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 relative">
+                                <Input 
+                                    placeholder="Escreva um comentário..." 
+                                    className="pr-10 min-h-[40px] py-2 text-sm bg-muted/20 border-transparent focus:bg-background focus:border-input transition-all" 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                                />
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="absolute right-1 top-1 h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" 
+                                    onClick={handleComment} 
+                                    disabled={!newComment.trim()}
+                                >
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
-                    )}
-
-                    {/* Footer Actions (Likes, etc - Optional) */}
-                    {post.likes !== undefined && post.likes > 0 && (
-                         <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2 border-t mt-2">
-                             <Heart className="h-3 w-3 text-red-500 fill-red-500" />
-                             <span>{post.likes} curtiram</span>
-                         </div>
-                    )}
-                </CardContent>
-            </Card>
-
+                    </div>
+                    </div>
+                )}
+            </CardFooter>
+            
+            {/* Preview Dialog */}
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-                <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none text-white">
-                     <DialogTitle className="sr-only">Visualização do Anexo</DialogTitle>
-                     {previewFile && (
+                <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none text-white ring-0 outline-none">
+                    <DialogTitle className="sr-only">Visualização do Anexo</DialogTitle>
+                    {previewFile && (
                         <div className="relative flex items-center justify-center min-h-[50vh] max-h-[85vh]">
                             {previewFile.type === 'image' ? (
                                 <img src={previewFile.url} alt={previewFile.title} className="max-w-full max-h-[85vh] object-contain" />
                             ) : previewFile.type === 'video' ? (
                                 <video src={previewFile.url} controls className="max-w-full max-h-[85vh]" />
-                            ) : (
-                                <div className="text-center p-8">
-                                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                                    <p>Visualização não disponível para este formato.</p>
-                                    <Button variant="outline" onClick={() => window.open(previewFile.url, '_blank')} className="mt-4 text-black border-white bg-white hover:bg-white/90">
-                                        Abrir em nova aba
-                                    </Button>
-                                </div>
-                            )}
+                            ) : null}
+                            <div className="absolute top-4 right-4 z-50">
+                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" onClick={() => setIsPreviewOpen(false)}>
+                                    <X className="h-6 w-6" />
+                                </Button>
+                            </div>
                         </div>
-                     )}
-                     <div className="absolute top-4 left-4 flex gap-2 z-50">
-                         {previewFile && (
-                             <Button size="icon" variant="ghost" className="text-white hover:bg-white/20 rounded-full bg-black/50" onClick={() => window.open(previewFile.url, '_blank')}>
-                                 <ExternalLink className="h-4 w-4" />
-                                 <span className="sr-only">Abrir em nova aba</span>
-                             </Button>
-                         )}
-                     </div>
+                    )}
                 </DialogContent>
             </Dialog>
-        </div>
+        </Card>
     )
 }
+
+

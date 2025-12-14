@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ProjectPost, PostType } from "./data"
 import { FeedPost } from "./feed-post"
+import { AddPostForm } from "./add-post-form"
 import { LayoutDashboard, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,10 +17,17 @@ import { Badge } from "@/components/ui/badge"
 
 interface ProjectMuralProps {
     feed?: ProjectPost[]
+    onAddPost?: (post: ProjectPost) => void
 }
 
-export function ProjectMural({ feed = [] }: ProjectMuralProps) {
+export function ProjectMural({ feed = [], onAddPost }: ProjectMuralProps) {
     const [filterType, setFilterType] = useState<PostType | 'all'>('all')
+
+    const handleNewPost = (post: ProjectPost) => {
+        if (onAddPost) {
+            onAddPost(post)
+        }
+    }
 
     const filteredFeed = filterType === 'all' 
         ? feed 
@@ -56,9 +64,9 @@ export function ProjectMural({ feed = [] }: ProjectMuralProps) {
                 <div className="flex items-center gap-2">
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 gap-2">
+                            <Button variant="outline" size="sm" className="h-8 gap-2" suppressHydrationWarning>
                                 <Filter className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Filtrar por:</span>
+
                                 <span className="font-semibold">{labels[filterType]}</span>
                                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 min-w-[1.25rem]">{counts[filterType as keyof typeof counts] || 0}</Badge>
                             </Button>
@@ -93,22 +101,26 @@ export function ProjectMural({ feed = [] }: ProjectMuralProps) {
                                         Atualizações <span className="text-muted-foreground text-xs">{counts.update}</span>
                                     </DropdownMenuRadioItem>
                                 )}
+                                {counts.general > 0 && (
+                                    <DropdownMenuRadioItem value="general" className="justify-between">
+                                        Geral <span className="text-muted-foreground text-xs">{counts.general}</span>
+                                    </DropdownMenuRadioItem>
+                                )}
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
             </div>
 
-            <div className="relative pl-2 pt-2">
-                {/* Vertical Connector Line */}
-                {filteredFeed.length > 0 && (
-                    <div className="absolute left-[25px] top-4 bottom-8 w-0.5 bg-border/50" />
-                )}
+            <AddPostForm onPost={handleNewPost} />
 
+            <div className="mt-4">
                 {filteredFeed.length > 0 ? (
-                    filteredFeed.map(post => (
-                        <FeedPost key={post.id} post={post} />
-                    ))
+                    <div className="space-y-4">
+                        {filteredFeed.map(post => (
+                            <FeedPost key={post.id} post={post} />
+                        ))}
+                    </div>
                 ) : (
                     <div className="text-center py-12 border rounded-lg bg-muted/10 border-dashed text-muted-foreground animate-in fade-in zoom-in-95 duration-300">
                         <p>Nenhuma publicação encontrada para este filtro.</p>
