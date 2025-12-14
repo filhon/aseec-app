@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Settings, LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Settings, LogOut, Sparkles, ChartNoAxesCombined } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/projetos", label: "Projetos", icon: FolderOpen },
+    { href: "/financeiro", label: "Financeiro", icon: ChartNoAxesCombined },
     { href: "/aseec-ia", label: "aseecIA", icon: Sparkles },
     { href: "/settings", label: "Configurações", icon: Settings },
   ]

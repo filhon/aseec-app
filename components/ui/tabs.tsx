@@ -101,12 +101,25 @@ const TabsContext = React.createContext<{ currentValue?: string, onChange?: (v: 
 // Re-implement Root with Context
 const TabsRoot = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { defaultValue?: string }
->(({ className, defaultValue, children, ...props }, ref) => {
-  const [value, setValue] = React.useState(defaultValue)
+  React.HTMLAttributes<HTMLDivElement> & { 
+    value?: string
+    defaultValue?: string
+    onValueChange?: (value: string) => void
+  }
+>(({ className, value: controlledValue, defaultValue, onValueChange, children, ...props }, ref) => {
+  const [internalValue, setInternalValue] = React.useState(defaultValue)
+  
+  const value = controlledValue !== undefined ? controlledValue : internalValue
+  
+  const handleValueChange = (newValue: string) => {
+      onValueChange?.(newValue)
+      if (controlledValue === undefined) {
+          setInternalValue(newValue)
+      }
+  }
 
   return (
-    <TabsContext.Provider value={{ currentValue: value, onChange: setValue }}>
+    <TabsContext.Provider value={{ currentValue: value, onChange: handleValueChange }}>
         <div ref={ref} className={cn("", className)} {...props}>
             {children}
         </div>

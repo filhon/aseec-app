@@ -1,0 +1,365 @@
+
+"use client"
+
+import { useState, useMemo, useEffect } from "react"
+import { FinancialCards } from "@/components/financeiro/financial-cards"
+import { CashFlowChart } from "@/components/financeiro/cash-flow-chart"
+import { ExpenseSimulator } from "@/components/financeiro/expense-simulator"
+import { FinancialTransactionList } from "@/components/financeiro/transaction-list"
+import { 
+    mockFinancialMetrics, 
+    SimulatedExpense, 
+    CashFlowData, 
+    Transaction, 
+    generateMockTransactions, 
+    mockCostCenters, 
+    calculateCashFlowFromTransactions,
+    getProjectFinancials
+} from "@/components/financeiro/data"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CalendarIcon, Search, FilterX } from "lucide-react"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { cn } from "@/lib/utils"
+
+import { DateRange } from "react-day-picker"
+
+export default function FinanceiroPage() {
+    // Data State
+    const [rawTransactions, setRawTransactions] = useState<Transaction[]>([])
+    const [projects, setProjects] = useState<ReturnType<typeof getProjectFinancials>>([])
+    
+    // Filter States
+    const [searchQuery, setSearchQuery] = useState("")
+    const [selectedCostCenter, setSelectedCostCenter] = useState<string>("all")
+    
+    // Default: Next 30 Days
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: new Date(),
+        to: new Date(new Date().setDate(new Date().getDate() + 30)),
+    })
+    const [presetName, setPresetName] = useState<string | null>("Próx. 30 Dias")
+
+    // Simulation State
+    const [simulatedExpense, setSimulatedExpense] = useState<SimulatedExpense | null>(null)
+    
+    // Load mock data on mount (Client-side only to avoid hydration mismatch)
+    useEffect(() => {
+        setRawTransactions(generateMockTransactions())
+        setProjects(getProjectFinancials())
+    }, [])
+
+    // 1. Base Transactions (Filtered by Search and Cost Center ONLY)
+    // We need this separates so the Chart can calculate the full running balance history correctly
+    // before visual slicing.
+    const baseTransactions = useMemo(() => {
+        let transactions = [...rawTransactions]
+
+        // Search Filter
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            transactions = transactions.filter(t => {
+                const desc = t.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                const ccName = (mockCostCenters.find(c => c.id === t.costCenterId)?.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                return desc.includes(query) || ccName.includes(query)
+            })
+        }
+
+        // Cost Center Filter
+        if (selectedCostCenter !== "all") {
+            transactions = transactions.filter(t => t.costCenterId === selectedCostCenter)
+        }
+        
+        return transactions
+    }, [searchQuery, selectedCostCenter, rawTransactions])
+
+    // 2. Transaction List Data (Applies Date Filter strongly)
+    const filteredTransactionList = useMemo(() => {
+        let transactions = [...baseTransactions]
+
+        if (dateRange?.from) {
+             const fromStr = format(dateRange.from, 'yyyy-MM-dd')
+             transactions = transactions.filter(t => t.date >= fromStr)
+        }
+        if (dateRange?.to) {
+             const toStr = format(dateRange.to, 'yyyy-MM-dd')
+             transactions = transactions.filter(t => t.date <= toStr)
+        }
+
+        return transactions
+    }, [baseTransactions, dateRange])
+
+    // Calculate Full Timeline Chart Data from Base Transactions (ignoring date filter for calculation)
+    const fullTimelineChartData = useMemo(() => {
+        const cashFlow = calculateCashFlowFromTransactions(baseTransactions)
+        return cashFlow
+    }, [baseTransactions])
+
+    // Simulation & Final Visual Slicing
+    const { finalChartData, currentMetrics, simulationImpact } = useMemo(() => {
+        let data = [...fullTimelineChartData]
+        let impactMessage = null
+        let metrics = { ...mockFinancialMetrics }
+
+        // Metrics should reflect the VIEWED period or the FULL period?
+        // Usually KPIs like "Total Revenue" reflect the current filters.
+        // So we calculate them from filteredTransactionList.
+        const totalRev = filteredTransactionList.filter(t => t.type === 'revenue').reduce((acc, t) => acc + t.amount, 0)
+        const totalExp = filteredTransactionList.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0)
+        
+        metrics.totalRevenue = totalRev
+        metrics.totalExpenses = totalExp
+
+        if (simulatedExpense && data.length > 0) {
+            data = data.map(d => ({ ...d }))
+            const { amount, installments, startDate } = simulatedExpense
+            const installmentAmount = amount / installments
+             const installmentDates: string[] = []
+            for (let i = 0; i < installments; i++) {
+                const date = new Date(startDate)
+                date.setMonth(date.getMonth() + i)
+                installmentDates.push(date.toISOString().split('T')[0])
+            }
+
+            let minBalance = Infinity
+            let firstNegativeDate = null
+            
+            installmentDates.forEach(payDate => {
+                 for (let i = 0; i < data.length; i++) {
+                    if (data[i].date >= payDate) {
+                        data[i].balance -= installmentAmount
+                        if (data[i].date === payDate) {
+                            data[i].expenses += installmentAmount
+                        }
+                    }
+                 }
+            })
+
+            for (const d of data) {
+                if (d.balance < minBalance) minBalance = d.balance
+                if (d.balance < 0 && !firstNegativeDate) firstNegativeDate = d.date
+            }
+
+            if (firstNegativeDate) {
+                impactMessage = { type: 'danger' as const, text: `Atenção: O saldo ficará negativo em ${new Date(firstNegativeDate).toLocaleDateString('pt-BR')}.` }
+            } else {
+                 impactMessage = { type: 'success' as const, text: `Simulação segura. O saldo mínimo será de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(minBalance)}.` }
+            }
+             const todayIndex = data.findIndex(d => d.date === new Date().toISOString().split('T')[0])
+             if (todayIndex !== -1 && todayIndex + 30 < data.length) {
+                metrics.predictedBalance = data[todayIndex + 30].balance
+             }
+        }
+        
+        // FINALLY: Slice the chart data for display based on Date Range
+        if (dateRange?.from) {
+             const fromStr = format(dateRange.from, 'yyyy-MM-dd')
+             data = data.filter(d => d.date >= fromStr)
+        }
+        if (dateRange?.to) {
+             const toStr = format(dateRange.to, 'yyyy-MM-dd')
+             data = data.filter(d => d.date <= toStr)
+        }
+
+        return { finalChartData: data, currentMetrics: metrics, simulationImpact: impactMessage }
+    }, [fullTimelineChartData, simulatedExpense, filteredTransactionList, dateRange])
+
+
+    // Transaction List for Table
+    const transactionList = useMemo(() => {
+        return filteredTransactionList
+    }, [filteredTransactionList])
+
+
+    const clearFilters = () => {
+        setSearchQuery("")
+        setSelectedCostCenter("all")
+        setPresetName(null)
+        setDateRange(undefined)
+    }
+
+    // Date Presets
+    const applyPreset = (days: number, type: 'next' | 'past' | 'month' | 'year' | 'year_to_date' = 'next', label: string) => {
+        const today = new Date()
+        let from = today
+        let to = today
+
+        if (type === 'next') {
+            to = new Date(today)
+            to.setDate(today.getDate() + days)
+        } else if (type === 'past') {
+            from = new Date(today)
+            from.setDate(today.getDate() - days)
+        } else if (type === 'month') {
+            from = new Date(today.getFullYear(), today.getMonth(), 1)
+            to = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+        } else if (type === 'year') {
+            from = new Date(today.getFullYear(), 0, 1)
+            to = new Date(today.getFullYear(), 11, 31)
+        } else if (type === 'year_to_date') {
+            from = new Date(today.getFullYear(), 0, 1)
+            to = new Date(today)
+        }
+
+        setDateRange({ from, to })
+        setPresetName(label)
+    }
+
+    return (
+        <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">
+             {/* Header with Filters */}
+             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-primary">Financeiro</h1>
+                    <p className="text-muted-foreground mt-1">
+                        Visão geral do fluxo de caixa e simulações.
+                    </p>
+                </div>
+
+                <div className="flex flex-col lg:flex-row gap-2">
+                    {/* Search */}
+                    <div className="relative w-full lg:w-[250px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar despesa, centro de custo..."
+                            className="pl-9"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Cost Center Select */}
+                    <Select value={selectedCostCenter} onValueChange={setSelectedCostCenter}>
+                        <SelectTrigger className="w-full lg:w-[200px]">
+                            <SelectValue placeholder="Centro de Custo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os Centros</SelectItem>
+                            {mockCostCenters.map(cc => (
+                                <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    {/* Date Range Picker */}
+                    <div className="grid gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-[240px] justify-start text-left font-normal",
+                                        !dateRange?.from && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {presetName ? (
+                                        <span>{presetName}</span>
+                                    ) : (
+                                        dateRange?.from ? (
+                                            dateRange.to ? (
+                                                <>
+                                                    {format(dateRange.from, "dd/MM/yyyy")} -{" "}
+                                                    {format(dateRange.to, "dd/MM/yyyy")}
+                                                </>
+                                            ) : (
+                                                format(dateRange.from, "dd/MM/yyyy")
+                                            )
+                                        ) : (
+                                            <span>Selecione o período</span>
+                                        )
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <div className="flex">
+                                    <div className="flex flex-col gap-1 p-2 border-r">
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(0, 'month', 'Este Mês')}>
+                                            Este Mês
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(30, 'next', 'Próx. 30 Dias')}>
+                                            Próx. 30 Dias
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(60, 'next', 'Próx. 60 Dias')}>
+                                            Próx. 60 Dias
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(90, 'next', 'Próx. 90 Dias')}>
+                                            Próx. 90 Dias
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(0, 'year', 'Este Ano')}>
+                                            Este Ano
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-xs font-normal" onClick={() => applyPreset(0, 'year_to_date', 'Ano até agora')}>
+                                            Ano até agora
+                                        </Button>
+                                    </div>
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={(range) => {
+                                            setDateRange(range)
+                                            setPresetName(null)
+                                        }}
+                                        numberOfMonths={1}
+                                    />
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+
+                    {(searchQuery || selectedCostCenter !== 'all' || dateRange?.from || dateRange?.to) && (
+                        <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar Filtros">
+                            <FilterX className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <FinancialCards 
+                currentBalance={currentMetrics.currentBalance}
+                totalRevenue={currentMetrics.totalRevenue}
+                totalExpenses={currentMetrics.totalExpenses}
+                predictedBalance={currentMetrics.predictedBalance}
+            />
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
+                
+                {/* Chart Section */}
+                <div className="lg:col-span-2 h-[500px] flex flex-col gap-2">
+                    <CashFlowChart 
+                        data={finalChartData} 
+                        title="Fluxo de Caixa"
+                        description={simulatedExpense ? "Simulação aplicada." : "Projeção baseada nos filtros atuais."}
+                        onDateClick={(date) => {
+                            setDateRange({ from: date, to: date })
+                            setPresetName(null)
+                        }}
+                    />
+                </div>
+
+                {/* Simulator Section */}
+                <div className="h-full">
+                    <ExpenseSimulator 
+                        onSimulate={setSimulatedExpense} 
+                        simulationResult={simulationImpact}
+                    />
+                </div>
+            </div>
+
+            {/* Transaction List Section */}
+            <div className="mt-8">
+                 <FinancialTransactionList transactions={transactionList} />
+            </div>
+
+        </div>
+    )
+}
