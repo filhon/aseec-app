@@ -4,8 +4,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Settings, LogOut, Sparkles, ChartNoAxesCombined } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
+import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined } from "lucide-react";
+import { UserNav } from "@/components/layout/user-nav";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -75,13 +75,9 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
         })}
       </nav>
 
-      {/* Footer: Logoff & Theme */}
-      <div className={cn("p-4 flex items-center gap-2", isDesktop && "border-t")}>
-          <Button variant="ghost" className="flex-1 flex items-center gap-2 text-muted-foreground hover:text-destructive justify-start px-2">
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
-          </Button>
-          <ModeToggle />
+      {/* Footer: User & Theme (Integrated) */}
+      <div className={cn("p-4", isDesktop && "border-t")}>
+          <UserNav />
       </div>
     </aside>
   )
