@@ -10,7 +10,7 @@ import { Search, MapPin, Users, Building2, Globe, Clock, RefreshCcw, Filter, X }
 import { mockDashboardProjects, DashboardProject } from "@/components/dashboard/data"
 import { mockProjects, ProjectLocation } from "@/components/map/data"
 import { ProjectsPieChart } from "@/components/dashboard/projects-pie-chart"
-import { ProjectUpdates } from "@/components/dashboard/project-updates"
+import { GlobalProjectUpdates } from "@/components/dashboard/global-project-updates"
 
 // Dynamically import MapView
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -176,9 +176,9 @@ export default function ProjectsPage() {
                      />
                 </div>
 
-                {/* Updates Card */}
+                {/* Updates Card - Global Feed */}
                 <div className="h-[450px]">
-                    <ProjectUpdates />
+                    <GlobalProjectUpdates onlyToday={false} variant="compact" showViewAll={true} />
                 </div>
             </div>
 

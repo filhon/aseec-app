@@ -17,9 +17,10 @@ import {
 
 interface FeedPostProps {
     post: ProjectPost
+    projectTitle?: string // Optional context for global feeds
 }
 
-export function FeedPost({ post }: FeedPostProps) {
+export function FeedPost({ post, projectTitle }: FeedPostProps) {
     const [likes, setLikes] = useState(post.likes || 0)
     const [liked, setLiked] = useState(false)
     
@@ -99,11 +100,16 @@ export function FeedPost({ post }: FeedPostProps) {
                         <AvatarFallback>{post.author[0]}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm leading-none">{post.author}</span>
-                            {post.role && <span className="text-xs text-muted-foreground">• {post.role}</span>}
+                        <div className="flex flex-col">
+                             {projectTitle && (
+                                <span className="text-[10px] uppercase font-bold text-primary mb-0.5 tracking-wide">{projectTitle}</span>
+                             )}
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm leading-none">{post.author}</span>
+                                {post.role && <span className="text-xs text-muted-foreground">• {post.role}</span>}
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{new Date(post.date).toLocaleDateString()} às {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(post.date).toLocaleDateString()} às {new Date(post.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
