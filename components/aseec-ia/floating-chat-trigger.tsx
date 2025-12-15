@@ -23,8 +23,8 @@ export function FloatingChatTrigger() {
 
   const currentContext = getContextFromPath(pathname);
 
-  // Don't show floating button on the dedicated page to avoid redundancy
-  if (pathname === "/aseec-ia") return null;
+  // Don't show floating button on the dedicated page to avoid redundancy, nor on Home as requested
+  if (pathname === "/aseec-ia" || pathname === "/") return null;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>

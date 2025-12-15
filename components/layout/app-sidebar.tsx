@@ -4,7 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined, Map as MapIcon } from "lucide-react";
 import { UserNav } from "@/components/layout/user-nav";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
   const pathname = usePathname()
 
   const navItems = [
+    { href: "/", label: "Mapa", icon: MapIcon },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/projetos", label: "Projetos", icon: FolderOpen },
     { href: "/financeiro", label: "Financeiro", icon: ChartNoAxesCombined },

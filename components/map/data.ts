@@ -6,6 +6,7 @@ export interface ProjectLocation {
   lat: number
   lng: number
   type: "blue" | "green"
+  latestImage?: string
 }
 
 export const mockProjects: ProjectLocation[] = [
@@ -16,7 +17,8 @@ export const mockProjects: ProjectLocation[] = [
     address: "Rua das Oliveiras, 123 - São Paulo, SP",
     lat: -23.5505,
     lng: -46.6333,
-    type: "green"
+    type: "green",
+    latestImage: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&auto=format&fit=crop&q=60"
   },
   {
     id: "2",
@@ -35,7 +37,8 @@ export const mockProjects: ProjectLocation[] = [
     address: "Rua da Paz, 10 - Rio de Janeiro, RJ",
     lat: -22.9068,
     lng: -43.1729,
-    type: "green"
+    type: "green",
+    latestImage: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&auto=format&fit=crop&q=60"
   },
   {
     id: "4",
@@ -63,7 +66,8 @@ export const mockProjects: ProjectLocation[] = [
     address: "Rua do Sol, 200 - Recife, PE",
     lat: -8.0476,
     lng: -34.8770,
-    type: "blue"
+    type: "blue",
+    latestImage: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop&q=60"
   },
   {
     id: "7",

@@ -5,7 +5,8 @@ import { MapContainer, TileLayer, Marker, ZoomControl, useMap } from "react-leaf
 import MarkerClusterGroup from "react-leaflet-cluster"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"
-import { RotateCcw } from "lucide-react"
+import { RotateCcw, Plus, Minus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { mockProjects, ProjectLocation } from "./data"
 
 // Fix for default Leaflet marker icons
@@ -58,26 +59,80 @@ const createClusterIcon = (cluster: any) => {
   })
 }
 
-function ResetZoomControl({ center, zoom }: { center: [number, number], zoom: number }) {
+function MapControls({ center, zoom, hidden }: { center: [number, number], zoom: number, hidden?: boolean }) {
   const map = useMap()
-  const handleReset = () => {
+
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    map.zoomIn()
+  }
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    map.zoomOut()
+  }
+
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation()
     map.setView(center, zoom, { animate: true })
   }
+
+  if (hidden) return null
+
   return (
-    <div className="leaflet-bottom leaflet-right" style={{ marginBottom: "90px", pointerEvents: "auto" }}>
-      <div className="leaflet-control leaflet-bar">
-        <a 
-          role="button" 
-          title="Redefinir Zoom" 
-          onClick={handleReset} 
-          className="flex items-center justify-center bg-white hover:bg-gray-50 cursor-pointer text-black" 
-          style={{ width: '30px', height: '30px', display: 'flex' }}
-        >
-           <RotateCcw className="h-4 w-4" />
-        </a>
-      </div>
+    <div className="leaflet-bottom leaflet-right" style={{ marginBottom: "24px", marginRight: "24px", pointerEvents: "auto", zIndex: 1000 }}>
+        <div className="flex flex-col gap-2">
+            <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleReset}
+                className="shadow-md h-9 w-9 bg-background/95 backdrop-blur hover:bg-background/100"
+                title="Redefinir visualização"
+            >
+                <RotateCcw className="h-4 w-4" />
+            </Button>
+            <div className="flex flex-col rounded-md shadow-md bg-background/95 backdrop-blur overflow-hidden border">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleZoomIn}
+                    className="h-9 w-9 rounded-none hover:bg-muted border-b"
+                    title="Aumentar zoom"
+                >
+                    <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleZoomOut}
+                    className="h-9 w-9 rounded-none hover:bg-muted"
+                    title="Diminuir zoom"
+                >
+                    <Minus className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
     </div>
   )
+}
+
+interface MapControllerProps {
+  flyTo?: { lat: number; lng: number; zoom: number } | null
+}
+
+function MapController({ flyTo }: MapControllerProps) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (flyTo) {
+      map.flyTo([flyTo.lat, flyTo.lng], flyTo.zoom, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      })
+    }
+  }, [flyTo, map])
+
+  return null
 }
 
 interface MapViewProps {
@@ -85,9 +140,11 @@ interface MapViewProps {
   onClusterClick: (projects: ProjectLocation[]) => void
   className?: string
   style?: React.CSSProperties
+  flyTo?: { lat: number; lng: number; zoom: number } | null
+  hideControls?: boolean
 }
 
-export default function MapView({ onPinClick, onClusterClick, className, style }: MapViewProps) {
+export default function MapView({ onPinClick, onClusterClick, className, style, flyTo, hideControls }: MapViewProps) {
   const [mounted, setMounted] = useState(false)
 
   // Move hook to top level
@@ -114,13 +171,13 @@ export default function MapView({ onPinClick, onClusterClick, className, style }
         style={mapStyle}
         className="z-0"
       >
+        <MapController flyTo={flyTo} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
         
-        <ResetZoomControl center={center} zoom={zoom} />
-        <ZoomControl position="bottomright" />
+        <MapControls center={center} zoom={zoom} hidden={hideControls} />
 
         <MarkerClusterGroup
           chunkedLoading
