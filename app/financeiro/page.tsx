@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { FinancialCards } from "@/components/financeiro/financial-cards"
 import { CashFlowChart } from "@/components/financeiro/cash-flow-chart"
-import { ExpenseSimulator } from "@/components/financeiro/expense-simulator"
+import { ExpenseSimulator, SimulationResult } from "@/components/financeiro/expense-simulator"
 import { FinancialTransactionList } from "@/components/financeiro/transaction-list"
 import { 
     mockFinancialMetrics, 
@@ -18,7 +18,9 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon, Search, FilterX } from "lucide-react"
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { CostCenterBudgetChart } from "@/components/financeiro/cost-center-budget-chart"
+import { Calculator, CalendarIcon, Search, FilterX } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -97,9 +99,9 @@ export default function FinanceiroPage() {
     }, [baseTransactions])
 
     // Simulation & Final Visual Slicing
-    const { finalChartData, currentMetrics, simulationImpact } = useMemo(() => {
+    const { finalChartData, currentMetrics, simulationImpact, costCenterData } = useMemo(() => {
         let data = [...fullTimelineChartData]
-        let impactMessage = null
+        let impactMessage: SimulationResult | null = null
         const metrics = { ...mockFinancialMetrics } // Modified to use const as we mutate properties, not the var itself? Wait, we spread it.
 
         // Metrics should reflect the VIEWED period or the FULL period?
@@ -125,15 +127,38 @@ export default function FinanceiroPage() {
             let minBalance = Infinity
             let firstNegativeDate = null
             
-            installmentDates.forEach(payDate => {
+            // Track installments detail
+            const installmentDetails: any[] = []
+
+            installmentDates.forEach((payDate, idx) => {
+                 let balanceAfter = 0;
                  for (let i = 0; i < data.length; i++) {
                     if (data[i].date >= payDate) {
                         data[i].balance -= installmentAmount
                         if (data[i].date === payDate) {
                             data[i].expenses += installmentAmount
+                            balanceAfter = data[i].balance;
                         }
                     }
+                    // Fallback if payDate is not in data (should be, as mock covers range)
+                    // If payDate > last data date, balance is roughly last balance - amount
                  }
+                 
+                 // If exact date match captured balanceAfter, use it. Else find closest.
+                 const exactDay = data.find(d => d.date === payDate)
+                 if (exactDay) {
+                     balanceAfter = exactDay.balance
+                 } else {
+                     // Try finding the closest day after?
+                     // Mock transactions are continuous, so exact match is likely.
+                 }
+
+                 installmentDetails.push({
+                     number: idx + 1,
+                     date: payDate,
+                     amount: installmentAmount,
+                     balanceAfter: balanceAfter
+                 })
             })
 
             for (const d of data) {
@@ -142,9 +167,17 @@ export default function FinanceiroPage() {
             }
 
             if (firstNegativeDate) {
-                impactMessage = { type: 'danger' as const, text: `Atenção: O saldo ficará negativo em ${new Date(firstNegativeDate).toLocaleDateString('pt-BR')}.` }
+                impactMessage = { 
+                    type: 'danger' as const, 
+                    text: `Atenção: O saldo ficará negativo em ${new Date(firstNegativeDate).toLocaleDateString('pt-BR')}.`,
+                    installments: installmentDetails
+                }
             } else {
-                 impactMessage = { type: 'success' as const, text: `Simulação segura. O saldo mínimo será de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(minBalance)}.` }
+                 impactMessage = { 
+                     type: 'success' as const, 
+                     text: `Simulação segura. O saldo mínimo será de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(minBalance)}.`,
+                     installments: installmentDetails
+                 }
             }
              const todayIndex = data.findIndex(d => d.date === new Date().toISOString().split('T')[0])
              if (todayIndex !== -1 && todayIndex + 30 < data.length) {
@@ -162,7 +195,27 @@ export default function FinanceiroPage() {
              data = data.filter(d => d.date <= toStr)
         }
 
-        return { finalChartData: data, currentMetrics: metrics, simulationImpact: impactMessage }
+        // 4. Calculate Const Center Budget vs Actuals (using filtered list or base? Usually Actuals are YTD or Period? 
+        // Let's use the Base transactions to get TOTAL used, or just filtered?
+        // "Valor Aplicado (Valor Já Usado)" implies specific period or total?
+        // If Budget is Annual, we should probably compare against Annual Applied?
+        // Let's use the filtered transactions for "Applied" to allow analysis of specific periods against the budget, 
+        // OR better yet, if no date selected, show YTD. If date selected, show that period's usage.
+        // Let's use filteredTransactionList.
+        
+        const costCenterData = mockCostCenters.map(cc => {
+            const used = filteredTransactionList
+                .filter(t => t.costCenterId === cc.id && t.type === 'expense')
+                .reduce((acc, t) => acc + t.amount, 0)
+            
+            return {
+                name: cc.name,
+                budget: cc.budget, // Static budget from mock
+                used: used
+            }
+        })
+
+        return { finalChartData: data, currentMetrics: metrics, simulationImpact: impactMessage, costCenterData }
     }, [fullTimelineChartData, simulatedExpense, filteredTransactionList, dateRange])
 
 
@@ -207,7 +260,7 @@ export default function FinanceiroPage() {
     }
 
     return (
-        <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-10 space-y-8 animate-in fade-in duration-500">
              {/* Header with Filters */}
              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div>
@@ -218,6 +271,30 @@ export default function FinanceiroPage() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-2">
+                    {/* Simulator Button (Popup) */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="gap-2 bg-background">
+                                <Calculator className="h-4 w-4" />
+                                <span className="hidden sm:inline">Simulador</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Simulador de Despesas</DialogTitle>
+                                <DialogDescription>
+                                    Simule o impacto de novas despesas no fluxo de caixa.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <ExpenseSimulator 
+                                    onSimulate={setSimulatedExpense} 
+                                    simulationResult={simulationImpact}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
                     {/* Search */}
                     <div className="relative w-full lg:w-[250px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -330,7 +407,7 @@ export default function FinanceiroPage() {
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
                 
-                {/* Chart Section */}
+                {/* Cash Flow Chart Section */}
                 <div className="lg:col-span-2 h-[500px] flex flex-col gap-2">
                     <CashFlowChart 
                         data={finalChartData} 
@@ -343,12 +420,9 @@ export default function FinanceiroPage() {
                     />
                 </div>
 
-                {/* Simulator Section */}
-                <div className="h-full">
-                    <ExpenseSimulator 
-                        onSimulate={setSimulatedExpense} 
-                        simulationResult={simulationImpact}
-                    />
+                {/* Cost Center Budget Chart Section */}
+                <div className="h-[500px]">
+                    <CostCenterBudgetChart data={costCenterData} />
                 </div>
             </div>
 

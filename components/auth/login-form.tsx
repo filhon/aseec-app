@@ -9,9 +9,10 @@ import { Eye, EyeOff } from "lucide-react"
 
 interface LoginFormProps {
   onForgotPassword: () => void
+  onInviteClick: () => void
 }
 
-export function LoginForm({ onForgotPassword }: LoginFormProps) {
+export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -94,17 +95,12 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Ou continue com
+            Ou
           </span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isLoading}>
-        {isLoading ? (
-          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Icons.google className="mr-2 h-4 w-4" />
-        )}
-        Google
+      <Button variant="outline" type="button" disabled={isLoading} onClick={onInviteClick}>
+        Entrar com código de convite
       </Button>
     </div>
   )

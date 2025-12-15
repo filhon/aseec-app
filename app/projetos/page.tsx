@@ -148,7 +148,7 @@ export default function ProjectsPage() {
 
 
     return (
-        <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-10 space-y-8 animate-in fade-in duration-500">
             
             {/* Header with Search */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

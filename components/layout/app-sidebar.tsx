@@ -23,7 +23,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
     { href: "/projetos", label: "Projetos", icon: FolderOpen },
     { href: "/financeiro", label: "Financeiro", icon: ChartNoAxesCombined },
     { href: "/aseec-ia", label: "aseecIA", icon: Sparkles },
-    { href: "/settings", label: "Configurações", icon: Settings },
+    { href: "/configuracoes", label: "Configurações", icon: Settings },
   ]
 
   const isDesktop = mode === "desktop"

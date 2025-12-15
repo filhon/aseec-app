@@ -14,12 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { LoginForm } from "@/components/auth/login-form"
+import { InviteCodeForm } from "@/components/auth/invite-code-form"
 import { SignUpForm } from "@/components/auth/signup-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
 export default function AuthenticationPage() {
-  const [view, setView] = useState<"login" | "signup" | "forgot_password">("login")
+  const [view, setView] = useState<"login" | "invite" | "forgot_password" | "register">("login")
 
   return (
     <div className="container relative flex h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0 bg-muted/40">
@@ -78,49 +79,49 @@ export default function AuthenticationPage() {
                  </CardDescription>
                </CardHeader>
                <CardContent>
-                 <LoginForm onForgotPassword={() => setView("forgot_password")} />
+                 <LoginForm 
+                   onForgotPassword={() => setView("forgot_password")} 
+                   onInviteClick={() => setView("invite")}
+                 />
                </CardContent>
                <CardFooter className="flex flex-wrap items-center justify-center gap-2">
-                 <div className="text-sm text-muted-foreground">
-                   Não tem uma conta?{" "}
-                   <Button variant="link" className="p-0 h-auto" onClick={() => setView("signup")}>
-                     Criar conta
-                   </Button>
-                 </div>
+                 {/* Footer content removed as requested */}
                </CardFooter>
             </Card>
           )}
 
-          {view === "signup" && (
+          {view === "invite" && (
+            <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight">
+                  Código de Convite
+                </CardTitle>
+                <CardDescription>
+                  Insira o código fornecido pelo administrador
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <InviteCodeForm 
+                  onBack={() => setView("login")} 
+                  onSuccess={() => setView("register")}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {view === "register" && (
             <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold tracking-tight">
                   Crie sua conta
                 </CardTitle>
                 <CardDescription>
-                  Preencha os dados abaixo para começar
+                  Complete seu cadastro para acessar o sistema
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <SignUpForm onLoginClick={() => setView("login")} />
               </CardContent>
-              <CardFooter className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-                Ao clicar em criar conta, você concorda com nossos{" "}
-                <Link
-                  href="/terms"
-                  className="underline underline-offset-4 hover:text-primary"
-                >
-                  Termos de Serviço
-                </Link>{" "}
-                e{" "}
-                <Link
-                  href="/privacy"
-                  className="underline underline-offset-4 hover:text-primary"
-                >
-                  Política de Privacidade
-                </Link>
-                .
-              </CardFooter>
             </Card>
           )}
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +17,7 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [password, setPassword] = useState("")
+  const router = useRouter()
   /* Removed state-based checkStrength and useEffect */
   const getStrength = (pass: string) => {
     let score = 0
@@ -37,7 +39,8 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
 
     setTimeout(() => {
       setIsLoading(false)
-    }, 3000)
+      router.push("/dashboard")
+    }, 1500)
   }
 
   return (

@@ -2,20 +2,31 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
-import { CalendarIcon, Calculator, Trash2 } from "lucide-react"
+import { CalendarIcon, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SimulatedExpense } from "./data"
 
+export interface SimulationResult {
+    type: 'success' | 'danger'
+    text: string
+    installments: {
+        number: number
+        date: string
+        amount: number
+        balanceAfter: number
+    }[]
+}
+
 interface ExpenseSimulatorProps {
     onSimulate: (expense: SimulatedExpense | null) => void
-    simulationResult?: { type: 'success' | 'danger', text: string } | null
+    simulationResult?: SimulationResult | null
 }
 
 export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimulatorProps) {
@@ -72,15 +83,7 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
 
     return (
         <Card className="h-full flex flex-col">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5" />
-                    Simulador de Despesa
-                </CardTitle>
-                <CardDescription>
-                    Avalie o impacto de uma nova despesa no fluxo de caixa.
-                </CardDescription>
-            </CardHeader>
+
             <CardContent className="space-y-4 flex-1">
                 <div className="space-y-2">
                     <Label htmlFor="amount">Valor Total (R$)</Label>
@@ -144,18 +147,54 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
                 </div>
                 
                 {/* Result Display Area */}
-                <div className={cn(
-                    "w-full p-3 rounded-md text-sm min-h-[60px] flex items-center justify-center text-center",
-                    simulationResult 
-                        ? (simulationResult.type === 'danger' 
-                            ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 border" 
-                            : "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 border")
-                        : "bg-muted/50 text-muted-foreground border border-dashed"
-                )}>
-                    {simulationResult ? (
-                        <span className="font-medium">{simulationResult.text}</span>
-                    ) : (
-                        <span>Preencha os campos acima para ver o resultado da análise.</span>
+                <div className="w-full space-y-4">
+                    {/* Status Message */}
+                    <div className={cn(
+                        "w-full p-3 rounded-md text-sm flex items-center justify-center text-center",
+                        simulationResult 
+                            ? (simulationResult.type === 'danger' 
+                                ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 border" 
+                                : "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 border")
+                            : "bg-muted/50 text-muted-foreground border border-dashed"
+                    )}>
+                        {simulationResult ? (
+                            <span className="font-medium">{simulationResult.text}</span>
+                        ) : (
+                            <span>Preencha os campos acima para ver o resultado da análise.</span>
+                        )}
+                    </div>
+
+                    {/* Installments Table */}
+                    {simulationResult && simulationResult.installments.length > 0 && (
+                        <div className="border rounded-md overflow-hidden">
+                            <table className="w-full text-xs">
+                                <thead className="bg-muted text-muted-foreground">
+                                    <tr>
+                                        <th className="px-2 py-2 text-center w-[40px]">#</th>
+                                        <th className="px-2 py-2 text-left">Data</th>
+                                        <th className="px-2 py-2 text-right">Valor</th>
+                                        <th className="px-2 py-2 text-right">Saldo Após</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-card">
+                                    {simulationResult.installments.map((inst) => (
+                                        <tr key={inst.number} className="border-t last:border-0 hover:bg-muted/50 transition-colors">
+                                            <td className="px-2 py-2 text-center text-muted-foreground">{inst.number}</td>
+                                            <td className="px-2 py-2 text-left font-medium">{format(new Date(inst.date), "dd/MM/yyyy")}</td>
+                                            <td className="px-2 py-2 text-right text-red-500 font-mono">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(inst.amount)}
+                                            </td>
+                                            <td className={cn(
+                                                "px-2 py-2 text-right font-mono font-bold",
+                                                inst.balanceAfter < 0 ? "text-red-600" : "text-green-600"
+                                            )}>
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(inst.balanceAfter)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
             </CardFooter>

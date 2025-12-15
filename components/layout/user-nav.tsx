@@ -23,7 +23,10 @@ import { ChevronsUpDown, LogOut, Settings, User, Moon, Sun, Laptop, Heart } from
 import { useTheme } from "next-themes"
 import Link from "next/link"
 
+import { useRouter } from "next/navigation"
+
 export function UserNav() {
+  const router = useRouter()
   const { setTheme, theme } = useTheme()
 
   // Mock user for now - in real app would come from auth context
@@ -70,10 +73,7 @@ export function UserNav() {
               <span>Favoritos</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configurações</span>
-          </DropdownMenuItem>
+
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
@@ -103,7 +103,7 @@ export function UserNav() {
           </DropdownMenuPortal>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-500/10" onClick={() => console.log('Sair')}>
+        <DropdownMenuItem className="text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-500/10" onClick={() => router.push("/login")}>
             {/* TODO: Add real logout logic */}
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>
