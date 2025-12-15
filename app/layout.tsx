@@ -3,6 +3,7 @@ import { Parkinsans, Titillium_Web } from "next/font/google"; // Verify imports 
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
 import { FloatingChatTrigger } from "@/components/aseec-ia/floating-chat-trigger"
+import { GlobalSearch } from "@/components/global-search"
 
 const parkinsans = Parkinsans({
   variable: "--font-parkinsans",
@@ -39,6 +40,7 @@ export default function RootLayout({
           >
             {children}
             <FloatingChatTrigger />
+            <GlobalSearch />
           </ThemeProvider>
       </body>
     </html>

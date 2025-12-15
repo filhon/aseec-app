@@ -20,9 +20,10 @@ import { ProjectLocation, mockProjects } from "@/components/map/data"
 import { searchLocation, AseecData } from "@/lib/search-service"
 import { calculateDistance, formatDistance } from "@/lib/geo-utils"
 import { Button } from "@/components/ui/button"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Navigation } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -31,6 +32,7 @@ export default function HomePage() {
   const [sidebarMode, setSidebarMode] = useState<"nav" | "details">("details")
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom: number } | null>(null)
   const [aseecData, setAseecData] = useState<AseecData | null>(null)
+  const [isLocating, setIsLocating] = useState(false)
 
   const handlePinClick = (project: ProjectLocation) => {
     setSelectedItems([project])
@@ -47,8 +49,6 @@ export default function HomePage() {
     setSidebarMode("details")
     setAseecData(null)
     setSidebarOpen(true)
-    // Optional: fly to cluster center? MapView handles zoom on cluster click usually, but we disabled it in MapView (zoomToBoundsOnClick={false})
-    // So we assume the user just wants to see the list.
   }
 
   const handleMenuClick = () => {
@@ -76,6 +76,50 @@ export default function HomePage() {
       setSidebarMode("details")
       setSidebarOpen(true)
     }
+  }
+
+  const handleNearMe = () => {
+      if (!navigator.geolocation) {
+          toast.error("Geolocalização não suportada pelo seu navegador.")
+          return;
+      }
+
+      setIsLocating(true)
+      toast.info("Obtendo sua localização...")
+
+      navigator.geolocation.getCurrentPosition(
+          (position) => {
+              const { latitude, longitude } = position.coords
+              
+              setFlyTo({ lat: latitude, lng: longitude, zoom: 11 })
+              
+              // Filter projects within 50km
+              const projectsNearby = mockProjects.map(p => {
+                  const distKm = calculateDistance(latitude, longitude, p.lat, p.lng)
+                  return { ...p, distance: formatDistance(distKm), distValue: distKm }
+              })
+              .filter(p => p.distValue <= 50)
+              .sort((a, b) => a.distValue - b.distValue)
+
+              if (projectsNearby.length === 0) {
+                  toast.warning("Nenhum projeto encontrado num raio de 50km.")
+                  setSidebarOpen(false)
+              } else {
+                  setSelectedItems(projectsNearby)
+                  setSidebarTitle("Projetos Próximos a Mim")
+                  setSidebarMode("details")
+                  setAseecData(null)
+                  setSidebarOpen(true)
+                  toast.success(`${projectsNearby.length} projetos encontrados próximos a você.`)
+              }
+              setIsLocating(false)
+          },
+          (error) => {
+              console.error("Error getting location", error)
+              toast.error("Erro ao obter localização. Verifique as permissões.")
+              setIsLocating(false)
+          }
+      )
   }
 
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -161,11 +205,22 @@ export default function HomePage() {
                                         <p><span className="font-medium text-foreground">Responsável:</span> {project.responsible}</p>
                                         <p><span className="font-medium text-foreground">Endereço:</span> {project.address}</p>
                                     </div>
-                                    <Link href={`/projetos/${project.id}`} passHref>
-                                        <Button className="w-full mt-4" variant="outline" size="sm">
-                                            Ver Detalhes
+                                    <div className="flex gap-2 mt-4">
+                                        <Button className="flex-1" variant="outline" size="sm" asChild>
+                                            <Link href={`/projetos/${project.id}`}>
+                                                Ver Detalhes
+                                            </Link>
                                         </Button>
-                                    </Link>
+                                        <Button className="flex-none w-10 px-0" variant="secondary" size="sm" title="Navegar" asChild>
+                                            <a 
+                                                href={`https://www.google.com/maps/dir/?api=1&destination=${project.lat},${project.lng}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                            >
+                                                <Navigation className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -175,7 +230,12 @@ export default function HomePage() {
         }
       />
       
-      <SearchBar onMenuClick={handleMenuClick} onSearch={handleSearch} isHidden={isFullscreen} />
+      <SearchBar 
+        onMenuClick={handleMenuClick} 
+        onSearch={handleSearch} 
+        onNearMeClick={!isLocating ? handleNearMe : undefined}
+        isHidden={isFullscreen} 
+      />
 
       <MapView 
         onPinClick={handlePinClick} 

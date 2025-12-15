@@ -4,9 +4,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined, Map as MapIcon } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined, Map as MapIcon, Search } from "lucide-react";
 import { UserNav } from "@/components/layout/user-nav";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface AppSidebarProps {
   mode?: "desktop" | "mobile"
@@ -40,7 +41,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
           For mobile/map usage, the Sidebar parent might have a title, but we can keep the logo for consistency or hide it.
           Let's keep it consistent for now.
       */}
-      <div className={cn("flex h-16 items-center px-6", isDesktop && "border-b")}>
+      <div className={cn("flex h-16 items-center justify-between px-6", isDesktop && "border-b")}>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg" onClick={onNavigate}>
           <Image 
             src="/logo-hebron.png" 
@@ -51,6 +52,13 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
             priority
           />
         </Link>
+        {pathname !== "/" && (
+            <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-muted-foreground hover:text-primary">
+                <Link href="/busca" title="Buscar">
+                    <Search className="h-4 w-4" />
+                </Link>
+            </Button>
+        )}
       </div>
 
       {/* Nav Links */}

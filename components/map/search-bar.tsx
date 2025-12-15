@@ -2,15 +2,16 @@
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, Menu } from "lucide-react"
+import { Search, Menu, Locate } from "lucide-react"
 
 interface SearchBarProps {
   onMenuClick: () => void
   onSearch: (query: string) => void
+  onNearMeClick?: () => void
   isHidden?: boolean
 }
 
-export function SearchBar({ onMenuClick, onSearch, isHidden }: SearchBarProps) {
+export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: SearchBarProps) {
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
@@ -42,8 +43,18 @@ export function SearchBar({ onMenuClick, onSearch, isHidden }: SearchBarProps) {
           name="q"
           type="search"
           placeholder="Buscar endereço..."
-          className="w-full bg-background pl-8 shadow-md"
+          className="w-full bg-background pl-8 shadow-md pr-10"
         />
+        <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-primary"
+            onClick={onNearMeClick}
+            title="Próximo a mim"
+        >
+            <Locate className="h-4 w-4" />
+        </Button>
       </div>
     </form>
   )
