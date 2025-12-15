@@ -7,7 +7,7 @@ import { FavoriteButton } from "@/components/ui/favorite-button"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Search, MapPin, Users, Building2, Globe, RefreshCcw, Filter, X } from "lucide-react"
+import { Search, MapPin, Users, Building2, Globe, RefreshCcw, Filter, X, Plus } from "lucide-react"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { mockProjects, ProjectLocation } from "@/components/map/data"
 import { ProjectsPieChart } from "@/components/dashboard/projects-pie-chart"
@@ -21,6 +21,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { useAdmin } from "@/hooks/use-admin"
 
 // Dynamically import MapView
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -45,6 +46,7 @@ export default function ProjectsPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [mapFilteredIds, setMapFilteredIds] = useState<Set<string> | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+    const { isAdmin } = useAdmin()
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1)
@@ -155,22 +157,35 @@ export default function ProjectsPage() {
                     <p className="text-muted-foreground mt-1">Gerencie e acompanhe o progresso de todos os projetos.</p>
                 </div>
                 
-                <div className="relative w-full md:w-[400px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        placeholder="Buscar por projeto, responsável, local..." 
-                        className="pl-9 bg-background"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    {searchTerm && (
-                        <button 
-                            onClick={() => setSearchTerm("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
+
+                
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    {isAdmin && (
+                        <Link href="/projetos/novo">
+                            <Button className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">Novo Projeto</span>
+                            </Button>
+                        </Link>
                     )}
+
+                    <div className="relative w-full md:w-[400px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar por projeto, responsável, local..." 
+                            className="pl-9 bg-background"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 

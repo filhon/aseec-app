@@ -38,7 +38,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-auto py-2 w-full justify-start px-2 gap-2 text-left hover:bg-muted/50 whitespace-normal">
+        <Button variant="ghost" className="relative h-auto py-2 w-full justify-start px-2 gap-2 text-left hover:bg-muted/50 whitespace-normal" suppressHydrationWarning>
           <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>{user.initials}</AvatarFallback>
