@@ -63,10 +63,7 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
-          </DropdownMenuItem>
+
           <DropdownMenuItem asChild>
             <Link href="/favoritos" className="w-full cursor-pointer">
               <Heart className="mr-2 h-4 w-4" />

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { DashboardProject, ProjectPost } from "@/components/dashboard/data"
 import { ProjectMural } from "@/components/dashboard/project-mural"
 import { ProjectGallery } from "@/components/dashboard/project-gallery"
@@ -32,6 +33,13 @@ interface ProjectDetailsViewProps {
 export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) {
     const [project, setProject] = useState(initialProject)
     const [feed, setFeed] = useState<ProjectPost[]>(initialProject.feed || [])
+    const { setLabel } = useBreadcrumbStore()
+
+    useEffect(() => {
+        if (project.id && project.title) {
+            setLabel(project.id, project.title)
+        }
+    }, [project.id, project.title, setLabel])
 
     // --- State for Editing ---
     const [isEditingClass, setIsEditingClass] = useState(false)
@@ -168,13 +176,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             {/* Header / Hero */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                        <Link href="/dashboard" className="hover:text-primary transition-colors flex items-center gap-1 text-sm">
-                            <ArrowLeft className="h-4 w-4" /> Voltar
-                        </Link>
-                        <span className="text-muted-foreground/30">•</span>
-                        <span className="text-sm">Projeto #{project.id}</span>
-                    </div>
+                    {/* Previous Navigation Removed */}
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
                         <FavoriteButton 
@@ -441,21 +443,11 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         )}
                     </ProjectInfoCard>
 
-                    {/* FINANCIAL (Mock Edit) */}
+                    {/* FINANCIAL (Read Only) */}
                      <ProjectInfoCard
                         title="Financeiro"
                         icon={<DollarSign className="h-4 w-4 text-primary" />}
-                        isEditing={isEditingFinance}
-                        setIsEditing={setIsEditingFinance}
-                        onSave={handleSaveFinance}
                         hasHistory={true}
-                        editContent={
-                            <div className="p-4 border border-dashed rounded bg-muted/20 text-center space-y-2">
-                                <AlertTriangle className="h-8 w-8 mx-auto text-yellow-500" />
-                                <p className="text-sm font-medium">Edição Financeira</p>
-                                <p className="text-xs text-muted-foreground">Os dados financeiros são geridos pelo Módulo Financeiro. Ao salvar, solicitaremos uma sincronização atualizada.</p>
-                            </div>
-                        }
                     >
                          <CardContent className="space-y-5 p-0">
                             <div className="grid grid-cols-2 gap-4">

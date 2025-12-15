@@ -12,6 +12,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
+
 const routeMap: Record<string, string> = {
   dashboard: "Dashboard",
   projetos: "Projetos",
@@ -30,9 +32,15 @@ const routeMap: Record<string, string> = {
 export function Breadcrumbs() {
   const pathname = usePathname()
   const segments = pathname.split("/").filter((item) => item !== "")
+  const { labels } = useBreadcrumbStore()
 
   // Function to format label
   const getLabel = (segment: string) => {
+    // 1. Check dynamic store
+    if (labels[segment]) {
+        return labels[segment]
+    }
+    // 2. Check static map
     if (routeMap[segment]) {
       return routeMap[segment]
     }

@@ -436,7 +436,7 @@ export default function DashboardPage() {
                         <Link href="/dashboard/paises" className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</Link>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-0.5">
                     {insights.topCountries.length > 0 ? insights.topCountries.map(([country, value], index) => {
                         const countryCodes: Record<string, string> = {
                             "Brasil": "br",
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                         <Link href="/dashboard/entidades" className="text-xs font-normal text-muted-foreground hover:underline cursor-pointer text-primary">Ver todos</Link>
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-0.5">
                      {insights.topInstitutions.length > 0 ? insights.topInstitutions.map(([inst, value]) => {
                          const slug = slugify(inst)
                          return (

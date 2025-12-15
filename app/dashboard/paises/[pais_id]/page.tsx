@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, use } from "react"
+import { useMemo, use, useEffect } from "react"
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -78,6 +79,14 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
     return project ? project.country : null
   }, [slug])
 
+  // Breadcrumbs logic
+  const { setLabel } = useBreadcrumbStore()
+  useEffect(() => {
+      if (countryName) {
+          setLabel(slug, countryName)
+      }
+  }, [countryName, slug, setLabel])
+
   // Filter projects for this country
   const filteredProjects = useMemo(() => {
     if (!countryName) return []
@@ -131,9 +140,6 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
-             <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0">
-                <ArrowLeft className="h-4 w-4" />
-            </Button>
             <div className="flex items-center gap-4">
             <div className="flex items-center gap-4">
                 {code ? (
@@ -299,9 +305,16 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map(project => (
                 <Link key={project.id} href={`/projetos/${project.id}`}>
-                    <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full">
-                        <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
+                    <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
+                        <FavoriteButton 
+                            id={project.id} 
+                            type="project" 
+                            title={project.title} 
+                            subtitle={project.institution}
+                            className="absolute top-4 right-4 z-10"
+                        />
+                        <CardHeader className="pb-3 pr-12">
+                            <div className="flex items-center gap-2">
                                 <BadgeStatus status={project.status} />
                                 <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
                             </div>

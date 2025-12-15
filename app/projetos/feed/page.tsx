@@ -138,11 +138,7 @@ export default function FeedPage() {
         <div className="flex-1 flex flex-col min-w-0">
             <div className="flex-none p-4 md:p-6 pb-2">
                 <div className="flex items-center gap-2 mb-4">
-                    <Link href="/projetos">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
+
                     <div>
                          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Feed de Notícias</h1>
                          <p className="text-muted-foreground hidden md:block">
@@ -156,7 +152,7 @@ export default function FeedPage() {
                 {activeFilterId && (
                    <div className="flex items-center gap-2 mb-2">
                        <Badge variant="secondary" className="gap-1 pl-2">
-                           Filtro: {favProjects.find(p => p.id === activeFilterId)?.title}
+                           {favProjects.find(p => p.id === activeFilterId)?.title}
                            <span 
                                className="ml-1 hover:bg-muted p-0.5 rounded cursor-pointer"
                                onClick={() => setActiveFilterId(null)}

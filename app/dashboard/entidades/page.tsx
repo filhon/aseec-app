@@ -65,9 +65,6 @@ export default function EntitiesPage() {
     <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                <ArrowLeft className="h-4 w-4" />
-            </Button>
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-primary">Entidades</h1>
                 <p className="text-muted-foreground mt-1">Visão geral dos investimentos por entidade.</p>

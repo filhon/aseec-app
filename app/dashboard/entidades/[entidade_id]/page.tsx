@@ -1,15 +1,18 @@
 "use client"
 
-import { useMemo, use } from "react"
+import { useMemo, use, useState, useEffect, useRef } from "react"
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe } from "lucide-react"
+import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FavoriteButton } from "@/components/ui/favorite-button"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
@@ -78,6 +81,15 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
     return project ? project.institution : null
   }, [slug])
 
+  // Breadcrumbs logic
+  const { setLabel } = useBreadcrumbStore()
+  useEffect(() => {
+      if (entityName) {
+          setLabel('entidades', 'Entidades')
+          setLabel(slug, entityName)
+      }
+  }, [entityName, slug, setLabel])
+
   // Filter projects for this entity
   const filteredProjects = useMemo(() => {
     if (!entityName) return []
@@ -119,22 +131,69 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
       )
   }
 
+  // Icon Upload State
+  const [entityIcon, setEntityIcon] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleIconClick = () => {
+      fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+          // Check file type
+          if (!file.type.match('image/png|image/x-icon|image/svg+xml')) {
+              toast.error("Formato inválido. Use PNG, ICO ou SVG.")
+              return
+          }
+
+          const reader = new FileReader()
+          reader.onload = (event) => {
+              if (event.target?.result) {
+                  setEntityIcon(event.target.result as string)
+                  toast.success("Ícone atualizado com sucesso!")
+              }
+          }
+          reader.readAsDataURL(file)
+      }
+  }
+
   return (
     <div className="space-y-8 py-8 animate-in fade-in duration-500 container mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
-             <Button variant="ghost" size="icon" onClick={() => router.back()} className="shrink-0">
-                <ArrowLeft className="h-4 w-4" />
-            </Button>
+             {/* Back Button Removed */}
             <div className="flex items-center gap-4">
-                <div className="bg-muted p-4 rounded-md hidden md:block">
-                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                <div 
+                    className="relative group bg-muted h-16 w-16 rounded-md flex items-center justify-center cursor-pointer overflow-hidden border border-transparent hover:border-primary/50 transition-all"
+                    onClick={handleIconClick}
+                    title="Alterar ícone da entidade"
+                >
+                    {entityIcon ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={entityIcon} alt={entityName || 'Entidade'} className="h-full w-full object-contain p-2" />
+                    ) : (
+                        <Building2 className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                    )}
+                    
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="h-5 w-5 text-white" />
+                    </div>
                 </div>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept=".png,.ico,.svg"
+                    onChange={handleFileChange}
+                />
+
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
                         {entityName}
-                         <FavoriteButton 
+                        <FavoriteButton 
                             id={String(slug)} 
                             type="entity" 
                             title={entityName || ''} 
@@ -261,9 +320,16 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
                 const code = countryCodes[project.country]
                 return (
                     <Link key={project.id} href={`/projetos/${project.id}`}>
-                        <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full">
-                            <CardHeader className="pb-3">
-                                <div className="flex justify-between items-start">
+                        <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
+                            <FavoriteButton 
+                                id={project.id} 
+                                type="project" 
+                                title={project.title} 
+                                subtitle={project.institution}
+                                className="absolute top-4 right-4 z-10"
+                            />
+                            <CardHeader className="pb-3 pr-12">
+                                <div className="flex items-center gap-2">
                                     <BadgeStatus status={project.status} />
                                     <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
                                 </div>
