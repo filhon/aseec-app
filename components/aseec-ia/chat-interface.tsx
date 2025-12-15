@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, User, Bot, Paperclip, X } from "lucide-react";
+import { Send, Sparkles, User, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,7 +22,7 @@ interface ChatInterfaceProps {
   onClose?: () => void;
 }
 
-export function ChatInterface({ isFloating = false, initialContext, onClose }: ChatInterfaceProps) {
+export function ChatInterface({ isFloating = false, initialContext }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -36,14 +36,7 @@ export function ChatInterface({ isFloating = false, initialContext, onClose }: C
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-        const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-        if (scrollContainer) {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-    }
-  };
+  /* unused scrollToBottom removed */
 
   // Context Selectors
   const contexts = ["Geral", "Financeiro", "Projetos", "Riscos"];
@@ -80,6 +73,7 @@ export function ChatInterface({ isFloating = false, initialContext, onClose }: C
     if (!textToSend.trim()) return;
 
     const newMessage: Message = {
+      // eslint-disable-next-line react-hooks/purity
       id: Date.now().toString(),
       role: "user",
       content: textToSend,

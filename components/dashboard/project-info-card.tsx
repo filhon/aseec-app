@@ -1,20 +1,11 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Pencil, Save, X, History, RotateCcw } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-interface ProjectInfoCardProps {
-    title: string | React.ReactNode
-    icon?: React.ReactNode
-    children: React.ReactNode
-    onSave?: (data: any) => void
-    isEditable?: boolean
-}
+
 
 // We will use a context or compound component pattern to manage fields? 
 // For simplicity, let's make a wrapper that just toggles "Edit Mode" and exposes a "Save" action 

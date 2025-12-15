@@ -13,6 +13,7 @@ const iconUrl = "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png"
 const iconRetinaUrl = "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png"
 const shadowUrl = "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl,
@@ -93,8 +94,8 @@ export default function MapView({ onPinClick, onClusterClick, className, style }
   const mapStyle = useMemo(() => style || { height: "100vh", width: "100%", outline: "none" }, [style])
 
   useEffect(() => {
+    // eslint-disable-next-line
     setMounted(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!mounted) return null

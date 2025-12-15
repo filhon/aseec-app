@@ -1,22 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardProject, ProjectPost, PostType } from "@/components/dashboard/data"
+import { DashboardProject, ProjectPost } from "@/components/dashboard/data"
 import { ProjectMural } from "@/components/dashboard/project-mural"
 import { ProjectGallery } from "@/components/dashboard/project-gallery"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { 
     Calendar as CalendarIcon, MapPin, DollarSign, Users, Award, 
-    ArrowLeft, MoreHorizontal, Edit2, Save, X, 
-    CheckCircle2, AlertCircle, Clock, Link as LinkIcon,
-    LayoutDashboard, FileText, Tag, AlertTriangle, Globe, User
+    ArrowLeft, Edit2, Save, X, 
+    CheckCircle2, AlertCircle, Tag, AlertTriangle, Globe, User,
+    LayoutDashboard, FileText
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -24,14 +23,12 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 
 interface ProjectDetailsViewProps {
     initialProject: DashboardProject
 }
 
 export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) {
-    const router = useRouter()
     const [project, setProject] = useState(initialProject)
     const [feed, setFeed] = useState<ProjectPost[]>(initialProject.feed || [])
 
@@ -42,7 +39,11 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     const [isEditingFinance, setIsEditingFinance] = useState(false)
 
     // Forms
-    const [classForm, setClassForm] = useState({
+    const [classForm, setClassForm] = useState<{
+        category: string
+        extension: string
+        tags: string
+    }>({
         category: project.category,
         extension: project.extension,
         tags: project.tags.join(', ')
@@ -89,6 +90,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             setProject({
                 ...project,
                 category: classForm.category,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 extension: classForm.extension as any,
                 tags: newTags
             })
@@ -140,46 +142,6 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         alert("Em produção, isso sincronizaria com o módulo financeiro e geraria logs.")
         setIsEditingFinance(false)
     }
-
-    // Reuse info cards layout
-    interface ProjectInfoCardProps {
-        title: string
-        icon: React.ReactNode
-        children?: React.ReactNode
-        isEditing?: boolean
-        setIsEditing?: (v: boolean) => void
-        onSave?: () => void
-        editContent?: React.ReactNode
-        hasHistory?: boolean
-    }
-
-    const ProjectInfoCard = ({ title, icon, children, isEditing, setIsEditing, onSave, editContent }: ProjectInfoCardProps) => (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    {icon}
-                    {title}
-                </CardTitle>
-                {setIsEditing && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(!isEditing)}>
-                        {isEditing ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-                    </Button>
-                )}
-            </CardHeader>
-            <CardContent>
-                {isEditing ? (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                        {editContent}
-                        <Button className="w-full gap-2" size="sm" onClick={onSave}>
-                            <Save className="h-4 w-4" /> Salvar Alterações
-                        </Button>
-                    </div>
-                ) : (
-                    children
-                )}
-            </CardContent>
-        </Card>
-    )
 
     // Helper formatter
     const formatDate = (dateString?: string) => {
@@ -581,6 +543,47 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         </div>
     )
 }
+
+// Moved wrapper component OUTSIDE main component to fix lint error
+interface ProjectInfoCardProps {
+    title: string
+    icon: React.ReactNode
+    children?: React.ReactNode
+    isEditing?: boolean
+    setIsEditing?: (v: boolean) => void
+    onSave?: () => void
+    editContent?: React.ReactNode
+    hasHistory?: boolean
+}
+
+const ProjectInfoCard = ({ title, icon, children, isEditing, setIsEditing, onSave, editContent }: ProjectInfoCardProps) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                {icon}
+                {title}
+            </CardTitle>
+            {setIsEditing && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(!isEditing)}>
+                    {isEditing ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                </Button>
+            )}
+        </CardHeader>
+        <CardContent>
+            {isEditing ? (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {editContent}
+                    <Button className="w-full gap-2" size="sm" onClick={onSave}>
+                        <Save className="h-4 w-4" /> Salvar Alterações
+                    </Button>
+                </div>
+            ) : (
+                children
+            )}
+        </CardContent>
+    </Card>
+)
+
 
 function BadgeStatus({ status }: { status: string }) {
      const styles: Record<string, string> = {

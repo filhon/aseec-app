@@ -135,24 +135,7 @@ export const calculateCashFlowFromTransactions = (transactions: Transaction[], i
 
     // Sort dates? No, we need continuous timeline
     // Range: -30 to +90 from today
-    for (let i = -30; i <= 90; i++) {
-        const date = addDays(today, i)
-        const dateStr = date.toISOString().split('T')[0]
-        const dayData = transactionMap.get(dateStr) || { revenue: 0, expenses: 0 }
-        
-        // Update balance logic: 
-        // 1. If i < 0 (past), effectively the 'initialBalance' is the balance at start of range (-30). 
-        // Or 'initialBalance' is CURRENT Balance.
-        // Let's assume initialBalance is the balance on day -30. 
-        // Wait, 'currentBalance' in param usually means "Balance Today". 
-        // To draw a curve including past, we need to backtrack or simple assume an arbitrary start.
-        // Let's assume initialBalance is TODAY's balance. We must subtract past changes to find start.
-        
-        // Actually, easier: Generate from start of range.
-        // Let's say Balance @ Day -30 = X. 
-        // We know Balance @ Day 0 = 1,250,000 (Fixed Mock Metric).
-        // So we can calculate backwards to find start balance.
-    }
+
     
     // Backtrack to find balance at day -30
     let balanceAtStart = initialBalance

@@ -1,23 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { PieChart, Pie, Sector, ResponsiveContainer, Cell, Label } from 'recharts'
+import { PieChart, Pie, Sector, ResponsiveContainer, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DashboardProject } from "@/components/dashboard/data"
 import { cn } from "@/lib/utils"
 
-// Modern palette using CSS variables where possible or curated hex codes
-// We will use a gradient-like palette or distinct modern colors
-const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-]
-
-// Fallback if vars aren't set, though shadcn usually sets them. 
-// Using hex to ensure visibility if variables fail or for specific look.
+// Modern palette using hex codes to ensure visibility and for a specific look.
 const MODERN_COLORS = [
   "#2563eb", // blue-600
   "#3b82f6", // blue-500
@@ -27,8 +16,9 @@ const MODERN_COLORS = [
   "#1d4ed8", // blue-700
 ]
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value } = props
 
   return (
     <g>
@@ -83,7 +73,7 @@ export function ProjectsPieChart({ projects, onCategoryClick, selectedCategory }
       .sort((a, b) => b.value - a.value)
   }, [projects])
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index)
   }
 
@@ -97,6 +87,7 @@ export function ProjectsPieChart({ projects, onCategoryClick, selectedCategory }
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
+              // @ts-expect-error activeIndex is a valid prop in Recharts but missing in types
               activeIndex={activeIndex}
               activeShape={renderActiveShape}
               data={data}

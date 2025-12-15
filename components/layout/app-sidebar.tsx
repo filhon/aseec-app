@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined } from "lucide-react";
 import { UserNav } from "@/components/layout/user-nav";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface AppSidebarProps {

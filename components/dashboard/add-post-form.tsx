@@ -27,15 +27,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProjectPost, PostType, ProjectAttachment } from "./data"
-import { Send, Paperclip, Plus, X, Image as ImageIcon, FileVideo, Trash2, FileText, Sparkles, Wand2, Bot } from "lucide-react"
+import { Send, Paperclip, Plus, X, FileVideo, FileText, Sparkles, Wand2 } from "lucide-react"
 
 const formSchema = z.object({
   type: z.enum(["history", "testimonial", "acknowledgment", "report", "update", "general"]),
@@ -72,6 +70,7 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newPost: ProjectPost = {
+      // eslint-disable-next-line react-hooks/purity
       id: Math.random().toString(36).substr(2, 9),
       type: values.type as PostType,
       author: values.author,
@@ -300,7 +299,10 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
                     {attachments.map((file, index) => (
                         <div key={index} className="relative group aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center">
                             {file.type === 'image' ? (
-                                <img src={file.url} alt={file.title} className="w-full h-full object-cover" />
+                                <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={file.url} alt={file.title} className="w-full h-full object-cover" />
+                                </>
                             ) : file.type === 'video' ? (
                                 <FileVideo className="h-8 w-8 text-muted-foreground" />
                             ) : (

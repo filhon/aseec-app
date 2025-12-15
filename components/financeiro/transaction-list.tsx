@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -18,10 +18,7 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
     const [typeFilter, setTypeFilter] = useState<'all' | 'revenue' | 'expense'>('all')
     const itemsPerPage = 10
     
-    // Reset page when data changes
-    useEffect(() => {
-        setCurrentPage(1)
-    }, [transactions])
+
 
     // Filter and Sort
     const filteredTransactions = transactions.filter(t => {
@@ -55,7 +52,7 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                         Lista detalhada de movimentações previstas para o período.
                     </CardDescription>
                 </div>
-                <Tabs value={typeFilter} onValueChange={(v) => { setTypeFilter(v as any); setCurrentPage(1); }}>
+                <Tabs value={typeFilter} onValueChange={(v) => { setTypeFilter(v as 'all' | 'revenue' | 'expense'); setCurrentPage(1); }}>
                     <TabsList>
                         <TabsTrigger value="all">Todas</TabsTrigger>
                         <TabsTrigger value="revenue" className="text-green-600 data-[state=active]:text-green-700">Receitas</TabsTrigger>

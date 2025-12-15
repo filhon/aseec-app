@@ -2,10 +2,9 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Building2, TrendingUp } from "lucide-react"
+import { Building2 } from "lucide-react"
 
 interface ProjectFinancial {
     id: string

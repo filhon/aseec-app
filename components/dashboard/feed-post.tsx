@@ -10,9 +10,9 @@ import { Toggle } from "@/components/ui/toggle"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { 
-    Heart, MessageSquare, Share2, MoreHorizontal, 
-    FileText, Image as ImageIcon, Video, Paperclip, 
-    Download, Eye, Send, X, HandHeart
+    Heart, MessageSquare, MoreHorizontal, 
+    FileText, Video, 
+    Eye, Send, X, HandHeart
 } from "lucide-react"
 
 interface FeedPostProps {
@@ -59,7 +59,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
         setNewComment("")
     }
 
-    const handlePreview = (file: any) => {
+    const handlePreview = (file: { url: string; type: 'image' | 'video' | 'document'; title: string }) => {
         setPreviewFile({
             url: file.url,
             type: file.type,
@@ -142,6 +142,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                              >
                                 {file.type === 'image' ? (
                                     <div className="relative w-full h-full">
+                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                          <img 
                                             src={file.url} 
                                             alt={file.title} 
@@ -257,7 +258,10 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                     {previewFile && (
                         <div className="relative flex items-center justify-center min-h-[50vh] max-h-[85vh]">
                             {previewFile.type === 'image' ? (
-                                <img src={previewFile.url} alt={previewFile.title} className="max-w-full max-h-[85vh] object-contain" />
+                                <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={previewFile.url} alt={previewFile.title} className="max-w-full max-h-[85vh] object-contain" />
+                                </>
                             ) : previewFile.type === 'video' ? (
                                 <video src={previewFile.url} controls className="max-w-full max-h-[85vh]" />
                             ) : null}

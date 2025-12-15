@@ -3,26 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-const Tabs = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { defaultValue?: string }
->(({ className, defaultValue, children, ...props }, ref) => {
-  const [value, setValue] = React.useState(defaultValue)
 
-  return (
-    <div ref={ref} className={cn("", className)} {...props}>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          // Pass the value state to children
-            // @ts-ignore
-          return React.cloneElement(child, { value, onValueChange: setValue })
-        }
-        return child
-      })}
-    </div>
-  )
-})
-Tabs.displayName = "Tabs"
 
 const TabsList = React.forwardRef<
   HTMLDivElement,

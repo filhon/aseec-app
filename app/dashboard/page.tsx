@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { mockDashboardProjects, DashboardProject } from "@/components/dashboard/data"
+import { useState, useMemo, useCallback } from "react"
+import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -13,10 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, Filter, X } from "lucide-react"
+import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
@@ -26,10 +25,6 @@ const formatCurrency = (value: number) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
-}
-
-const formatNumber = (value: number) => {
-  return new Intl.NumberFormat('pt-BR').format(value);
 }
 
 const slugify = (text: string) => {
@@ -54,7 +49,7 @@ export default function DashboardPage() {
   const [yearFilter, setYearFilter] = useState("all")
 
   // --- Helper for Faceted Search ---
-  const getFilteredProjects = (exclude: 'search' | 'category' | 'tag' | 'status' | 'extension' | 'year' | null) => {
+  const getFilteredProjects = useCallback((exclude: 'search' | 'category' | 'tag' | 'status' | 'extension' | 'year' | null) => {
     return mockDashboardProjects.filter(project => {
       const searchLower = searchTerm.toLowerCase()
       const matchesSearch = exclude === 'search' || 
@@ -70,10 +65,10 @@ export default function DashboardPage() {
 
       return matchesSearch && matchesCategory && matchesTag && matchesStatus && matchesExtension && matchesYear
     })
-  }
+  }, [searchTerm, categoryFilter, tagFilter, statusFilter, extensionFilter, yearFilter])
 
   // --- Derived Data (Filtering) ---
-  const filteredProjects = useMemo(() => getFilteredProjects(null), [searchTerm, categoryFilter, tagFilter, statusFilter, extensionFilter, yearFilter])
+  const filteredProjects = useMemo(() => getFilteredProjects(null), [getFilteredProjects])
   
   // --- Dynamic Counters ---
   const stats = useMemo(() => {
@@ -128,30 +123,18 @@ export default function DashboardPage() {
   const availableYears = useMemo(() => {
     const projects = getFilteredProjects('year')
     return Array.from(new Set(projects.flatMap(p => p.investmentByYear.map(i => i.year)))).sort((a,b) => b-a)
-  }, [searchTerm, categoryFilter, tagFilter, statusFilter, extensionFilter])
+  }, [getFilteredProjects])
 
   const availableCategories = useMemo(() => {
     const projects = getFilteredProjects('category')
     return Array.from(new Set(projects.map(p => p.category)))
-  }, [searchTerm, yearFilter, tagFilter, statusFilter, extensionFilter])
+  }, [getFilteredProjects])
 
   const availableTags = useMemo(() => {
     const projects = getFilteredProjects('tag')
     return Array.from(new Set(projects.flatMap(p => p.tags)))
-  }, [searchTerm, yearFilter, categoryFilter, statusFilter, extensionFilter])
+  }, [getFilteredProjects])
     
-  // For Status and Extension, we usually keep them static because they are small enums, 
-  // but if we want strictly only available ones:
-  const availableStatuses = useMemo(() => {
-      const projects = getFilteredProjects('status')
-      return Array.from(new Set(projects.map(p => p.status)))
-  }, [searchTerm, yearFilter, categoryFilter, tagFilter, extensionFilter])
-
-  const availableExtensions = useMemo(() => {
-      const projects = getFilteredProjects('extension')
-      return Array.from(new Set(projects.map(p => p.extension)))
-  }, [searchTerm, yearFilter, categoryFilter, tagFilter, statusFilter])
-
   // --- Active Filters Helpers ---
   const activeFilters = useMemo(() => {
     const filters = []
@@ -183,8 +166,6 @@ export default function DashboardPage() {
     setStatusFilter("all")
     setExtensionFilter("all")
   }
-
-  // ... derived data 
 
   return (
     <div className="space-y-8 py-8 animate-in fade-in duration-500">
@@ -448,6 +429,7 @@ export default function DashboardPage() {
                                         {index + 1}
                                     </span>
                                     {code ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img 
                                             src={`https://flagcdn.com/w40/${code}.png`}
                                             srcSet={`https://flagcdn.com/w80/${code}.png 2x`}
@@ -477,7 +459,7 @@ export default function DashboardPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     {insights.topInstitutions.length > 0 ? insights.topInstitutions.map(([inst, value], index) => {
+                     {insights.topInstitutions.length > 0 ? insights.topInstitutions.map(([inst, value]) => {
                          const slug = slugify(inst)
                          return (
                             <Link href={`/dashboard/entidades/${slug}`} key={inst} className="flex items-center justify-between text-sm group hover:bg-muted/50 p-2 rounded-md -mx-2 transition-colors cursor-pointer">
@@ -560,6 +542,3 @@ function BadgeStatus({ status }: { status: string }) {
         </span>
     )
 }
-
-// Fix BadgeStatus props (it was 'state' but logic used 'state' and type used 'status').
-// Re-writing BadgeStatus correct function signature in component.

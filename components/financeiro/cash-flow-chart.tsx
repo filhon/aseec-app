@@ -2,8 +2,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine } from "recharts"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts"
 import { CashFlowData } from "./data"
 
 interface CashFlowChartProps {
@@ -21,7 +20,8 @@ export function CashFlowChart({
 }: CashFlowChartProps) {
     
     // Find today's index to draw a reference line
-    const todayStr = new Date().toISOString().split('T')[0]
+    // const todayStr = new Date().toISOString().split('T')[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleChartClick = (data: any) => {
         if (data && data.activePayload && data.activePayload.length > 0) {
             const dateStr = data.activePayload[0].payload.date

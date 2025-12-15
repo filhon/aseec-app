@@ -57,7 +57,7 @@ export function ProjectUpdates() {
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[300px] px-6">
             <div className="space-y-6 pb-6">
-                {recentUpdates.map((item, i) => (
+                {recentUpdates.map((item) => (
                     <div key={item.id} className="relative pl-6 border-l last:border-0 border-muted-foreground/20 pb-1">
                         <div className="absolute top-0 left-0 -translate-x-1/2 w-2 h-2 rounded-full bg-primary ring-4 ring-background" />
                         <div className="space-y-1">

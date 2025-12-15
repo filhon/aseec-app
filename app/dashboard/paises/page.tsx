@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { mockDashboardProjects } from "@/components/dashboard/data"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Globe, TrendingUp, LayoutDashboard, Search, X } from "lucide-react"
@@ -112,6 +112,7 @@ export default function CountriesPage() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     {code ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
                                         <img 
                                             src={`https://flagcdn.com/w40/${code}.png`}
                                             srcSet={`https://flagcdn.com/w80/${code}.png 2x`}

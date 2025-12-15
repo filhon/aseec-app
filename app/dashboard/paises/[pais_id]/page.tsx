@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, use } from "react"
-import { mockDashboardProjects, DashboardProject } from "@/components/dashboard/data"
+import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard } from "lucide-react"
@@ -135,6 +135,7 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
             </Button>
             <div className="flex items-center gap-4">
                 {code ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img 
                         src={`https://flagcdn.com/w160/${code}.png`}
                         width={80}
@@ -150,7 +151,8 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
                         {countryName}
-                        {code && <img src={`https://flagcdn.com/w40/${code}.png`} width={24} className="rounded-sm shadow-sm md:hidden" />}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {code && <img src={`https://flagcdn.com/w40/${code}.png`} width={24} alt={countryName} className="rounded-sm shadow-sm md:hidden" />}
                     </h1>
                     <p className="text-muted-foreground mt-1">Visão detalhada dos investimentos e projetos.</p>
                 </div>

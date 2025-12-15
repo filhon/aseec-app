@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
@@ -9,12 +8,10 @@ import { FinancialTransactionList } from "@/components/financeiro/transaction-li
 import { 
     mockFinancialMetrics, 
     SimulatedExpense, 
-    CashFlowData, 
     Transaction, 
     generateMockTransactions, 
     mockCostCenters, 
-    calculateCashFlowFromTransactions,
-    getProjectFinancials
+    calculateCashFlowFromTransactions
 } from "@/components/financeiro/data"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,7 +20,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, Search, FilterX } from "lucide-react"
 import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
 import { DateRange } from "react-day-picker"
@@ -31,8 +27,8 @@ import { DateRange } from "react-day-picker"
 export default function FinanceiroPage() {
     // Data State
     const [rawTransactions, setRawTransactions] = useState<Transaction[]>([])
-    const [projects, setProjects] = useState<ReturnType<typeof getProjectFinancials>>([])
-    
+    // const [projects, setProjects] = useState<ReturnType<typeof getProjectFinancials>>([]) // Unused
+
     // Filter States
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCostCenter, setSelectedCostCenter] = useState<string>("all")
@@ -49,8 +45,9 @@ export default function FinanceiroPage() {
     
     // Load mock data on mount (Client-side only to avoid hydration mismatch)
     useEffect(() => {
+        // eslint-disable-next-line
         setRawTransactions(generateMockTransactions())
-        setProjects(getProjectFinancials())
+        // setProjects(getProjectFinancials()) // Unused
     }, [])
 
     // 1. Base Transactions (Filtered by Search and Cost Center ONLY)
@@ -103,7 +100,7 @@ export default function FinanceiroPage() {
     const { finalChartData, currentMetrics, simulationImpact } = useMemo(() => {
         let data = [...fullTimelineChartData]
         let impactMessage = null
-        let metrics = { ...mockFinancialMetrics }
+        const metrics = { ...mockFinancialMetrics } // Modified to use const as we mutate properties, not the var itself? Wait, we spread it.
 
         // Metrics should reflect the VIEWED period or the FULL period?
         // Usually KPIs like "Total Revenue" reflect the current filters.
@@ -357,7 +354,10 @@ export default function FinanceiroPage() {
 
             {/* Transaction List Section */}
             <div className="mt-8">
-                 <FinancialTransactionList transactions={transactionList} />
+                 <FinancialTransactionList 
+                    key={JSON.stringify(transactionList.map(t => t.id).join(','))}
+                    transactions={transactionList} 
+                 />
             </div>
 
         </div>

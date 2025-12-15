@@ -43,6 +43,7 @@ export function ProjectGallery({ feed }: ProjectGalleryProps) {
             onClick={() => setSelectedItem(item)}
         >
             {item.attachment.type === 'image' ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img 
                     src={item.attachment.url} 
                     alt={item.attachment.title} 
@@ -97,6 +98,7 @@ export function ProjectGallery({ feed }: ProjectGalleryProps) {
                         {selectedItem && (
                             <>
                                 {selectedItem.attachment.type === 'image' ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
                                     <img 
                                         src={selectedItem.attachment.url} 
                                         alt={selectedItem.attachment.title} 

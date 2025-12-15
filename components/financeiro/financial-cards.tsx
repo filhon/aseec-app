@@ -2,7 +2,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowDown, ArrowUp, DollarSign, Wallet, TrendingUp, Calendar } from "lucide-react"
+import { ArrowDown, ArrowUp, Wallet, TrendingUp } from "lucide-react"
 
 interface FinancialCardsProps {
     currentBalance: number

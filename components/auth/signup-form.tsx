@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
-import { Eye, EyeOff, Check, X } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SignUpFormProps {
@@ -16,23 +16,20 @@ export function SignUpForm({ onLoginClick }: SignUpFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [password, setPassword] = useState("")
-  const [strength, setStrength] = useState(0)
-
-  useEffect(() => {
-    checkStrength(password)
-  }, [password])
-
-  const checkStrength = (pass: string) => {
+  /* Removed state-based checkStrength and useEffect */
+  const getStrength = (pass: string) => {
     let score = 0
-    if (!pass) return setStrength(0)
+    if (!pass) return 0
 
     if (pass.length >= 8) score += 1
     if (/[A-Z]/.test(pass)) score += 1
     if (/[0-9]/.test(pass)) score += 1
     if (/[^A-Za-z0-9]/.test(pass)) score += 1
 
-    setStrength(score)
+    return score
   }
+
+  const strength = getStrength(password)
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()

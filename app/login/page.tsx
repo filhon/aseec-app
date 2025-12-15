@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -16,6 +15,8 @@ import {
 } from "@/components/ui/card"
 import { LoginForm } from "@/components/auth/login-form"
 import { SignUpForm } from "@/components/auth/signup-form"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 export default function AuthenticationPage() {
   const [view, setView] = useState<"login" | "signup" | "forgot_password">("login")

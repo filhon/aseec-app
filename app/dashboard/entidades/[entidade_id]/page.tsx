@@ -260,7 +260,8 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
                                 </div>
                                 <CardTitle className="mt-2 text-lg group-hover:text-primary transition-colors">{project.title}</CardTitle>
                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                                    {code && <img src={`https://flagcdn.com/w20/${code}.png`} width={14} className="rounded-sm" />}
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    {code && <img src={`https://flagcdn.com/w20/${code}.png`} alt={project.country} width={14} className="rounded-sm" />}
                                     <span className="line-clamp-1">{project.country}</span>
                                 </div>
                             </CardHeader>
