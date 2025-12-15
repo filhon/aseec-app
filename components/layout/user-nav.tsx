@@ -19,8 +19,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronsUpDown, LogOut, Settings, User, Moon, Sun, Laptop } from "lucide-react"
+import { ChevronsUpDown, LogOut, Settings, User, Moon, Sun, Laptop, Heart } from "lucide-react"
 import { useTheme } from "next-themes"
+import Link from "next/link"
 
 export function UserNav() {
   const { setTheme, theme } = useTheme()
@@ -65,6 +66,12 @@ export function UserNav() {
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
             <span>Perfil</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/favoritos" className="w-full cursor-pointer">
+              <Heart className="mr-2 h-4 w-4" />
+              <span>Favoritos</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />

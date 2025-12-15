@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Link from "next/link"
+import { FavoriteButton } from "@/components/ui/favorite-button"
 
 interface ProjectDetailsViewProps {
     initialProject: DashboardProject
@@ -176,6 +177,13 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     </div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
+                        <FavoriteButton 
+                            id={project.id} 
+                            type="project" 
+                            title={project.title} 
+                            subtitle={project.institution}
+                            className="h-8 w-8"
+                        />
                         <BadgeStatus status={project.status} />
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">

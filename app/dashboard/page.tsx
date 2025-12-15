@@ -12,8 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { FavoriteButton } from "@/components/ui/favorite-button"
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -47,6 +57,10 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [extensionFilter, setExtensionFilter] = useState("all")
   const [yearFilter, setYearFilter] = useState("all")
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 6 // 2 rows * 3 cols (max)
 
   // --- Helper for Faceted Search ---
   const getFilteredProjects = useCallback((exclude: 'search' | 'category' | 'tag' | 'status' | 'extension' | 'year' | null) => {
@@ -69,6 +83,18 @@ export default function DashboardPage() {
 
   // --- Derived Data (Filtering) ---
   const filteredProjects = useMemo(() => getFilteredProjects(null), [getFilteredProjects])
+  
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage)
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredProjects.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredProjects, currentPage])
+
+  // Reset page when filters change
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [filteredProjects.length])
   
   // --- Dynamic Counters ---
   const stats = useMemo(() => {
@@ -480,11 +506,11 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold tracking-tight">Projetos Listados ({filteredProjects.length})</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map(project => (
+            {paginatedProjects.map(project => (
                 <Link key={project.id} href={`/projetos/${project.id}`}>
-                    <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full">
+                    <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
                         <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2 mb-2">
                                 <BadgeStatus status={project.status} />
                                 <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
                             </div>
@@ -492,6 +518,16 @@ export default function DashboardPage() {
                             <CardDescription className="line-clamp-1">{project.institution}</CardDescription>
                         </CardHeader>
                         <CardContent>
+                            <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <FavoriteButton 
+                                    id={project.id} 
+                                    type="project" 
+                                    title={project.title} 
+                                    subtitle={project.institution}
+                                    variant="icon"
+                                    className="h-8 w-8 bg-background/80 hover:bg-background shadow-sm"
+                                />
+                            </div>
                             <div className="space-y-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <Users className="h-4 w-4" />
@@ -512,6 +548,52 @@ export default function DashboardPage() {
             ))}
         </div>
       </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+            <div className="mt-8">
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious 
+                                href="#" 
+                                onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(p => p - 1); }}
+                                className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: totalPages }).map((_, i) => {
+                             const page = i + 1;
+                             if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                 return (
+                                    <PaginationItem key={page}>
+                                        <PaginationLink 
+                                            href="#" 
+                                            isActive={page === currentPage}
+                                            onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}
+                                        >
+                                            {page}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                 )
+                             }
+                             if (page === currentPage - 2 || page === currentPage + 2) {
+                                 return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>
+                             }
+                             return null;
+                        })}
+
+                        <PaginationItem>
+                            <PaginationNext 
+                                href="#" 
+                                onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(p => p + 1); }}
+                                className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+            </div>
+        )}
     </div>
   )
 }

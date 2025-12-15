@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeft, Building2, TrendingUp, LayoutDashboard, Search, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { FavoriteButton } from "@/components/ui/favorite-button"
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
@@ -98,7 +99,7 @@ export default function EntitiesPage() {
 
             return (
                 <Link key={item.institution} href={`/dashboard/entidades/${slug}`}>
-                    <Card className="h-full hover:border-primary/50 transition-all hover:shadow-md cursor-pointer group">
+                    <Card className="h-full hover:border-primary/50 transition-all hover:shadow-md cursor-pointer group relative">
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -112,6 +113,16 @@ export default function EntitiesPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
+                            <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <FavoriteButton 
+                                    id={slug} 
+                                    type="entity" 
+                                    title={item.institution} 
+                                    subtitle={`${item.projectCount} Projetos`} 
+                                    variant="icon"
+                                    className="h-8 w-8 bg-background/80 hover:bg-background shadow-sm"
+                                />
+                            </div>
                             <div className="space-y-3">
                                 <div>
                                     <div className="text-2xl font-bold">{formatCurrency(item.totalInvestment)}</div>

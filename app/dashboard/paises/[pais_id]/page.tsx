@@ -8,6 +8,7 @@ import { ArrowLeft, Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { FavoriteButton } from "@/components/ui/favorite-button"
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
@@ -134,6 +135,7 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
                 <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
                 {code ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img 
@@ -149,13 +151,24 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
                     </div>
                 )}
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        {countryName}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {code && <img src={`https://flagcdn.com/w40/${code}.png`} width={24} alt={countryName} className="rounded-sm shadow-sm md:hidden" />}
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                            {countryName}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {code && <img src={`https://flagcdn.com/w40/${code}.png`} width={24} alt={countryName} className="rounded-sm shadow-sm md:hidden" />}
+                        </h1>
+                        <FavoriteButton 
+                            id={String(slug)} 
+                            type="country" 
+                            title={countryName} 
+                            subtitle={`${stats.totalProjects} Projetos`}
+                            image={code ? `https://flagcdn.com/w160/${code}.png` : undefined}
+                            className="h-8 w-8"
+                        />
+                    </div>
                     <p className="text-muted-foreground mt-1">Visão detalhada dos investimentos e projetos.</p>
                 </div>
+            </div>
             </div>
         </div>
       </div>

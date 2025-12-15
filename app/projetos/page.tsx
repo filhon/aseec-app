@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { FavoriteButton } from "@/components/ui/favorite-button"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -11,6 +12,15 @@ import { mockDashboardProjects } from "@/components/dashboard/data"
 import { mockProjects, ProjectLocation } from "@/components/map/data"
 import { ProjectsPieChart } from "@/components/dashboard/projects-pie-chart"
 import { GlobalProjectUpdates } from "@/components/dashboard/global-project-updates"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 // Dynamically import MapView
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -35,6 +45,10 @@ export default function ProjectsPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [mapFilteredIds, setMapFilteredIds] = useState<Set<string> | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 8 // 2 rows * 4 cols (max)
 
     // Filter logic
     const filteredProjects = useMemo(() => {
@@ -69,6 +83,18 @@ export default function ProjectsPage() {
 
         return result
     }, [searchTerm, mapFilteredIds, categoryFilter])
+    
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredProjects.length / itemsPerPage)
+    const paginatedProjects = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage
+        return filteredProjects.slice(startIndex, startIndex + itemsPerPage)
+    }, [filteredProjects, currentPage])
+
+    // Reset page when filters change
+    useMemo(() => {
+        setCurrentPage(1)
+    }, [filteredProjects.length])
     
     // Projects for Chart (excludes category filter so we can see other options)
     const projectsForChart = useMemo(() => {
@@ -209,11 +235,11 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredProjects.map(project => (
+                    {paginatedProjects.map(project => (
                         <Link key={project.id} href={`/projetos/${project.id}`} className="block group">
-                            <Card className="h-full hover:border-primary/50 transition-all hover:shadow-md cursor-pointer">
+                            <Card className="h-full hover:border-primary/50 transition-all hover:shadow-md cursor-pointer relative">
                                 <CardHeader className="pb-3 space-y-2">
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
                                         <BadgeStatus status={project.status} />
                                         <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded uppercase tracking-wider">
                                             {project.category}
@@ -229,6 +255,16 @@ export default function ProjectsPage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent>
+                                    <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <FavoriteButton 
+                                            id={project.id} 
+                                            type="project" 
+                                            title={project.title} 
+                                            subtitle={project.institution}
+                                            variant="icon"
+                                            className="h-8 w-8 bg-background/80 hover:bg-background shadow-sm"
+                                        />
+                                    </div>
                                     <div className="space-y-2.5 text-sm text-muted-foreground">
                                         <div className="flex items-center gap-2">
                                             <Users className="h-3.5 w-3.5" />
@@ -269,6 +305,52 @@ export default function ProjectsPage() {
                     )}
                 </div>
             </div>
+            
+             {/* Pagination */}
+             {totalPages > 1 && (
+                <div className="mt-8">
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious 
+                                    href="#" 
+                                    onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(p => p - 1); }}
+                                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+                            
+                            {Array.from({ length: totalPages }).map((_, i) => {
+                                 const page = i + 1;
+                                 if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                     return (
+                                        <PaginationItem key={page}>
+                                            <PaginationLink 
+                                                href="#" 
+                                                isActive={page === currentPage}
+                                                onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                     )
+                                 }
+                                 if (page === currentPage - 2 || page === currentPage + 2) {
+                                     return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>
+                                 }
+                                 return null;
+                            })}
+
+                            <PaginationItem>
+                                <PaginationNext 
+                                    href="#" 
+                                    onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(p => p + 1); }}
+                                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
         </div>
     )
 }

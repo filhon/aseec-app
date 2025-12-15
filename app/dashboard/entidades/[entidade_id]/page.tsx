@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FavoriteButton } from "@/components/ui/favorite-button"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 // --- Helpers ---
@@ -132,6 +134,13 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
                         {entityName}
+                         <FavoriteButton 
+                            id={String(slug)} 
+                            type="entity" 
+                            title={entityName || ''} 
+                            subtitle={`${stats.totalProjects} Projetos`}
+                            className="h-8 w-8 ml-2"
+                        />
                     </h1>
                     <p className="text-muted-foreground mt-1">Visão detalhada dos investimentos por entidade.</p>
                 </div>

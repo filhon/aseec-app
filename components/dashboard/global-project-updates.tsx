@@ -15,6 +15,7 @@ interface GlobalProjectUpdatesProps {
   onlyToday?: boolean
   showViewAll?: boolean
   variant?: 'compact' | 'feed'
+  filterIds?: string[]
 }
 
 // Helper to check if a date string is today
@@ -48,7 +49,7 @@ interface EnrichedPost extends ProjectPost {
   projectId: string;
 }
 
-export function GlobalProjectUpdates({ onlyToday = false, showViewAll = false, variant = 'compact' }: GlobalProjectUpdatesProps) {
+export function GlobalProjectUpdates({ onlyToday = false, showViewAll = false, variant = 'compact', filterIds }: GlobalProjectUpdatesProps) {
   // Aggregate all posts from all projects
   const allPosts = useMemo(() => {
     const posts: EnrichedPost[] = []
@@ -68,11 +69,17 @@ export function GlobalProjectUpdates({ onlyToday = false, showViewAll = false, v
   }, [])
 
   const displayedPosts = useMemo(() => {
-      if (onlyToday) {
-          return allPosts.filter(p => isToday(p.date))
+      let posts = allPosts;
+
+      if (filterIds) {
+          posts = posts.filter(p => filterIds.includes(p.projectId));
       }
-      return allPosts
-  }, [allPosts, onlyToday])
+
+      if (onlyToday) {
+          posts = posts.filter(p => isToday(p.date))
+      }
+      return posts
+  }, [allPosts, onlyToday, filterIds])
 
   if (variant === 'feed') {
       return (

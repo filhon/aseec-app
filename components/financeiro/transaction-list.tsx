@@ -1,10 +1,18 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
+import { ArrowUpCircle, ArrowDownCircle } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Transaction, mockCostCenters } from "./data"
@@ -112,29 +120,49 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                 </Table>
 
                 {/* Pagination */}
+                {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-end space-x-2 py-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                            Anterior
-                        </Button>
-                        <div className="text-sm font-medium">
-                            Página {currentPage} de {totalPages}
-                        </div>
-                         <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Próxima
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
+                    <div className="mt-4">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious 
+                                        href="#" 
+                                        onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(p => p - 1); }}
+                                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                </PaginationItem>
+                                
+                                {Array.from({ length: totalPages }).map((_, i) => {
+                                     const page = i + 1;
+                                     if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                         return (
+                                            <PaginationItem key={page}>
+                                                <PaginationLink 
+                                                    href="#" 
+                                                    isActive={page === currentPage}
+                                                    onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>
+                                         )
+                                     }
+                                     if (page === currentPage - 2 || page === currentPage + 2) {
+                                         return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>
+                                     }
+                                     return null;
+                                })}
+
+                                <PaginationItem>
+                                    <PaginationNext 
+                                        href="#" 
+                                        onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(p => p + 1); }}
+                                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
                     </div>
                 )}
             </CardContent>
