@@ -1,92 +1,113 @@
 # ASEEC App
 
-Aplicação desenvolvida com Next.js, Supabase e Tailwind CSS para gestão de projetos e controle financeiro.
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![Leaflet](https://img.shields.io/badge/Leaflet-Maps-199900?style=for-the-badge&logo=leaflet)
+
+Aplicação moderna desenvolvida para gestão de projetos missionários e controle financeiro robusto.
+
+## Status do Desenvolvimento
+
+| Área          | Status        | Progresso                                                         |
+| ------------- | ------------- | ----------------------------------------------------------------- |
+| **Frontend**  | 🟢 Avançado   | Interface polida com shadcn/ui, responsiva e suporte a Dark Mode. |
+| **Navegação** | 🟢 Completo   | App Router estruturado, Breadcrumbs dinâmicos e Sidebar fixa.     |
+| **Backend**   | 🟡 Integração | Supabase configurado, algumas integrações pendentes (IA/Anexos).  |
 
 ## Funcionalidades Principais
 
-### Dashboard de Projetos (`/projetos`)
+### 🗺️ Gestão de Projetos e Mapa
 
-- **Visualização de Mapa Interativo**:
-  - Mapa com clustering para agrupamento de projetos próximos.
-  - Filtro interativo: clique em pinos ou clusters para filtrar a lista de projetos.
-  - Ícones personalizados indicando status.
-- **Gráficos Dinâmicos**:
-  - Gráfico de pizza interativo exibindo a distribuição por categoria.
-  - Clique nas fatias ou legendas para filtrar a lista.
-  - Filtros cruzados entre Mapa e Gráfico.
-- **Listagem e Busca**:
-  - Busca textual por nome, responsável, localidade, etc.
-  - Visualização em cards com indicadores de status e investimento.
-- **Página de Detalhes do Projeto (`/projetos/[id]`)**:
-  - Visão geral completa com informações básicas, financeiras e categorização.
-  - Linha do tempo (Histórico) de atualizações.
-  - Galeria de anexos (fotos, vídeos, documentos).
-  - Seção de depoimentos e observações.
+- **Mapa Interativo (`/`)**:
+  - Clustering para agrupamento de projetos.
+  - **Filtro "Perto de Mim"**: Localiza projetos em um raio de 50km.
+  - Navegação integrada: Rotas diretas para o endereço do projeto.
+  - Modo Fullscreen imersivo com controles flutuantes.
+- **Detalhes do Projeto (`/projetos/[id]`)**:
+  - **Mural de Atualizações**: Feed estilo timeline substituindo abas antigas.
+  - Galeria multimídia e gestão de anexos.
+  - Integração direta com Entidades responsáveis.
 
-### Gestão Financeira (Recursos Anteriores)
+### 💰 Módulo Financeiro
 
-- **Contas a Pagar e Receber**: Controle de fluxo de caixa com permissões baseadas em funções.
-- **Centros de Custo**: Dashboards específicos para análise financeira por centro de custo.
-- **Importação em Massa**: Ferramenta para importação de transações via CSV/Excel.
-- **Entidades**: Cadastro e visualização detalhada de entidades/fornecedores com dashboard financeiro.
+- **Dashboard Financeiro**:
+  - Gráfico de **Fluxo de Caixa Interativo**: Filtre transações clicando nas barras do gráfico.
+  - Indicadores de Saldo, Receitas e Despesas.
+- **Transações**:
+  - Contas a Pagar e Receber com suporte a Centros de Custo.
+  - **Importação em Massa**: Ferramenta para upload de CSV/Excel com pré-visualização e edição em linha.
+- **Simulador de Despesas**: Calculadora de parcelamento e impacto no saldo futuro.
 
-### Sistema e Configurações
+### 🏢 Entidades e Cadastros
 
-- **Autenticação**: Login com email/senha suportado por Supabase Auth.
-- **Controle de Acesso (RBAC)**:
-  - Admin (acesso total).
-  - Gerente Financeiro (acesso à empresa vinculada).
-  - Usuário Padrão (acesso restrito).
-- **Feedback**: Sistema de feedback integrado para reporte de bugs e sugestões.
-- **Layout Moderno**: Sidebar fixo, suporte a Tema Claro/Escuro (Dark Mode).
+- **Perfil da Entidade (`/dashboard/entidades/[id]`)**:
+  - Layout em abas: "Visão Geral" (KPIs financeiros) e "Informações" (Dados bancários/Contato).
+  - Upload de ícones/logos personalizados.
+- **Centros de Custo**: Gestão hierárquica para alocação financeira.
+
+### 🤖 ASEEC IA
+
+- **Assistente Inteligente (`/aseec-ia`)**:
+  - Chat conversacional para dúvidas e insights sobre projetos.
+  - **Modo Flutuante**: Acesso ao chat de qualquer tela do sistema.
+  - Sugestões de prompts e contexto inteligente.
+
+### ⚙️ Sistema e Utilitários
+
+- **Feedback System**: Reporte de bugs e sugestões com capturas de tela e anexos.
+- **Autenticação e RBAC**: Controle de acesso granular (Admin, Gerente, Usuário).
+- **Busca Global**: Pesquisa rápida de projetos e entidades.
+- **Favoritos**: Acesso rápido a itens prioritários.
 
 ## Tech Stack
 
-- **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
-- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-- **Estilização:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- **Mapas:** [React Leaflet](https://react-leaflet.js.org/)
-- **Backend / Database:** [Supabase](https://supabase.com/) (Database, Auth, Storage)
-- **Gerenciamento de Estado:** [Zustand](https://github.com/pmndrs/zustand)
-- **Formulários:** [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
-- **Gráficos:** [Recharts](https://recharts.org/)
-- **Ícones:** [Lucide React](https://lucide.dev/)
+- **Core**: [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)
+- **Linguagem**: [TypeScript](https://www.typescriptlang.org/)
+- **Estilo**: [Tailwind CSS 4](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Lucide Icons](https://lucide.dev/)
+- **Dados & Auth**: [Supabase](https://supabase.com/)
+- **Mapas**: [React Leaflet](https://react-leaflet.js.org/)
+- **Estado**: [Zustand](https://github.com/pmndrs/zustand)
+- **Validação**: [Zod](https://zod.dev/) + [React Hook Form](https://react-hook-form.com/)
+- **Visualização de Dados**: [Recharts](https://recharts.org/)
+
+## Estrutura do Projeto
+
+```
+/app
+ ├── (home)/           # Página inicial com Mapa
+ ├── aseec-ia/         # Módulo de Inteligência Artificial
+ ├── dashboard/        # Área administrativa
+ │   ├── entidades/    # Gestão de Entidades
+ │   └── ...
+ ├── projetos/         # Listagem e Detalhes de Projetos
+ ├── financeiro/       # Módulo Financeiro (Contas, Relatórios)
+ ├── busca/            # Página de resultados de busca
+ ├── favoritos/        # Projetos/Entidades favoritos
+ ├── configuracoes/    # Ajustes do usuário e sistema
+ └── login/            # Autenticação
+```
 
 ## Como Executar
 
-1. **Clone o repositório**
-
-2. **Instale as dependências**
+1. **Instale as dependências**:
 
    ```bash
    npm install
    ```
 
-3. **Configure as Variáveis de Ambiente**
-   Crie um arquivo `.env.local` na raiz do projeto com as chaves do Supabase:
+2. **Configure o ambiente**:
+   Crie um arquivo `.env.local` com as credenciais do Supabase:
 
    ```env
-   NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
-   NEXT_PUBLIC_SUPABASE_DEFAULT_KEY=sua_default_key_do_supabase
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_DEFAULT_KEY=...
    ```
 
-4. **Execute o servidor de desenvolvimento**
+3. **Inicie o servidor**:
    ```bash
    npm run dev
    ```
    Acesse [http://localhost:3000](http://localhost:3000)
-
-## Estrutura do Projeto
-
-- `/app` - Páginas e layout (App Router)
-  - `/dashboard` - Visão geral principal
-  - `/projetos` - Módulo de Projetos
-  - `/cadastros` - Entidades e Centros de Custo
-  - `/financeiro` - Contas a Pagar/Receber
-- `/components`
-  - `/ui` - Componentes do shadcn/ui
-  - `/map` - Componentes de Mapa (Leaflet)
-  - `/dashboard` - Widgets e Gráficos
-- `/lib`
-  - `/supabase` - Configurações do cliente Supabase
-  - `utils.ts` - Utilitários gerais
