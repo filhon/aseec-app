@@ -17,6 +17,7 @@ interface SearchResult {
     type: 'project' | 'institution' | 'person' | 'location'
     category?: string 
     financialValue?: number
+    status?: string // New field
     entityId?: string
     responsibleId?: string
     indicationId?: string
@@ -40,6 +41,7 @@ const MOCK_RESULTS: SearchResult[] = [
         type: "project",
         category: "missionary",
         financialValue: 12000,
+        status: "em_andamento",
         entityId: "ent_1",
         responsibleId: "resp_1",
         indicationId: "ind_1",
@@ -57,6 +59,7 @@ const MOCK_RESULTS: SearchResult[] = [
         type: "project",
         category: "construction",
         financialValue: 45000,
+        status: "em_andamento",
         entityId: "ent_2",
         responsibleId: "resp_2",
         indicationId: "ind_2",
@@ -74,6 +77,7 @@ const MOCK_RESULTS: SearchResult[] = [
         type: "project",
         category: "social",
         financialValue: 8000,
+        status: "concluido",
         entityId: "ent_3",
         responsibleId: "resp_3",
         indicationId: "ind_3",
@@ -91,6 +95,7 @@ const MOCK_RESULTS: SearchResult[] = [
         type: "project",
         category: "education",
         financialValue: 60000,
+        status: "pendente",
         entityId: "ent_1",
         responsibleId: "resp_4",
         indicationId: "ind_1",
@@ -108,6 +113,7 @@ const MOCK_RESULTS: SearchResult[] = [
         type: "project",
         category: "health",
         financialValue: 3500,
+        status: "concluido",
         entityId: "ent_4",
         responsibleId: "resp_5",
         indicationId: "ind_4",
@@ -123,6 +129,9 @@ const MOCK_RESULTS: SearchResult[] = [
 // Mappings for labels (Simplified for redundancy)
 const categoryLabels: Record<string, string> = {
     missionary: "Missionário", humanitarian: "Humanitário", social: "Social", construction: "Construção", education: "Educação", health: "Saúde"
+};
+const statusLabels: Record<string, string> = {
+    concluido: "Concluído", em_andamento: "Em Andamento", pendente: "Pendente", cancelado: "Cancelado"
 };
 const entityLabels: Record<string, string> = {
     ent_1: "Igreja Local", ent_2: "ONG Esperança", ent_3: "Associação Vida", ent_4: "Missão Global"
@@ -155,6 +164,7 @@ export default function SearchPage() {
         entities: [],
         responsible: [],
         indication: [],
+        status: [],
         extension: [],
         tags: [],
         thanked: []
@@ -174,6 +184,7 @@ export default function SearchPage() {
             if (filters.entities.length > 0 && (!item.entityId || !filters.entities.includes(item.entityId))) return false;
             if (filters.responsible.length > 0 && (!item.responsibleId || !filters.responsible.includes(item.responsibleId))) return false;
             if (filters.indication.length > 0 && (!item.indicationId || !filters.indication.includes(item.indicationId))) return false;
+            if (filters.status.length > 0 && (!item.status || !filters.status.includes(item.status))) return false;
             if (filters.extension.length > 0 && (!item.extensionId || !filters.extension.includes(item.extensionId))) return false;
             if (filters.tags.length > 0) {
                 if (!item.tagIds) return false;
@@ -194,7 +205,7 @@ export default function SearchPage() {
             item.title.toLowerCase().includes(initialQuery.toLowerCase()) || 
             item.description?.toLowerCase().includes(initialQuery.toLowerCase())
          );
-         const newCounts: Record<string, Record<string, number>> = { category: {}, entities: {}, responsible: {}, indication: {}, extension: {}, tags: {}, thanked: {} };
+         const newCounts: Record<string, Record<string, number>> = { category: {}, entities: {}, responsible: {}, indication: {}, status: {}, extension: {}, tags: {}, thanked: {} };
          const inc = (cat: string, id?: string) => { if (id) newCounts[cat][id] = (newCounts[cat][id] || 0) + 1; }
 
          baseSet.forEach(item => {
@@ -202,6 +213,7 @@ export default function SearchPage() {
              inc('entities', item.entityId);
              inc('responsible', item.responsibleId);
              inc('indication', item.indicationId);
+             inc('status', item.status);
              inc('extension', item.extensionId);
              if (item.thanked !== undefined) inc('thanked', item.thanked ? 'yes' : 'no');
              item.tagIds?.forEach(t => inc('tags', t));
@@ -248,6 +260,7 @@ export default function SearchPage() {
         filters.entities.forEach(v => list.push({ label: entityLabels[v] || v, category: 'entities', value: v }));
         filters.responsible.forEach(v => list.push({ label: responsibleLabels[v] || v, category: 'responsible', value: v }));
         filters.indication.forEach(v => list.push({ label: indicationLabels[v] || v, category: 'indication', value: v }));
+        filters.status.forEach(v => list.push({ label: statusLabels[v] || v, category: 'status', value: v }));
         filters.extension.forEach(v => list.push({ label: extensionLabels[v] || v, category: 'extension', value: v }));
         filters.tags.forEach(v => list.push({ label: tagLabels[v] || v, category: 'tags', value: v }));
         filters.thanked.forEach(v => list.push({ label: thankedLabels[v] || v, category: 'thanked', value: v }));
@@ -311,7 +324,7 @@ export default function SearchPage() {
                                     size="sm" 
                                     className="h-6 text-xs text-muted-foreground hover:text-destructive"
                                     onClick={() => setFilters({ 
-                                        category: [], financialRange: [0, 100000], entities: [], responsible: [], indication: [], extension: [], tags: [], thanked: [] 
+                                        category: [], financialRange: [0, 100000], entities: [], responsible: [], indication: [], status: [], extension: [], tags: [], thanked: [] 
                                     })}
                                 >
                                     Limpar todos
@@ -327,7 +340,7 @@ export default function SearchPage() {
                                 <Button 
                                     variant="link" 
                                     onClick={() => setFilters({ 
-                                        category: [], financialRange: [0, 100000], entities: [], responsible: [], indication: [], extension: [], tags: [], thanked: [] 
+                                        category: [], financialRange: [0, 100000], entities: [], responsible: [], indication: [], status: [], extension: [], tags: [], thanked: [] 
                                     })}
                                 >
                                     Limpar filtros
@@ -340,7 +353,7 @@ export default function SearchPage() {
                                     <Card key={result.id} className="hover:bg-muted/50 transition-colors cursor-pointer group py-0">
                                         <CardHeader className="p-4 pb-2">
                                             <div className="flex justify-between items-start">
-                                                <div className="flex gap-2 items-center">
+                                                <div className="flex gap-2 items-center flex-wrap">
                                                     <Badge variant="outline" className="capitalize flex gap-1 items-center font-normal">
                                                         <Icon className="w-3 h-3" />
                                                         {result.type === 'project' ? 'Projeto' : result.type}
@@ -348,6 +361,11 @@ export default function SearchPage() {
                                                     {result.category && (
                                                         <Badge variant="secondary" className="capitalize">
                                                             {categoryLabels[result.category] || result.category}
+                                                        </Badge>
+                                                    )}
+                                                    {result.status && (
+                                                        <Badge variant="outline" className="capitalize text-xs">
+                                                            {statusLabels[result.status] || result.status}
                                                         </Badge>
                                                     )}
                                                 </div>

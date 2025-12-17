@@ -145,6 +145,48 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         setIsEditingBasic(false)
     }
 
+    const [isEditingFinancial, setIsEditingFinancial] = useState(false)
+    const [financialForm, setFinancialForm] = useState({
+        requestedValue: project.requestedValue || project.investment,
+        approvedValue: project.approvedValue || project.investment,
+        investmentByYear: [...project.investmentByYear]
+    })
+
+    const handleSaveFinancial = () => {
+        const changes = []
+        if (financialForm.requestedValue !== (project.requestedValue || project.investment)) changes.push(`Valor solicitado atualizado para ${formatCurrency(financialForm.requestedValue)}`)
+        if (financialForm.approvedValue !== (project.approvedValue || project.investment)) changes.push(`Valor aprovado atualizado para ${formatCurrency(financialForm.approvedValue)}`)
+        
+        // Check for specific year changes
+        const oldYears = new Map(project.investmentByYear.map(i => [i.year, i.value]))
+        const newYears = new Map(financialForm.investmentByYear.map(i => [i.year, i.value]))
+        
+        let historyChanged = false
+        if (oldYears.size !== newYears.size) historyChanged = true
+        else {
+            for (const [year, value] of newYears) {
+                if (oldYears.get(year) !== value) {
+                    historyChanged = true
+                    break
+                }
+            }
+        }
+
+        if (historyChanged) changes.push("Histórico de investimentos atualizado")
+
+        if (changes.length > 0) {
+            setProject({
+                ...project,
+                requestedValue: financialForm.requestedValue,
+                approvedValue: financialForm.approvedValue,
+                investmentByYear: financialForm.investmentByYear,
+                investment: financialForm.approvedValue // Sync main investment with approved
+            })
+            addAutoPost("Atualização Financeira", changes.join('\n'))
+        }
+        setIsEditingFinancial(false)
+    }
+
 
 
     // Helper formatter
@@ -454,11 +496,108 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         )}
                     </ProjectInfoCard>
 
-                    {/* FINANCIAL (Read Only) */}
+                    {/* FINANCIAL */}
                      <ProjectInfoCard
                         title="Financeiro"
                         icon={<DollarSign className="h-4 w-4 text-primary" />}
                         hasHistory={true}
+                        isEditing={isEditingFinancial}
+                        setIsEditing={setIsEditingFinancial}
+                        onSave={handleSaveFinancial}
+                        editContent={
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                     <div className="flex items-center justify-between">
+                                        <label className="text-xs font-semibold">Histórico de Investimentos</label>
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            className="h-6 text-xs"
+                                            onClick={() => {
+                                                setFinancialForm({
+                                                    ...financialForm,
+                                                    investmentByYear: [...financialForm.investmentByYear, { year: new Date().getFullYear() - 1, value: 0 }]
+                                                })
+                                            }}
+                                        >
+                                            + Adicionar Ano
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                        {financialForm.investmentByYear.sort((a, b) => b.year - a.year).map((item, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="Ano"
+                                                    className="w-24" 
+                                                    value={item.year}
+                                                    onChange={(e) => {
+                                                        const newInvestments = [...financialForm.investmentByYear]
+                                                        newInvestments.find(i => i === item)!.year = parseInt(e.target.value) || 0
+                                                        setFinancialForm({...financialForm, investmentByYear: newInvestments})
+                                                    }}
+                                                />
+                                                <div className="relative w-full">
+                                                    <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                                    <Input 
+                                                        type="number" 
+                                                        placeholder="Valor"
+                                                        className="pl-8"
+                                                        value={item.value}
+                                                        onChange={(e) => {
+                                                            const newInvestments = [...financialForm.investmentByYear]
+                                                            newInvestments.find(i => i === item)!.value = parseFloat(e.target.value) || 0
+                                                            setFinancialForm({...financialForm, investmentByYear: newInvestments})
+                                                        }}
+                                                    />
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => {
+                                                        const newInvestments = financialForm.investmentByYear.filter(i => i !== item)
+                                                        setFinancialForm({...financialForm, investmentByYear: newInvestments})
+                                                    }}
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {financialForm.investmentByYear.length === 0 && (
+                                            <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
+                                                Nenhum registro histórico.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Valor Solicitado</label>
+                                     <div className="relative w-full">
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                        <Input 
+                                            type="number" 
+                                            className="pl-8"
+                                            value={financialForm.requestedValue} 
+                                            onChange={e => setFinancialForm({...financialForm, requestedValue: parseFloat(e.target.value) || 0})} 
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Valor Aprovado</label>
+                                    <div className="relative w-full">
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                        <Input 
+                                            type="number" 
+                                            className="pl-8"
+                                            value={financialForm.approvedValue} 
+                                            onChange={e => setFinancialForm({...financialForm, approvedValue: parseFloat(e.target.value) || 0})} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     >
                          <CardContent className="space-y-5 p-0">
                             <div className="grid grid-cols-2 gap-4">
@@ -485,6 +624,21 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                 </div>
                                 <Progress value={75} className="h-2" /> 
                             </div>
+
+                             {project.investmentByYear.length > 0 && (
+                                <div className="mt-4 pt-4 border-t space-y-2">
+                                    <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Histórico Anual</span>
+                                    <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                        {project.investmentByYear.sort((a, b) => b.year - a.year).map((item) => (
+                                            <div key={item.year} className="flex justify-between text-sm p-1.5 hover:bg-muted/50 rounded-md transition-colors">
+                                                <span className="text-muted-foreground font-medium">{item.year}</span>
+                                                <span>{formatCurrency(item.value)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                         </CardContent>
                     </ProjectInfoCard>
 

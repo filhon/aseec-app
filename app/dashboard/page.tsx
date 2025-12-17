@@ -29,7 +29,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, X, Filter, ChevronDown, ChevronUp } from "lucide-react"
+import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, X, Filter, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FavoriteButton } from "@/components/ui/favorite-button"
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [extensionFilter, setExtensionFilter] = useState("all")
   const [yearFilter, setYearFilter] = useState("all")
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false) // For mobile counters
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
@@ -103,15 +103,52 @@ export default function DashboardPage() {
   // Reset page when filters change
 
   
-  // --- Dynamic Counters ---
+  // --- Dynamic Counters & Strategic Indicators ---
   const stats = useMemo(() => {
-    const totalInvested = filteredProjects.reduce((sum, p) => sum + p.investment, 0)
-    const totalProjects = filteredProjects.length
-    const uniqueCountries = new Set(filteredProjects.map(p => p.country)).size
-    const uniqueStates = new Set(filteredProjects.map(p => p.state)).size
-    const uniqueMunicipalities = new Set(filteredProjects.map(p => p.municipality)).size
+    let totalInvested = 0
+    let totalReachedPeople = 0
+    let totalApproved = 0
+    let delayedProjects = 0
+    
+    // For YoY Growth
+    const currentYear = new Date().getFullYear()
+    const lastYear = currentYear - 1
+    let investedCurrentYear = 0
+    let investedLastYear = 0
 
-    return { totalInvested, totalProjects, uniqueCountries, uniqueStates, uniqueMunicipalities }
+    const today = new Date().toISOString().split('T')[0]
+
+    filteredProjects.forEach(p => {
+        // 1. Total Invested
+        totalInvested += p.investment
+
+        // 2. Reached People (for Cost per Beneficiary)
+        if (p.reachedPeople) totalReachedPeople += p.reachedPeople
+
+        // 3. Approved Value (for Execution Rate)
+        totalApproved += (p.approvedValue || p.investment)
+
+        // 4. Delayed Projects
+        if (p.status === 'em_andamento' && p.endDate && p.endDate < today) {
+            delayedProjects++
+        }
+
+        // 5. YoY Growth Data
+        p.investmentByYear.forEach(item => {
+            if (item.year === currentYear) investedCurrentYear += item.value
+            if (item.year === lastYear) investedLastYear += item.value
+        })
+    })
+
+    const costPerBeneficiary = totalReachedPeople > 0 ? totalInvested / totalReachedPeople : 0
+    const executionRate = totalApproved > 0 ? Math.round((totalInvested / totalApproved) * 100) : 0
+    
+    let yoyGrowth = 0
+    if (investedLastYear > 0) {
+        yoyGrowth = Math.round(((investedCurrentYear - investedLastYear) / investedLastYear) * 100)
+    }
+
+    return { totalInvested, costPerBeneficiary, executionRate, delayedProjects, yoyGrowth }
   }, [filteredProjects])
 
   // --- Insights ---
@@ -401,8 +438,9 @@ export default function DashboardPage() {
 
       {/* Key Metrics / Counters */}
       {/* Key Metrics / Counters */}
-      <div className="grid grid-cols-6 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="col-span-3 md:col-span-1 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* 1. Total Invested */}
+        <Card className="col-span-1 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -413,49 +451,64 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 md:col-span-1 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projetos</CardTitle>
-            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProjects}</div>
-             <p className="text-xs text-muted-foreground mt-1">Total listado</p>
-          </CardContent>
+        {/* 2. Cost per Beneficiary */}
+        <Card className={`col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Custo / Beneficiário</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{stats.costPerBeneficiary > 0 ? formatCurrency(stats.costPerBeneficiary) : "N/A"}</div>
+                <p className="text-xs text-muted-foreground mt-1">Eficiência de impacto</p>
+            </CardContent>
         </Card>
 
-        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Países</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.uniqueCountries}</div>
-             <p className="text-xs text-muted-foreground mt-1">Geografia</p>
-          </CardContent>
+        {/* 3. Budget Execution Rate */}
+        <Card className={`col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Execução Orçamentária</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-end gap-2">
+                    <div className="text-2xl font-bold">{stats.executionRate}%</div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Do orçamento aprovado</p>
+            </CardContent>
         </Card>
 
-        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estados</CardTitle>
-            <MapIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.uniqueStates}</div>
-             <p className="text-xs text-muted-foreground mt-1">Nacional</p>
-          </CardContent>
+        {/* 4. YoY Growth */}
+        <Card className={`col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Crescimento (YoY)</CardTitle>
+                {stats.yoyGrowth >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                ) : (
+                    <TrendingUp className="h-4 w-4 text-red-500 rotate-180" />
+                )}
+            </CardHeader>
+            <CardContent>
+                <div className={`text-2xl font-bold ${stats.yoyGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {stats.yoyGrowth >= 0 ? '+' : ''}{stats.yoyGrowth}%
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">vs. ano anterior</p>
+            </CardContent>
         </Card>
 
-        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Municípios</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.uniqueMunicipalities}</div>
-             <p className="text-xs text-muted-foreground mt-1">Local</p>
-          </CardContent>
+        {/* 5. Schedule Risk */}
+        <Card className={`col-span-1 shadow-sm hover:shadow-md transition-shadow ${stats.delayedProjects > 0 ? 'border-l-4 border-l-red-500 bg-red-50/20 dark:bg-red-900/10' : ''} ${!isExpanded ? 'hidden md:block' : ''}`}>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Risco de Prazo</CardTitle>
+                <AlertTriangle className={`h-4 w-4 ${stats.delayedProjects > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+            </CardHeader>
+            <CardContent>
+                <div className={`text-2xl font-bold ${stats.delayedProjects > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+                    {stats.delayedProjects}
+                </div>
+                 <p className="text-xs text-muted-foreground mt-1">Projetos atrasados</p>
+            </CardContent>
         </Card>
+
       </div>
 
        {/* Mobile Toggle Button */}

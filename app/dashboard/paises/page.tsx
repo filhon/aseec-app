@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Globe, TrendingUp, LayoutDashboard, Search, X } from "lucide-react"
+import { Globe, TrendingUp, LayoutDashboard, Search, X, MapPin, Map as MapIcon, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { FavoriteButton } from "@/components/ui/favorite-button"
 
@@ -32,6 +33,14 @@ const slugify = (text: string) => {
 
 export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [isExpanded, setIsExpanded] = useState(false) // For mobile counters
+
+  const stats = useMemo(() => {
+    const uniqueCountries = new Set(mockDashboardProjects.map(p => p.country)).size
+    const uniqueStates = new Set(mockDashboardProjects.map(p => p.state)).size
+    const uniqueMunicipalities = new Set(mockDashboardProjects.map(p => p.municipality)).size
+    return { uniqueCountries, uniqueStates, uniqueMunicipalities }
+  }, [])
 
   const countriesData = useMemo(() => {
     const data: Record<string, { totalInvestment: number, projectCount: number, country: string }> = {}
@@ -68,6 +77,58 @@ export default function CountriesPage() {
 
   return (
     <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">
+      
+      {/* Location Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Países</CardTitle>
+            <Globe className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniqueCountries}</div>
+             <p className="text-xs text-muted-foreground mt-1">Geografia Global</p>
+          </CardContent>
+        </Card>
+
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Estados</CardTitle>
+            <MapIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniqueStates}</div>
+             <p className="text-xs text-muted-foreground mt-1">Nacional</p>
+          </CardContent>
+        </Card>
+
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Municípios</CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.uniqueMunicipalities}</div>
+             <p className="text-xs text-muted-foreground mt-1">Local</p>
+          </CardContent>
+        </Card>
+      </div>
+
+       {/* Mobile Toggle Button */}
+       <div className="flex justify-center md:hidden -mt-2 mb-4">
+        <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 gap-1 text-xs text-muted-foreground"
+            onClick={() => setIsExpanded(!isExpanded)}
+        >
+            {isExpanded ? (
+                <>Menos detalhes <ChevronUp className="h-3 w-3" /></>
+            ) : (
+                <>Mais detalhes <ChevronDown className="h-3 w-3" /></>
+            )}
+        </Button>
+      </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
             <div>

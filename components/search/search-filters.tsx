@@ -89,6 +89,7 @@ export interface AdvancedFiltersState {
     entities: string[]
     responsible: string[]
     indication: string[]
+    status: string[]
     extension: string[]
     tags: string[]
     thanked: string[]
@@ -139,6 +140,13 @@ export function SearchFilters({ filters, onFilterChange, counts = {}, hasFinanci
         { id: "ind_4", label: "Pra. Julia Ferreira" },
         { id: "ind_5", label: "Miss. Ricardo Gomes" },
     ].map(o => ({ ...o, count: getCount('indication', o.id) }))
+
+    const optionsStatus = [
+        { id: "concluido", label: "Concluído" },
+        { id: "em_andamento", label: "Em Andamento" },
+        { id: "pendente", label: "Pendente" },
+        { id: "cancelado", label: "Cancelado" },
+    ].map(o => ({ ...o, count: getCount('status', o.id) }))
 
     const optionsExtension = [
         { id: "ext_1", label: "Curto Prazo" },
@@ -212,6 +220,13 @@ export function SearchFilters({ filters, onFilterChange, counts = {}, hasFinanci
                 options={optionsIndication}
                 selected={filters.indication}
                 onChange={(id, checked) => onFilterChange('indication', id, checked)}
+            />
+
+             <FilterGroup 
+                title="Status"
+                options={optionsStatus}
+                selected={filters.status}
+                onChange={(id, checked) => onFilterChange('status', id, checked)}
             />
 
              <FilterGroup 
