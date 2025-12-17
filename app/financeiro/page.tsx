@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { CostCenterBudgetChart } from "@/components/financeiro/cost-center-budget-chart"
-import { Calculator, CalendarIcon, Search, FilterX } from "lucide-react"
+import { Calculator, CalendarIcon, Search, FilterX, Filter } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -260,23 +260,51 @@ export default function FinanceiroPage() {
     }
 
     return (
-        <div className="container mx-auto py-10 space-y-8 animate-in fade-in duration-500">
-             {/* Header with Filters */}
-             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">Financeiro</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Visão geral do fluxo de caixa e simulações.
-                    </p>
-                </div>
+        <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8 animate-in fade-in duration-500">
+             {/* Header */}
+             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start justify-between lg:justify-start lg:gap-4">
+                    <div>
+                        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-primary">Financeiro</h1>
+                        <p className="text-muted-foreground mt-1 text-sm lg:text-base">
+                            Visão geral do fluxo de caixa e simulações.
+                        </p>
+                    </div>
 
-                <div className="flex flex-col lg:flex-row gap-2">
-                    {/* Simulator Button (Popup) */}
+                    {/* Simulator Button - Mobile Only (Right of Title) */}
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="outline" className="gap-2 bg-background">
+                            <Button variant="outline" size="sm" className="gap-2 bg-background h-9 lg:hidden">
                                 <Calculator className="h-4 w-4" />
                                 <span className="hidden sm:inline">Simulador</span>
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="w-[90%] rounded-md max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Simulador de Despesas</DialogTitle>
+                                <DialogDescription>
+                                    Simule o impacto de novas despesas no fluxo de caixa.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <ExpenseSimulator 
+                                    onSimulate={setSimulatedExpense} 
+                                    simulationResult={simulationImpact}
+                                />
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                {/* Filters Row */}
+                <div className="flex items-center gap-2 lg:justify-end">
+                    
+                    {/* Simulator Button - Desktop Only (Left of Filters) */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="hidden lg:inline-flex gap-2 bg-background">
+                                <Calculator className="h-4 w-4" />
+                                <span>Simulador</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -296,58 +324,65 @@ export default function FinanceiroPage() {
                     </Dialog>
 
                     {/* Search */}
-                    <div className="relative w-full lg:w-[250px]">
+                    <div className="relative flex-1 lg:flex-none lg:w-[250px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Buscar despesa, centro de custo..."
-                            className="pl-9"
+                            placeholder="Buscar..."
+                            className="pl-9 h-9 lg:h-10 text-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
 
                     {/* Cost Center Select */}
-                    <Select value={selectedCostCenter} onValueChange={setSelectedCostCenter}>
-                        <SelectTrigger className="w-full lg:w-[200px]">
-                            <SelectValue placeholder="Centro de Custo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos os Centros</SelectItem>
-                            {mockCostCenters.map(cc => (
-                                <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="w-9 lg:w-[200px] shrink-0">
+                         <Select value={selectedCostCenter} onValueChange={setSelectedCostCenter}>
+                            <SelectTrigger className="w-full px-2 lg:px-3 h-9 lg:h-10 [&>svg]:hidden lg:[&>svg]:block">
+                                <span className="lg:hidden text-muted-foreground">
+                                     <Filter className="h-4 w-4" />
+                                </span>
+                                <span className="hidden lg:block truncate text-sm">
+                                    <SelectValue placeholder="Centro de Custo" />
+                                </span>
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                                <SelectItem value="all">Todos os Centros</SelectItem>
+                                {mockCostCenters.map(cc => (
+                                    <SelectItem key={cc.id} value={cc.id}>{cc.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    {/* Date Range Picker */}
-                    <div className="grid gap-2">
+                    {/* Date Range Picker - Icon only on mobile */}
+                    <div className="shrink-0">
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     id="date"
                                     variant={"outline"}
+                                    size="icon"
                                     className={cn(
-                                        "w-[240px] justify-start text-left font-normal",
+                                        "w-9 lg:w-[240px] lg:justify-start lg:px-3 h-9 lg:h-10 font-normal",
                                         !dateRange?.from && "text-muted-foreground"
                                     )}
+                                    title="Selecione o período"
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {presetName ? (
-                                        <span>{presetName}</span>
-                                    ) : (
-                                        dateRange?.from ? (
-                                            dateRange.to ? (
+                                    <CalendarIcon className="h-4 w-4 lg:mr-2" />
+                                    <div className="hidden lg:block truncate text-sm">
+                                        {presetName ? (
+                                            <span>{presetName}</span>
+                                        ) : (
+                                            dateRange && dateRange.from ? (
                                                 <>
-                                                    {format(dateRange.from, "dd/MM/yyyy")} -{" "}
-                                                    {format(dateRange.to, "dd/MM/yyyy")}
+                                                    {format(dateRange.from, "dd/MM/yyyy")}
+                                                    {dateRange.to ? ` - ${format(dateRange.to, "dd/MM/yyyy")}` : ""}
                                                 </>
                                             ) : (
-                                                format(dateRange.from, "dd/MM/yyyy")
+                                                <span>Selecione o período</span>
                                             )
-                                        ) : (
-                                            <span>Selecione o período</span>
-                                        )
-                                    )}
+                                        )}
+                                    </div>
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="end">
@@ -389,12 +424,12 @@ export default function FinanceiroPage() {
                     </div>
 
                     {(searchQuery || selectedCostCenter !== 'all' || dateRange?.from || dateRange?.to) && (
-                        <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar Filtros">
+                        <Button variant="ghost" size="icon" onClick={clearFilters} title="Limpar Filtros" className="h-9 w-9 shrink-0">
                             <FilterX className="h-4 w-4" />
                         </Button>
                     )}
                 </div>
-            </div>
+             </div>
 
             {/* KPI Cards */}
             <FinancialCards 
@@ -408,7 +443,7 @@ export default function FinanceiroPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
                 
                 {/* Cash Flow Chart Section */}
-                <div className="lg:col-span-2 h-[500px] flex flex-col gap-2">
+                <div className="lg:col-span-2 h-[400px] lg:h-[500px] flex flex-col gap-2">
                     <CashFlowChart 
                         data={finalChartData} 
                         title="Fluxo de Caixa"
@@ -421,7 +456,7 @@ export default function FinanceiroPage() {
                 </div>
 
                 {/* Cost Center Budget Chart Section */}
-                <div className="h-[500px]">
+                <div className="h-[400px] lg:h-[500px]">
                     <CostCenterBudgetChart data={costCenterData} />
                 </div>
             </div>

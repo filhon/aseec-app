@@ -24,6 +24,7 @@ import { Sparkles, Navigation } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { toast } from "sonner"
+import { MobileNavbar } from "@/components/layout/mobile-navbar"
 
 export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -243,6 +244,7 @@ export default function HomePage() {
         flyTo={flyTo}
         hideControls={isFullscreen}
       />
+      <MobileNavbar />
     </main>
   )
 }

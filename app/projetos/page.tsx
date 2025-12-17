@@ -148,12 +148,12 @@ export default function ProjectsPage() {
 
 
     return (
-        <div className="container mx-auto py-10 space-y-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-6 lg:py-10 space-y-8 animate-in fade-in duration-500">
             
             {/* Header with Search */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">Projetos</h1>
+                    <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-primary">Projetos</h1>
                     <p className="text-muted-foreground mt-1">Gerencie e acompanhe o progresso de todos os projetos.</p>
                 </div>
                 
@@ -190,10 +190,10 @@ export default function ProjectsPage() {
             </div>
 
             {/* Top Section: Map, Pie, Updates */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-auto lg:h-[450px]">
+            <div className="hidden lg:grid grid-cols-1 lg:grid-cols-4 gap-6 h-auto lg:h-[450px]">
                 
                 {/* Map Card */}
-                <Card className="lg:col-span-2 shadow-sm overflow-hidden flex flex-col h-[450px] p-0 border-0 ring-1 ring-border">
+                <Card className="lg:col-span-2 shadow-sm overflow-hidden flex flex-col h-[350px] lg:h-[450px] p-0 border-0 ring-1 ring-border">
                     <div className="flex-1 relative bg-slate-100 dark:bg-slate-900 w-full h-full">
                         <MapView 
                             onPinClick={handlePinClick} 
@@ -209,7 +209,7 @@ export default function ProjectsPage() {
                 </Card>
 
                 {/* Pie Chart */}
-                <div className="h-[450px]">
+                <div className="h-[300px] lg:h-[450px]">
                      <ProjectsPieChart 
                         projects={projectsForChart} 
                         selectedCategory={categoryFilter}
@@ -218,7 +218,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Updates Card - Global Feed */}
-                <div className="h-[450px]">
+                <div className="h-[400px] lg:h-[450px]">
                     <GlobalProjectUpdates onlyToday={false} variant="compact" showViewAll={true} />
                 </div>
             </div>

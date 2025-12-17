@@ -272,7 +272,7 @@ export function NewProjectForm() {
                                 }}
                              />
                              <FormDescription>
-                                Digite o endereço completo para preencher automaticamente os dados de localização.
+                                Digite o endereço ou CEP para preencher automaticamente os dados de localização.
                              </FormDescription>
                         </div>
 

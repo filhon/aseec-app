@@ -51,8 +51,21 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
     const searchAddress = async (searchQuery: string) => {
         setLoading(true)
         try {
+            // Check if it's a CEP (numbers, optionally dash, 8 digits total)
+            const cleanQuery = searchQuery.replace(/\D/g, "")
+            const isCEP = /^\d{8}$/.test(cleanQuery)
+
+            let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=br`
+            
+            if (isCEP) {
+                // For CEP, we use the postalcode parameter for better accuracy
+                url += `&postalcode=${cleanQuery}`
+            } else {
+                url += `&q=${encodeURIComponent(searchQuery)}`
+            }
+
             const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&addressdetails=1&limit=5`,
+                url,
                 {
                     headers: {
                         "User-Agent": "AseecApp/1.0"
@@ -113,7 +126,7 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
                         setQuery(e.target.value)
                         if (!open && e.target.value.length >= 3) setLoading(true)
                     }}
-                    placeholder="Digite o endereço completo..."
+                    placeholder="Digite o endereço ou CEP..."
                     className="pl-9"
                 />
                 {loading && (

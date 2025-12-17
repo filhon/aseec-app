@@ -86,7 +86,7 @@ export function GlobalProjectUpdates({ onlyToday = false, showViewAll = false, v
         <div className="h-full flex flex-col">
             <div className="flex-1 p-0 flex flex-col min-h-0 bg-transparent">
                 <ScrollArea className="flex-1">
-                    <div className="space-y-4 pr-3">
+                    <div className="space-y-4">
                         {displayedPosts.length > 0 ? displayedPosts.map((item) => (
                             <FeedPost 
                                 key={`${item.projectId}-${item.id}`} 

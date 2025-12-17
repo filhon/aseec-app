@@ -16,7 +16,7 @@ import {
     Calendar as CalendarIcon, MapPin, DollarSign, Users, Award, 
     ArrowLeft, Edit2, Save, X, 
     CheckCircle2, AlertCircle, Tag, AlertTriangle, Globe, User,
-    LayoutDashboard, FileText
+    LayoutDashboard, FileText, ChevronDown
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -170,6 +170,9 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         }
     }
 
+    // Mobile Details Toggle
+    const [showMobileDetails, setShowMobileDetails] = useState(false)
+
     return (
         <div className="min-h-screen bg-transparent space-y-6">
             
@@ -177,8 +180,8 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                     {/* Previous Navigation Removed */}
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
                         <FavoriteButton 
                             id={project.id} 
                             type="project" 
@@ -198,14 +201,27 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         </span>
                     </div>
                 </div>
-                
+            </div>
 
+            {/* Mobile: Toggle Details Row */}
+            <div 
+                className="lg:hidden flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setShowMobileDetails(!showMobileDetails)}
+            >
+                <div className="flex items-center gap-6 text-muted-foreground">
+                    <LayoutDashboard className="h-5 w-5 text-primary" />
+                    <FileText className="h-5 w-5" />
+                    <DollarSign className="h-5 w-5" />
+                    <Tag className="h-5 w-5" />
+                    <span className="text-sm font-medium ml-2">Informações do Projeto</span>
+                </div>
+                <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", showMobileDetails && "rotate-180")} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Left Column - Details */}
-                <div className="space-y-6 lg:col-span-1">
+                <div className={cn("space-y-6 lg:col-span-1", !showMobileDetails && "hidden lg:block")}>
                     
                     {/* OVERVIEW */}
                     <ProjectInfoCard

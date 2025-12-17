@@ -80,7 +80,7 @@ function MapControls({ center, zoom, hidden }: { center: [number, number], zoom:
   if (hidden) return null
 
   return (
-    <div className="leaflet-bottom leaflet-right" style={{ marginBottom: "24px", marginRight: "24px", pointerEvents: "auto", zIndex: 1000 }}>
+    <div className="leaflet-bottom leaflet-right mb-24 mr-6 md:mb-6" style={{ pointerEvents: "auto", zIndex: 1000 }}>
         <div className="flex flex-col gap-2">
             <Button
                 variant="secondary"
@@ -148,7 +148,11 @@ export default function MapView({ onPinClick, onClusterClick, className, style, 
   const [mounted, setMounted] = useState(false)
 
   // Move hook to top level
-  const mapStyle = useMemo(() => style || { height: "100vh", width: "100%", outline: "none" }, [style])
+  // Stable style reference to prevent re-renders
+  const mapStyle = useMemo(() => ({ height: "100%", width: "100%", outline: "none", ...style }), [style])
+  
+  // Unique key to force remount on initial load only once
+  const [mapKey] = useState(() => `map-${Math.random().toString(36).substr(2, 9)}`)
 
   useEffect(() => {
     // eslint-disable-next-line
@@ -163,7 +167,7 @@ export default function MapView({ onPinClick, onClusterClick, className, style, 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }} className={className}>
       <MapContainer 
-        key="custom-map-view"
+        key={mapKey}
         center={center} 
         zoom={zoom} 
         scrollWheelZoom={true} 

@@ -30,26 +30,28 @@ import {
 } from "@/components/ui/command"
 import { useRouter } from "next/navigation"
 
+import { useSearchStore } from "@/hooks/use-search-store"
+
 export function GlobalSearch() {
-  const [open, setOpen] = React.useState(false)
+  const { isOpen, setOpen, toggle } = useSearchStore()
   const router = useRouter()
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setOpen((open) => !open)
+        toggle()
       }
     }
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
-  }, [])
+  }, [toggle])
 
   const runCommand = React.useCallback((command: () => unknown) => {
     setOpen(false)
     command()
-  }, [])
+  }, [setOpen])
 
   // Mock Data for Autocomplete
   const projects = [
@@ -83,7 +85,7 @@ export function GlobalSearch() {
 
   return (
     <>
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={isOpen} onOpenChange={setOpen}>
         <CommandInput placeholder="Digite um comando ou busque..." />
         <CommandList>
           <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>

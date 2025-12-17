@@ -21,7 +21,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, X } from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, Map as MapIcon, X, Filter, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FavoriteButton } from "@/components/ui/favorite-button"
 
@@ -57,6 +65,7 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [extensionFilter, setExtensionFilter] = useState("all")
   const [yearFilter, setYearFilter] = useState("all")
+  const [isExpanded, setIsExpanded] = useState(false)
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
@@ -194,15 +203,103 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 py-8 animate-in fade-in duration-500">
+    <div className="space-y-6 py-4 lg:py-8 animate-in fade-in duration-500">
       
       {/* Search & Filters */}
-      <div className="w-full border-b pb-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            {/* ... inputs ... */}
+      <div className="w-full lg:border-b lg:pb-6 space-y-4">
+        {/* Mobile Filter Button & Desktop Grid */}
+        <div className="flex flex-col lg:hidden gap-3 mb-4">
+             <div className="flex gap-2">
+                <div className="relative flex-1">
+                    <Input 
+                        id="search-mobile"
+                        placeholder="Buscar..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-background pl-10 w-full"
+                    />
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="outline" size="icon" className="shrink-0">
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right">
+                        <SheetHeader>
+                            <SheetTitle>Filtros</SheetTitle>
+                            <SheetDescription>Refine a visualização dos projetos.</SheetDescription>
+                        </SheetHeader>
+                        <div className="flex flex-col gap-4 mt-6 px-4">
+                            <Select value={yearFilter} onValueChange={setYearFilter}>
+                                <SelectTrigger className="bg-background w-full">
+                                    <SelectValue placeholder="Ano" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos os Anos</SelectItem>
+                                    {availableYears.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                <SelectTrigger className="bg-background w-full">
+                                    <SelectValue placeholder="Categoria" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Categorias</SelectItem>
+                                    {availableCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={tagFilter} onValueChange={setTagFilter}>
+                                <SelectTrigger className="bg-background w-full">
+                                    <SelectValue placeholder="Tag" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Tags</SelectItem>
+                                    {availableTags.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="bg-background w-full">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos os Status</SelectItem>
+                                    <SelectItem value="concluido">Concluído</SelectItem>
+                                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                                    <SelectItem value="pendente">Pendente</SelectItem>
+                                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={extensionFilter} onValueChange={setExtensionFilter}>
+                                <SelectTrigger className="bg-background w-full">
+                                    <SelectValue placeholder="Extensão" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todas as Extensões</SelectItem>
+                                    <SelectItem value="parcial">Parcial</SelectItem>
+                                    <SelectItem value="completo">Completo</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Button onClick={clearAllFilters} variant="secondary" className="mt-4">
+                                Limpar Filtros
+                            </Button>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+             </div>
+        </div>
+
+        {/* Desktop Filters Grid */}
+        <div className="hidden lg:grid grid-cols-6 gap-4">
                 <div className="relative">
                     <Input 
-                        id="search"
+                        id="search-desktop"
                         placeholder="Buscar..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -293,25 +390,26 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Dashboard de Projetos</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-primary">Dashboard de Projetos</h1>
           <p className="text-muted-foreground mt-1">Visão consolidada e estratégica dos investimentos.</p>
         </div>
       </div>
 
       {/* Key Metrics / Counters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+      {/* Key Metrics / Counters */}
+      <div className="grid grid-cols-6 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="col-span-3 md:col-span-1 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total Investido</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats.totalInvested)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Consolidado dos projetos filtrados</p>
+            <p className="text-xs text-muted-foreground mt-1">Consolidado</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className="col-span-3 md:col-span-1 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Projetos</CardTitle>
             <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
@@ -322,38 +420,54 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Países Alcançados</CardTitle>
+            <CardTitle className="text-sm font-medium">Países</CardTitle>
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.uniqueCountries}</div>
-             <p className="text-xs text-muted-foreground mt-1">Diversidade geográfica</p>
+             <p className="text-xs text-muted-foreground mt-1">Geografia</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estados</CardTitle>
             <MapIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.uniqueStates}</div>
-             <p className="text-xs text-muted-foreground mt-1">Abrangência estadual</p>
+             <p className="text-xs text-muted-foreground mt-1">Nacional</p>
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`col-span-2 md:col-span-1 shadow-sm hover:shadow-md transition-shadow ${!isExpanded ? 'hidden md:block' : ''}`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Municípios</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.uniqueMunicipalities}</div>
-             <p className="text-xs text-muted-foreground mt-1">Impacto local</p>
+             <p className="text-xs text-muted-foreground mt-1">Local</p>
           </CardContent>
         </Card>
+      </div>
+
+       {/* Mobile Toggle Button */}
+      <div className="flex justify-center md:hidden -mt-4 mb-2">
+        <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 gap-1 text-xs text-muted-foreground"
+            onClick={() => setIsExpanded(!isExpanded)}
+        >
+            {isExpanded ? (
+                <>Menos detalhes <ChevronUp className="h-3 w-3" /></>
+            ) : (
+                <>Mais detalhes <ChevronDown className="h-3 w-3" /></>
+            )}
+        </Button>
       </div>
 
       {/* Main Content Grid: Chart + Insights */}
@@ -504,8 +618,8 @@ export default function DashboardPage() {
 
       {/* Project List */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold tracking-tight">Projetos Listados ({filteredProjects.length})</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="text-xl font-bold tracking-tight hidden lg:block">Projetos Listados ({filteredProjects.length})</h2>
+        <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedProjects.map(project => (
                 <Link key={project.id} href={`/projetos/${project.id}`}>
                     <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
@@ -547,11 +661,21 @@ export default function DashboardPage() {
                 </Link>
             ))}
         </div>
+
+        {/* Mobile View Projects Button */}
+        <div className="lg:hidden mt-4">
+            <Link href="/projetos" className="w-full">
+                <Button variant="outline" className="w-full justify-between group">
+                    Ver todos os projetos ({filteredProjects.length})
+                    <LayoutDashboard className="w-4 h-4 ml-2 group-hover:text-primary transition-colors" />
+                </Button>
+            </Link>
+        </div>
       </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
-            <div className="mt-8">
+            <div className="mt-8 hidden lg:block">
                 <Pagination>
                     <PaginationContent>
                         <PaginationItem>

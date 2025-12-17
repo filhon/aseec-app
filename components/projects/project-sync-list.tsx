@@ -100,8 +100,8 @@ export function ProjectSyncList() {
     }
 
     return (
-        <Card>
-            <CardHeader className="pb-3 border-b">
+        <Card className="pb-0">
+            <CardHeader className="border-b">
                 <div className="flex items-center justify-between">
                     <div>
                         <CardTitle>Sincronização Disponível</CardTitle>
@@ -115,6 +115,7 @@ export function ProjectSyncList() {
                 </div>
             </CardHeader>
             <CardContent className="p-0">
+                <div className="hidden md:block">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -189,6 +190,61 @@ export function ProjectSyncList() {
                         ))}
                     </TableBody>
                 </Table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden">
+                    <div className="p-4 border-b bg-muted/5 flex items-center gap-2">
+                         <Checkbox 
+                            checked={selectedIds.size === projects.length && projects.length > 0}
+                            onCheckedChange={toggleAll}
+                            id="select-all-mobile"
+                        />
+                        <label htmlFor="select-all-mobile" className="text-sm font-medium text-muted-foreground cursor-pointer">
+                            Selecionar todos os {projects.length} projetos
+                        </label>
+                    </div>
+                    {projects.map((project) => (
+                        <div key={project.id} className="p-4 border-b last:border-0 flex flex-col gap-3 active:bg-muted/50 transition-colors" onClick={(e) => {
+                             // Allow clicking anywhere to toggle, but prevent double toggle if clicking specific elements?
+                             // Actually, let's keep interactions specific or on main area.
+                        }}>
+                             <div className="flex items-start gap-3">
+                                 <Checkbox 
+                                     checked={selectedIds.has(project.id)} 
+                                     onCheckedChange={() => toggleSelection(project.id)}
+                                     className="mt-1"
+                                 />
+                                 <div className="flex-1 space-y-1.5">
+                                     <div className="flex items-start justify-between gap-2">
+                                         <span className="font-medium text-sm leading-tight text-foreground">{project.description}</span>
+                                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] h-5 px-1.5 shrink-0">Novo</Badge>
+                                     </div>
+                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                         <span className="bg-muted px-1.5 py-0.5 rounded">Code: {project.costCenterCode}</span>
+                                     </div>
+                                 </div>
+                             </div>
+                             
+                             <div className="ml-7 grid grid-cols-2 gap-2 pt-1">
+                                  <div className="flex items-center gap-2">
+                                       <Avatar className="h-6 w-6">
+                                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                                {project.managerName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                       </Avatar>
+                                       <span className="text-xs text-muted-foreground truncate">{project.managerName}</span>
+                                  </div>
+                                  <div className="flex items-center justify-end gap-1.5 text-right">
+                                       <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                                       <span className="text-sm font-semibold">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(project.approvedValue)}
+                                       </span>
+                                  </div>
+                             </div>
+                        </div>
+                    ))}
+                </div>
                 
                 <div className="p-4 bg-muted/20 border-t flex justify-between items-center">
                     <div className="text-sm text-muted-foreground">

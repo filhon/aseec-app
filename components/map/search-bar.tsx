@@ -32,7 +32,7 @@ export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: Se
         type="button"
         variant="secondary" 
         size="icon" 
-        className="shadow-md" 
+        className="shadow-md hidden sm:inline-flex" 
         onClick={onMenuClick}
       >
         <Menu className="h-4 w-4" />
@@ -49,7 +49,7 @@ export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: Se
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-primary"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary"
             onClick={onNearMeClick}
             title="Próximo a mim"
         >

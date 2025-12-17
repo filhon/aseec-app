@@ -31,7 +31,7 @@ export function FloatingChatTrigger() {
       <SheetTrigger asChild>
         <Button
           size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 animate-in fade-in zoom-in duration-300 hover:scale-110 transition-transform bg-primary text-primary-foreground border-2 border-white/20"
+          className="fixed bottom-24 sm:bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 animate-in fade-in zoom-in duration-300 hover:scale-110 transition-transform bg-primary text-primary-foreground border-2 border-white/20"
         >
           <Sparkles className="h-6 w-6" />
           <span className="sr-only">Abrir aseecIA</span>

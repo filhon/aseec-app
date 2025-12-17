@@ -91,12 +91,12 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
     }
 
     return (
-        <Card className="mb-6 overflow-hidden border-none shadow-sm ring-1 ring-border/50">
+        <Card className="mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-primary/50">
             {/* Header */}
             <CardHeader className="flex flex-row items-start justify-between space-y-0 px-6 pt-0 pb-3">
                 <div className="flex gap-4">
                     <Avatar className="h-10 w-10 border">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.author}`} />
+                        <AvatarImage src="https://github.com/shadcn.png" />
                         <AvatarFallback>{post.author[0]}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
@@ -208,7 +208,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                 {comments.map((comment) => (
                                     <div key={comment.id} className="flex gap-3 text-sm group">
                                         <Avatar className="h-8 w-8 shrink-0">
-                                            <AvatarImage src={comment.avatar} />
+                                            <AvatarImage src="https://github.com/shadcn.png" />
                                             <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-1 bg-muted/30 p-3 rounded-md rounded-tl-none">
@@ -225,6 +225,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                         
                         <div className="flex gap-3 items-end">
                             <Avatar className="h-8 w-8 shrink-0">
+                                <AvatarImage src="https://github.com/shadcn.png" />
                                 <AvatarFallback className="bg-primary/10 text-primary text-xs">EU</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 relative">

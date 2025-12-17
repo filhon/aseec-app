@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Edit2, Plus, Copy, RefreshCw, X } from "lucide-react"
+import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check } from "lucide-react"
 import { toast } from "sonner" // Assuming sonner is installed as per list_dir
 
 // --- Mock Data & Types ---
@@ -83,6 +83,7 @@ export default function SettingsPage() {
   // Invite Code State
   const [inviteCode, setInviteCode] = useState("")
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
 
   // Content Management State
   const [newCategory, setNewCategory] = useState("")
@@ -99,7 +100,9 @@ export default function SettingsPage() {
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode)
+    setIsCopied(true)
     toast.success("Código copiado!")
+    setTimeout(() => setIsCopied(false), 2000)
   }
 
   const handleDeleteUser = (id: string) => {
@@ -152,10 +155,10 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="container mx-auto py-10 space-y-8">
+    <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
+          <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">Configurações</h2>
           <p className="text-muted-foreground">
             Gerencie usuários, permissões e conteúdos do sistema.
           </p>
@@ -171,7 +174,7 @@ export default function SettingsPage() {
         {/* --- USERS TAB --- */}
         <TabsContent value="users" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
               <div className="space-y-1">
                 <CardTitle>Gerenciamento de Usuários</CardTitle>
                 <CardDescription>
@@ -180,9 +183,10 @@ export default function SettingsPage() {
               </div>
               <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={generateInviteCode}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Usuário
+                  <Button onClick={generateInviteCode} size="sm" className="w-auto gap-1 sm:gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="sm:hidden">Novo</span>
+                    <span className="hidden sm:inline">Novo Usuário</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -200,9 +204,14 @@ export default function SettingsPage() {
                         className="text-center text-2xl font-mono tracking-widest uppercase"
                       />
                     </div>
-                    <Button type="submit" size="sm" className="px-3" onClick={handleCopyCode}>
+                    <Button 
+                        type="submit" 
+                        size="sm" 
+                        className={`px-3 transition-all ${isCopied ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
+                        onClick={handleCopyCode}
+                    >
                       <span className="sr-only">Copiar</span>
-                      <Copy className="h-4 w-4" />
+                      {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                     <Button variant="outline" size="sm" className="px-3" onClick={generateInviteCode}>
                         <RefreshCw className="h-4 w-4" />
@@ -217,55 +226,103 @@ export default function SettingsPage() {
               </Dialog>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Permissão</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.status === "active" ? "default" : "secondary"}>
-                          {user.status === "active" ? "Ativo" : "Pendente"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          defaultValue={user.role}
-                          onValueChange={(value) => handleRoleChange(user.id, value as Role)}
-                        >
-                          <SelectTrigger className="w-[130px] h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table className="min-w-[600px]">
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Permissão</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    </TableHeader>
+                    <TableBody>
+                    {users.map((user) => (
+                        <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                            <Badge variant={user.status === "active" ? "default" : "secondary"}>
+                            {user.status === "active" ? "Ativo" : "Pendente"}
+                            </Badge>
+                        </TableCell>
+                        <TableCell>
+                            <Select
+                            defaultValue={user.role}
+                            onValueChange={(value) => handleRoleChange(user.id, value as Role)}
+                            >
+                            <SelectTrigger className="w-[130px] h-8">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="editor">Editor</SelectItem>
+                                <SelectItem value="user">User</SelectItem>
+                            </SelectContent>
+                            </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                            onClick={() => handleDeleteUser(user.id)}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden space-y-4">
+                {users.map((user) => (
+                    <div key={user.id} className="border rounded-lg p-4 bg-card text-card-foreground shadow-sm space-y-3">
+                        <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0">
+                                <p className="font-medium truncate">{user.name}</p>
+                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                            </div>
+                            <Badge variant={user.status === "active" ? "default" : "secondary"} className="shrink-0">
+                                {user.status === "active" ? "Ativo" : "Pendente"}
+                            </Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-3 border-t gap-2">
+                             <div className="flex items-center gap-2 flex-1">
+                                <span className="text-sm font-medium text-muted-foreground shrink-0">Role:</span>
+                                <Select
+                                    defaultValue={user.role}
+                                    onValueChange={(value) => handleRoleChange(user.id, value as Role)}
+                                >
+                                    <SelectTrigger className="h-8 w-full max-w-[130px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="editor">Editor</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                             </div>
+                             
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
+                                onClick={() => handleDeleteUser(user.id)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

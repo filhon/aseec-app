@@ -5,7 +5,7 @@ import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera } from "lucide-react"
+import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -74,6 +74,7 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
   const router = useRouter()
   const resolvedParams = use(params)
   const slug = resolvedParams.entidade_id
+  const [kpiExpanded, setKpiExpanded] = useState(false)
 
   // Find the entity name from the slug
   const entityName = useMemo(() => {
@@ -220,7 +221,18 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        {/* Mobile Toggle Button */}
+        <div className="lg:hidden col-span-1 flex justify-center -my-2">
+           <Button variant="ghost" size="sm" onClick={() => setKpiExpanded(!kpiExpanded)} className="text-muted-foreground w-full">
+                {kpiExpanded ? (
+                    <>Ver menos <ChevronUp className="ml-2 h-4 w-4" /></>
+                ) : (
+                    <>Ver mais indicadores <ChevronDown className="ml-2 h-4 w-4" /></>
+                )}
+           </Button>
+        </div>
+
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
                 <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
@@ -231,7 +243,7 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
             </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Alcance Geográfico</CardTitle>
                 <Globe className="h-4 w-4 text-muted-foreground" />

@@ -54,9 +54,9 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="space-y-1">
                     <CardTitle className="flex items-center gap-2">
-                        Próximas Receitas e Despesas
+                        Receitas e Despesas
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="hidden md:block">
                         Lista detalhada de movimentações previstas para o período.
                     </CardDescription>
                 </div>
@@ -69,55 +69,102 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                 </Tabs>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead>Centro de Custo</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {currentTransactions.length > 0 ? (
-                            currentTransactions.map((t) => (
-                                <TableRow key={t.id}>
-                                    <TableCell className="font-medium">
-                                        {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
-                                    </TableCell>
-                                    <TableCell>{t.description}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline">{getCostCenterName(t.costCenterId)}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        {t.type === 'revenue' ? (
-                                            <div className="flex items-center gap-1 text-green-600">
-                                                <ArrowUpCircle className="h-4 w-4" />
-                                                <span>Receita</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-1 text-red-600">
-                                                <ArrowDownCircle className="h-4 w-4" />
-                                                <span>Despesa</span>
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className={`text-right font-bold ${t.type === 'revenue' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {t.type === 'expense' ? '- ' : '+ '}
-                                        {formatCurrency(t.amount)}
+                {/* Desktop View */}
+                <div className="hidden md:block">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead>Centro de Custo</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead className="text-right">Valor</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {currentTransactions.length > 0 ? (
+                                currentTransactions.map((t) => (
+                                    <TableRow key={t.id}>
+                                        <TableCell className="font-medium">
+                                            {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
+                                        </TableCell>
+                                        <TableCell>{t.description}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{getCostCenterName(t.costCenterId)}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {t.type === 'revenue' ? (
+                                                <div className="flex items-center gap-1 text-green-600">
+                                                    <ArrowUpCircle className="h-4 w-4" />
+                                                    <span>Receita</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 text-red-600">
+                                                    <ArrowDownCircle className="h-4 w-4" />
+                                                    <span>Despesa</span>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className={`text-right font-bold ${t.type === 'revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                                            {t.type === 'expense' ? '- ' : '+ '}
+                                            {formatCurrency(t.amount)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                        Nenhuma transação encontrada para este período.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                    Nenhuma transação encontrada para este período.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                    {currentTransactions.length > 0 ? (
+                        currentTransactions.map((t) => (
+                            <div key={t.id} className="flex flex-col gap-3 rounded-lg border p-4 shadow-sm bg-card">
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
+                                        </span>
+                                        <p className="font-medium text-sm line-clamp-2">{t.description}</p>
+                                    </div>
+                                    <div className={`font-bold text-sm whitespace-nowrap ${t.type === 'revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                                        {t.type === 'expense' ? '- ' : '+ '}
+                                        {formatCurrency(t.amount)}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex justify-between items-center pt-2 border-t mt-1">
+                                    <Badge variant="secondary" className="text-[10px] font-normal px-2 py-0.5 h-auto">
+                                        {getCostCenterName(t.costCenterId)}
+                                    </Badge>
+                                    
+                                    {t.type === 'revenue' ? (
+                                        <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
+                                            <ArrowUpCircle className="h-3.5 w-3.5" />
+                                            <span>Receita</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-xs text-red-600 font-medium">
+                                            <ArrowDownCircle className="h-3.5 w-3.5" />
+                                            <span>Despesa</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                         <div className="text-center py-8 text-muted-foreground text-sm">
+                            Nenhuma transação encontrada.
+                        </div>
+                    )}
+                </div>
 
                 {/* Pagination */}
                 {/* Pagination */}

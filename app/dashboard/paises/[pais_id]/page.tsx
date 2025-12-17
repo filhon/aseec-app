@@ -1,11 +1,26 @@
 "use client"
 
-import { useMemo, use, useEffect } from "react"
+import { useMemo, use, useEffect, useState } from "react"
 import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard } from "lucide-react"
+import { ArrowLeft, Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard, ChevronDown, ChevronUp } from "lucide-react"
+
+// ... (existing helper functions usually preserved, but here I am targeting imports first. 
+// However, the tool replaces chunks. If I target the top file imports, I should be careful not to overwrite helpers if they are in the range.
+// The helpers are lines 14-68. Imports are 1-12.
+// I will split this into 2 chunks or 1 big chunk if contiguous, but they are far apart.
+// I will do imports first, then the component logic.)
+// Actually, I can allow multiple chunks.
+
+// Chunk 1: Imports
+// Chunk 2: Component State
+// Chunk 3: The Cards Logic
+
+// Let's configure the chunks.
+
+
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -71,6 +86,7 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
   const router = useRouter()
   const resolvedParams = use(params)
   const slug = resolvedParams.pais_id
+  const [kpiExpanded, setKpiExpanded] = useState(false)
 
   // Find the country name from the slug
   // We iterate through projects to find a matching slug
@@ -192,7 +208,18 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        {/* Mobile Toggle Button */}
+        <div className="lg:hidden col-span-1 flex justify-center -my-2">
+           <Button variant="ghost" size="sm" onClick={() => setKpiExpanded(!kpiExpanded)} className="text-muted-foreground w-full">
+                {kpiExpanded ? (
+                    <>Ver menos <ChevronUp className="ml-2 h-4 w-4" /></>
+                ) : (
+                    <>Ver mais indicadores <ChevronDown className="ml-2 h-4 w-4" /></>
+                )}
+           </Button>
+        </div>
+
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
                 <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
@@ -203,7 +230,7 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
             </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Abrangência</CardTitle>
                 <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -214,7 +241,7 @@ export default function CountryPage({ params }: { params: Promise<{ pais_id: str
             </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Maior Parceiro</CardTitle>
                 <Building2 className="h-4 w-4 text-muted-foreground" />

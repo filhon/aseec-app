@@ -108,45 +108,38 @@ export default function FeedPage() {
   );
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)] overflow-hidden">
+    // Removed fixed height/overflow-hidden for mobile to allow natural scroll. Re-enabled for desktop to keep sidebar layout.
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden">
         {/* Desktop Sidebar */}
         <div className="hidden md:block w-64 border-r bg-muted/10 p-4 overflow-y-auto">
              <SidebarContent />
         </div>
 
-        {/* Mobile Header/Filter Trigger */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b">
-            <span className="font-semibold text-sm">Filtros & Navegação</span>
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                        <Filter className="w-4 h-4" /> Filtros
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left">
-                    <SheetHeader>
-                        <SheetTitle>Navegação do Feed</SheetTitle>
-                    </SheetHeader>
-                    <div className="pt-6">
-                        <SidebarContent />
-                    </div>
-                </SheetContent>
-            </Sheet>
-        </div>
-
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex-none p-4 md:p-6 pb-2">
-                <div className="flex items-center gap-2 mb-4">
+        <div className="flex-1 flex flex-col min-w-0 container mx-auto py-6 lg:py-10">
+            <div className="flex-none pb-4">
+                <div className="flex items-center justify-between gap-2 mb-4">
 
                     <div>
-                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Feed de Notícias</h1>
+                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
+                            Feed de Notícias
+                         </h1>
                          <p className="text-muted-foreground hidden md:block">
                              {viewMode === 'all' 
                                 ? "Acompanhe todas as atualizações de todos os projetos em tempo real." 
                                 : "Atualizações dos seus projetos favoritos."}
                          </p>
                     </div>
+
+                    {/* Mobile Favorite Toggle */}
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="md:hidden"
+                        onClick={() => setViewMode(viewMode === 'all' ? 'favorites' : 'all')}
+                    >
+                        <Heart className={cn("w-6 h-6 text-muted-foreground", viewMode === 'favorites' && "fill-red-500 text-red-500")} />
+                    </Button>
                 </div>
                 
                 {activeFilterId && (
@@ -164,7 +157,7 @@ export default function FeedPage() {
                 )}
             </div>
 
-            <div className="flex-1 min-h-0 px-4 md:px-6 pb-6">
+            <div className="flex-1 min-h-0 pb-6">
                  {/* 
                     Key is important to force re-render when filters change 
                     so the component resets its scroll or internal state if needed 

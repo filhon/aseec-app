@@ -41,18 +41,18 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-auto py-2 w-full justify-start px-2 gap-2 text-left hover:bg-muted/50 whitespace-normal" suppressHydrationWarning>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full lg:h-auto lg:w-full lg:rounded-md lg:justify-start lg:px-2 lg:py-2 lg:gap-2 lg:text-left hover:bg-muted/50" suppressHydrationWarning>
           <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>{user.initials}</AvatarFallback>
           </Avatar>
-          <div className="flex flex-col flex-1 min-w-0">
+          <div className="hidden lg:flex flex-col flex-1 min-w-0">
              {/* Name: Break lines if needed, do not overflow */}
             <span className="font-semibold text-sm leading-tight break-words">{user.name}</span>
              {/* Email: Smaller font, truncate if too long to prevent breaking layout too much, or break-all if preferred universally visible */}
             <span className="text-xs text-muted-foreground truncate w-full">{user.email}</span>
           </div>
-          <ChevronsUpDown className="ml-auto h-4 w-4 text-muted-foreground opacity-50 shrink-0" />
+          <ChevronsUpDown className="ml-auto h-4 w-4 text-muted-foreground opacity-50 shrink-0 hidden lg:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 z-[1001]" align="end" forceMount>
