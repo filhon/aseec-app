@@ -87,7 +87,6 @@ export function ProjectsPieChart({ projects, onCategoryClick, selectedCategory }
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              // @ts-expect-error activeIndex is a valid prop in Recharts but missing in types
               activeIndex={activeIndex}
               activeShape={renderActiveShape}
               data={data}

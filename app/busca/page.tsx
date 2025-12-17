@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FolderOpen, MapPin, Building2, User, ChevronRight, Tag as TagIcon, CreditCard, ThumbsUp, UserCheck, X } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, Suspense } from "react"
 
 
 // Mock Data Types (Same as before)
@@ -153,7 +153,7 @@ const thankedLabels: Record<string, string> = {
 };
 
 
-export default function SearchPage() {
+function SearchContent() {
     const searchParams = useSearchParams()
     const initialQuery = searchParams.get('q') || ''
     
@@ -420,5 +420,13 @@ export default function SearchPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<div className="container py-8 text-center text-muted-foreground">Carregando busca...</div>}>
+            <SearchContent />
+        </Suspense>
     )
 }
