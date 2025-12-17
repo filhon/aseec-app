@@ -13,7 +13,7 @@ interface FavoriteButtonProps {
   title: string;
   subtitle?: string;
   image?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   className?: string;
   variant?: "icon" | "full";
 }

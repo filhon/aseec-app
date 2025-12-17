@@ -2,20 +2,15 @@
 
 import * as React from "react"
 import {
-  Calculator,
-  Calendar,
   CreditCard,
   Settings,
-  Smile,
-  User,
   LayoutDashboard,
   FolderOpen,
   Map,
   Sparkles,
   MapPin,
   Building2,
-  Users,
-  Search
+  Users
 } from "lucide-react"
 
 import {

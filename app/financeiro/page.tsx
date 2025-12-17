@@ -128,7 +128,7 @@ export default function FinanceiroPage() {
             let firstNegativeDate = null
             
             // Track installments detail
-            const installmentDetails: any[] = []
+            const installmentDetails: { number: number; date: string; amount: number; balanceAfter: number }[] = []
 
             installmentDates.forEach((payDate, idx) => {
                  let balanceAfter = 0;

@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { useAdmin } from "@/hooks/use-admin"
 import { ProjectSyncList } from "@/components/projects/project-sync-list"
 import { NewProjectForm } from "@/components/projects/new-project-form"
-import { Button } from "@/components/ui/button"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, RefreshCw, Plus } from "lucide-react"
+import { RefreshCw, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 export default function NewProjectPage() {

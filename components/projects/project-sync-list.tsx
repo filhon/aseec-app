@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Loader2, RefreshCw, ArrowRight, CalendarDays, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -205,7 +205,7 @@ export function ProjectSyncList() {
                         </label>
                     </div>
                     {projects.map((project) => (
-                        <div key={project.id} className="p-4 border-b last:border-0 flex flex-col gap-3 active:bg-muted/50 transition-colors" onClick={(e) => {
+                        <div key={project.id} className="p-4 border-b last:border-0 flex flex-col gap-3 active:bg-muted/50 transition-colors" onClick={() => {
                              // Allow clicking anywhere to toggle, but prevent double toggle if clicking specific elements?
                              // Actually, let's keep interactions specific or on main area.
                         }}>

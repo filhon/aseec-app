@@ -4,11 +4,9 @@ import { useFavorites, FavoriteItem, FavoriteType } from "@/hooks/use-favorites"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FavoriteButton } from "@/components/ui/favorite-button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 import Link from "next/link";
 import { MapPin, Building2, Globe, FolderHeart, ChevronDown, ChevronUp, ExternalLink, Heart } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 
 export default function FavoritesPage() {
   const { items, getItemsByType } = useFavorites();
@@ -55,7 +53,6 @@ export default function FavoritesPage() {
                 icon={FolderHeart} 
                 items={projects} 
                 description="Projetos missionários e sociais que você acompanha."
-                linkPrefix="/projetos"
             />
             
             <FavoritesSection 
@@ -63,7 +60,6 @@ export default function FavoritesPage() {
                 icon={Globe} 
                 items={countries} 
                 description="Países com atuação missionária."
-                linkPrefix="/dashboard/paises"
             />
 
             <FavoritesSection 
@@ -71,12 +67,6 @@ export default function FavoritesPage() {
                 icon={Building2} 
                 items={entities} 
                 description="Igrejas, ONGs e instituições parceiras."
-                linkPrefix="/cadastros/entidades" // This assumes a generic list or specific ID route
-                // If the detail page is /dashboard/entidades/[id] or /cadastros/entidades/[id], verify prefix.
-                // Based on previous reads, the dashboard entity page is at /dashboard/entidades/[id].
-                // Let's force the prefix logic inside the component if needed, or stick to this.
-                // The EntityPage path read was `app/dashboard/entidades/[entidade_id]/page.tsx`.
-                // So the link should probably be `/dashboard/entidades`.
             />
 
             <FavoritesSection 
@@ -84,7 +74,6 @@ export default function FavoritesPage() {
                 icon={MapPin} 
                 items={addresses} 
                 description="Locais específicos salvos."
-                linkPrefix="#"
             />
         </div>
       )}
@@ -96,14 +85,12 @@ function FavoritesSection({
     title, 
     icon: Icon, 
     items, 
-    description,
-    linkPrefix 
+    description
 }: { 
     title: string; 
-    icon: any; 
+    icon: React.ElementType; 
     items: FavoriteItem[]; 
     description?: string;
-    linkPrefix: string;
 }) {
     const [expanded, setExpanded] = useState(false);
     

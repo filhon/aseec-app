@@ -2,7 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Filter, ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -96,7 +96,7 @@ export interface AdvancedFiltersState {
 
 interface SearchFiltersProps {
     filters: AdvancedFiltersState
-    onFilterChange: (category: keyof AdvancedFiltersState, value: any, checked?: boolean) => void 
+    onFilterChange: (category: keyof AdvancedFiltersState, value: string | number | number[] | string[], checked?: boolean) => void 
     counts?: Record<string, Record<string, number>>
     hasFinancialData?: boolean // New prop
 }

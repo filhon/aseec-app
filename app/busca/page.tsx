@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { FolderOpen, MapPin, Building2, User, ChevronRight, Tag as TagIcon, CreditCard, ThumbsUp, UserCheck, X } from "lucide-react"
 import { useState, useMemo } from "react"
-import { cn } from "@/lib/utils"
+
 
 // Mock Data Types (Same as before)
 interface SearchResult {
@@ -218,9 +218,9 @@ export default function SearchPage() {
          return baseSet.some(item => item.financialValue !== undefined);
     }, [initialQuery]);
 
-    const handleFilterChange = (category: keyof AdvancedFiltersState, value: any, checked?: boolean) => {
+    const handleFilterChange = (category: keyof AdvancedFiltersState, value: string | number | number[] | string[], checked?: boolean) => {
         if (category === 'financialRange') {
-             setFilters(prev => ({ ...prev, financialRange: value }))
+             setFilters(prev => ({ ...prev, financialRange: value as [number, number] }))
         } else {
              setFilters(prev => {
                 const current = prev[category] as string[]
@@ -232,7 +232,7 @@ export default function SearchPage() {
         }
     }
 
-    const removeFilter = (category: keyof AdvancedFiltersState, value: any) => {
+    const removeFilter = (category: keyof AdvancedFiltersState, value: string | number | number[] | string[]) => {
          handleFilterChange(category, value, false);
     }
 
@@ -277,7 +277,7 @@ export default function SearchPage() {
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight mb-2">Resultados</h1>
                             <p className="text-muted-foreground">
-                                Mostrando resultados para <span className="font-semibold">"{initialQuery}"</span>
+                                Mostrando resultados para <span className="font-semibold">&quot;{initialQuery}&quot;</span>
                                 {filteredResults.length > 0 ? ` (${filteredResults.length} encontrados)` : ''}
                             </p>
                         </div>

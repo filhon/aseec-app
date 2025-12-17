@@ -5,7 +5,7 @@ import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard, ChevronDown, ChevronUp } from "lucide-react"
+import { Globe, MapPin, Users, TrendingUp, Building2, LayoutDashboard, ChevronDown, ChevronUp } from "lucide-react"
 
 // ... (existing helper functions usually preserved, but here I am targeting imports first. 
 // However, the tool replaces chunks. If I target the top file imports, I should be careful not to overwrite helpers if they are in the range.

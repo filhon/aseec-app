@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Loader2, MapPin, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+
 import { cn } from "@/lib/utils"
  
 
@@ -28,6 +28,7 @@ interface AddressAutocompleteProps {
 
 export function AddressAutocomplete({ onAddressSelect, defaultValue = "", className }: AddressAutocompleteProps) {
     const [query, setQuery] = React.useState(defaultValue)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [results, setResults] = React.useState<any[]>([])
     const [loading, setLoading] = React.useState(false)
     const [open, setOpen] = React.useState(false)
@@ -83,6 +84,7 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSelect = (item: any) => {
         const address = item.address
 

@@ -101,9 +101,7 @@ export default function DashboardPage() {
   }, [filteredProjects, currentPage])
 
   // Reset page when filters change
-  useMemo(() => {
-    setCurrentPage(1)
-  }, [filteredProjects.length])
+
   
   // --- Dynamic Counters ---
   const stats = useMemo(() => {
@@ -184,12 +182,12 @@ export default function DashboardPage() {
 
   const removeFilter = (type: string) => {
     switch (type) {
-      case 'search': setSearchTerm(""); break;
-      case 'year': setYearFilter("all"); break;
-      case 'category': setCategoryFilter("all"); break;
-      case 'tag': setTagFilter("all"); break;
-      case 'status': setStatusFilter("all"); break;
-      case 'extension': setExtensionFilter("all"); break;
+      case 'search': setSearchTerm(""); setCurrentPage(1); break;
+      case 'year': setYearFilter("all"); setCurrentPage(1); break;
+      case 'category': setCategoryFilter("all"); setCurrentPage(1); break;
+      case 'tag': setTagFilter("all"); setCurrentPage(1); break;
+      case 'status': setStatusFilter("all"); setCurrentPage(1); break;
+      case 'extension': setExtensionFilter("all"); setCurrentPage(1); break;
     }
   }
 
@@ -199,7 +197,13 @@ export default function DashboardPage() {
     setCategoryFilter("all")
     setTagFilter("all")
     setStatusFilter("all")
+    setSearchTerm("")
+    setYearFilter("all")
+    setCategoryFilter("all")
+    setTagFilter("all")
+    setStatusFilter("all")
     setExtensionFilter("all")
+    setCurrentPage(1)
   }
 
   return (
@@ -215,7 +219,7 @@ export default function DashboardPage() {
                         id="search-mobile"
                         placeholder="Buscar..." 
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         className="bg-background pl-10 w-full"
                     />
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
@@ -232,7 +236,7 @@ export default function DashboardPage() {
                             <SheetDescription>Refine a visualização dos projetos.</SheetDescription>
                         </SheetHeader>
                         <div className="flex flex-col gap-4 mt-6 px-4">
-                            <Select value={yearFilter} onValueChange={setYearFilter}>
+                            <Select value={yearFilter} onValueChange={(v) => { setYearFilter(v); setCurrentPage(1); }}>
                                 <SelectTrigger className="bg-background w-full">
                                     <SelectValue placeholder="Ano" />
                                 </SelectTrigger>
@@ -242,7 +246,7 @@ export default function DashboardPage() {
                                 </SelectContent>
                             </Select>
 
-                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
                                 <SelectTrigger className="bg-background w-full">
                                     <SelectValue placeholder="Categoria" />
                                 </SelectTrigger>
@@ -252,7 +256,7 @@ export default function DashboardPage() {
                                 </SelectContent>
                             </Select>
 
-                            <Select value={tagFilter} onValueChange={setTagFilter}>
+                            <Select value={tagFilter} onValueChange={(v) => { setTagFilter(v); setCurrentPage(1); }}>
                                 <SelectTrigger className="bg-background w-full">
                                     <SelectValue placeholder="Tag" />
                                 </SelectTrigger>
@@ -262,7 +266,7 @@ export default function DashboardPage() {
                                 </SelectContent>
                             </Select>
 
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                                 <SelectTrigger className="bg-background w-full">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
@@ -275,7 +279,7 @@ export default function DashboardPage() {
                                 </SelectContent>
                             </Select>
 
-                            <Select value={extensionFilter} onValueChange={setExtensionFilter}>
+                            <Select value={extensionFilter} onValueChange={(v) => { setExtensionFilter(v); setCurrentPage(1); }}>
                                 <SelectTrigger className="bg-background w-full">
                                     <SelectValue placeholder="Extensão" />
                                 </SelectTrigger>
@@ -308,7 +312,7 @@ export default function DashboardPage() {
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
 
-                <Select value={yearFilter} onValueChange={setYearFilter}>
+                <Select value={yearFilter} onValueChange={(v) => { setYearFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="bg-background w-full">
                         <SelectValue placeholder="Ano" />
                     </SelectTrigger>
@@ -318,7 +322,7 @@ export default function DashboardPage() {
                     </SelectContent>
                 </Select>
 
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="bg-background w-full">
                         <SelectValue placeholder="Categoria" />
                     </SelectTrigger>
@@ -328,7 +332,7 @@ export default function DashboardPage() {
                     </SelectContent>
                 </Select>
 
-                <Select value={tagFilter} onValueChange={setTagFilter}>
+                <Select value={tagFilter} onValueChange={(v) => { setTagFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="bg-background w-full">
                         <SelectValue placeholder="Tag" />
                     </SelectTrigger>
@@ -338,7 +342,7 @@ export default function DashboardPage() {
                     </SelectContent>
                 </Select>
 
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="bg-background w-full">
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
@@ -351,7 +355,7 @@ export default function DashboardPage() {
                     </SelectContent>
                 </Select>
 
-                <Select value={extensionFilter} onValueChange={setExtensionFilter}>
+                <Select value={extensionFilter} onValueChange={(v) => { setExtensionFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="bg-background w-full">
                         <SelectValue placeholder="Extensão" />
                     </SelectTrigger>

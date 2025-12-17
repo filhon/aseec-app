@@ -5,14 +5,14 @@ import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
 import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera, ChevronDown, ChevronUp } from "lucide-react"
+import { Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import { FavoriteButton } from "@/components/ui/favorite-button"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { toast } from "sonner"
-import { Input } from "@/components/ui/input"
+
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
@@ -75,6 +75,14 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
   const resolvedParams = use(params)
   const slug = resolvedParams.entidade_id
   const [kpiExpanded, setKpiExpanded] = useState(false)
+  
+  // Icon Upload State
+  const [entityIcon, setEntityIcon] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleIconClick = () => {
+      fileInputRef.current?.click()
+  }
 
   // Find the entity name from the slug
   const entityName = useMemo(() => {
@@ -132,13 +140,7 @@ export default function EntityPage({ params }: { params: Promise<{ entidade_id: 
       )
   }
 
-  // Icon Upload State
-  const [entityIcon, setEntityIcon] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleIconClick = () => {
-      fileInputRef.current?.click()
-  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]

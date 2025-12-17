@@ -24,29 +24,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
+
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 // Keep existing Lucide imports and add CalendarIcon
-import { Loader2, Search, Link as LinkIcon, Check, ChevronsUpDown, CalendarIcon } from "lucide-react"
+import { Loader2, Search, Link as LinkIcon, CalendarIcon } from "lucide-react"
 import { financialService, FinancialProject } from "@/lib/services/financial-service"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 // ... (imports command, popover, etc) - assuming they align
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { countries } from "@/lib/constants/countries"
+
 import { Checkbox } from "@/components/ui/checkbox"
 import { projectTags } from "@/lib/constants/project-tags"
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete"

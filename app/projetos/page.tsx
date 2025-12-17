@@ -94,9 +94,7 @@ export default function ProjectsPage() {
     }, [filteredProjects, currentPage])
 
     // Reset page when filters change
-    useMemo(() => {
-        setCurrentPage(1)
-    }, [filteredProjects.length])
+
     
     // Projects for Chart (excludes category filter so we can see other options)
     const projectsForChart = useMemo(() => {
@@ -125,10 +123,12 @@ export default function ProjectsPage() {
 
     const handlePinClick = (project: ProjectLocation) => {
         setMapFilteredIds(new Set([project.id]))
+        setCurrentPage(1)
     }
 
     const handleClusterClick = (projects: ProjectLocation[]) => {
         setMapFilteredIds(new Set(projects.map(p => p.id)))
+        setCurrentPage(1)
     }
 
     // Map projects Logic: Filter map pins based on the filtered list IDs if possible, or just Show All if no search.
@@ -175,11 +175,11 @@ export default function ProjectsPage() {
                             placeholder="Buscar por projeto, responsável, local..." 
                             className="pl-9 bg-background"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         />
                         {searchTerm && (
                             <button 
-                                onClick={() => setSearchTerm("")}
+                                onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 <X className="h-4 w-4" />
@@ -213,7 +213,7 @@ export default function ProjectsPage() {
                      <ProjectsPieChart 
                         projects={projectsForChart} 
                         selectedCategory={categoryFilter}
-                        onCategoryClick={(category) => setCategoryFilter(category === categoryFilter ? null : category)}
+                        onCategoryClick={(category) => { setCategoryFilter(category === categoryFilter ? null : category); setCurrentPage(1); }}
                      />
                 </div>
 
@@ -238,6 +238,7 @@ export default function ProjectsPage() {
                                 onClick={() => {
                                     setMapFilteredIds(null)
                                     setCategoryFilter(null)
+                                    setCurrentPage(1)
                                 }} 
                                 className="h-8 gap-2"
                             >
@@ -313,7 +314,7 @@ export default function ProjectsPage() {
                          <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
                             <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
                             <p>Nenhum projeto encontrado com os filtros atuais.</p>
-                            <Button variant="link" onClick={() => setSearchTerm("")} className="mt-2 text-primary">
+                            <Button variant="link" onClick={() => { setSearchTerm(""); setCurrentPage(1); }} className="mt-2 text-primary">
                                 Limpar busca
                             </Button>
                         </div>

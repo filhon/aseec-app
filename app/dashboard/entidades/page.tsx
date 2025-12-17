@@ -5,9 +5,9 @@ import { mockDashboardProjects } from "@/components/dashboard/data"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Building2, TrendingUp, LayoutDashboard, Search, X } from "lucide-react"
+import { Building2, TrendingUp, LayoutDashboard, Search, X } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+
 import { FavoriteButton } from "@/components/ui/favorite-button"
 
 // --- Helpers ---
@@ -33,7 +33,7 @@ const slugify = (text: string) => {
 }
 
 export default function EntitiesPage() {
-  const router = useRouter()
+
   const [searchTerm, setSearchTerm] = useState("")
 
   const entitiesData = useMemo(() => {

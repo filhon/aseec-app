@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { 
     Calendar as CalendarIcon, MapPin, DollarSign, Users, Award, 
-    ArrowLeft, Edit2, Save, X, 
-    CheckCircle2, AlertCircle, Tag, AlertTriangle, Globe, User,
+    Edit2, Save, X, 
+    CheckCircle2, AlertCircle, Tag, Globe, User,
     LayoutDashboard, FileText, ChevronDown
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
@@ -45,7 +45,6 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     const [isEditingClass, setIsEditingClass] = useState(false)
     const [isEditingOverview, setIsEditingOverview] = useState(false)
     const [isEditingBasic, setIsEditingBasic] = useState(false)
-    const [isEditingFinance, setIsEditingFinance] = useState(false)
 
     // Forms
     const [classForm, setClassForm] = useState<{
@@ -146,11 +145,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         setIsEditingBasic(false)
     }
 
-    const handleSaveFinance = () => {
-        // Mock save logic for finance - in real app would sync with finance module
-        alert("Em produção, isso sincronizaria com o módulo financeiro e geraria logs.")
-        setIsEditingFinance(false)
-    }
+
 
     // Helper formatter
     const formatDate = (dateString?: string) => {

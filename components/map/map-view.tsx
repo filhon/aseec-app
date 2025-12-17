@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { MapContainer, TileLayer, Marker, ZoomControl, useMap } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet"
 import MarkerClusterGroup from "react-leaflet-cluster"
 import "leaflet/dist/leaflet.css"
 import L from "leaflet"

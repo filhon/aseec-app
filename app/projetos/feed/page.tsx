@@ -2,23 +2,23 @@
 
 import { GlobalProjectUpdates } from "@/components/dashboard/global-project-updates"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Filter, Heart, FolderOpen, Globe, Building2, MapPin, X } from "lucide-react"
-import Link from "next/link"
+import { Heart, X } from "lucide-react"
 import { useState } from "react"
-import { useFavorites, FavoriteItem } from "@/hooks/use-favorites"
+import { useFavorites } from "@/hooks/use-favorites"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+
+import { SidebarContent } from "./sidebar-content"
 
 export default function FeedPage() {
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
   
-  const { items, getItemsByType } = useFavorites();
+  const { getItemsByType } = useFavorites();
   
   // Get favorited items for the sidebar
   const favProjects = getItemsByType('project');
-  const favCountries = getItemsByType('country'); // Could map country ID to projects if needed, but for now filtering by Project ID is safest for the feed logic
+
   
   // Logic to determine which Project IDs to show
   // If viewMode is 'all', show all (pass undefined to GlobalProjectUpdates)
@@ -37,82 +37,20 @@ export default function FeedPage() {
     return favProjects.map(p => p.id);
   };
 
-  const SidebarContent = () => (
-      <div className="space-y-6">
-          <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Visualização</h3>
-              <div className="flex flex-col gap-1">
-                  <Button 
-                      variant={viewMode === 'all' ? "secondary" : "ghost"} 
-                      className="justify-start gap-2"
-                      onClick={() => { setViewMode('all'); setActiveFilterId(null); }}
-                  >
-                      <Filter className="w-4 h-4" /> Todos
-                  </Button>
-                  <Button 
-                      variant={viewMode === 'favorites' ? "secondary" : "ghost"} 
-                      className="justify-start gap-2"
-                      onClick={() => setViewMode('favorites')}
-                  >
-                      <Heart className={cn("w-4 h-4", viewMode === 'favorites' && "fill-current")} /> Favoritos
-                  </Button>
-              </div>
-          </div>
 
-          {viewMode === 'favorites' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-                  {favProjects.length > 0 && (
-                      <div className="space-y-2">
-                          <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                              <FolderOpen className="w-4 h-4" /> Projetos
-                          </h3>
-                          <div className="flex flex-col gap-1 pl-2 border-l">
-                              <Button 
-                                  variant={activeFilterId === null ? "secondary" : "ghost"}
-                                  size="sm"
-                                  className="justify-start h-8 text-xs w-full"
-                                  onClick={() => setActiveFilterId(null)}
-                              >
-                                  Todos os Favoritos
-                              </Button>
-                              {favProjects.map(project => (
-                                  <Button 
-                                      key={project.id}
-                                      variant={activeFilterId === project.id ? "secondary" : "ghost"}
-                                      size="sm"
-                                      className="justify-start h-8 text-xs w-full truncate"
-                                      onClick={() => setActiveFilterId(project.id)}
-                                      title={project.title}
-                                  >
-                                      {project.title}
-                                  </Button>
-                              ))}
-                          </div>
-                      </div>
-                  )}
-
-                  {/* NOTE: Currently GlobalProjectUpdates relies on ProjectID. 
-                      Filtering by Country/Entity would require mapping those IDs to Project IDs.
-                      For this task, we focus on Project grouping as requested directly for the Feed. 
-                      If we want to filter by Country, we'd need to know which projects belong to that country.
-                  */}
-                  
-                  {favProjects.length === 0 && (
-                      <div className="text-sm text-muted-foreground italic px-2">
-                          Você ainda não tem projetos favoritos.
-                      </div>
-                  )}
-              </div>
-          )}
-      </div>
-  );
 
   return (
     // Removed fixed height/overflow-hidden for mobile to allow natural scroll. Re-enabled for desktop to keep sidebar layout.
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden">
         {/* Desktop Sidebar */}
         <div className="hidden md:block w-64 border-r bg-muted/10 p-4 overflow-y-auto">
-             <SidebarContent />
+             <SidebarContent 
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                activeFilterId={activeFilterId}
+                setActiveFilterId={setActiveFilterId}
+                favProjects={favProjects}
+             />
         </div>
 
         {/* Main Content */}

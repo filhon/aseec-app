@@ -8,7 +8,7 @@ export interface FavoriteItem {
   type: FavoriteType;
   title: string;
   subtitle?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   image?: string;
 }
 

@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { ChevronsUpDown, LogOut, Settings, User, Moon, Sun, Laptop, Heart } from "lucide-react"
+import { ChevronsUpDown, LogOut, Moon, Sun, Laptop, Heart } from "lucide-react"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 
