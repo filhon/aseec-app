@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -89,6 +89,119 @@ export default function ResetPasswordPage() {
   }
 
   return (
+    <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold tracking-tight">
+          {isSuccess ? "Senha Atualizada!" : "Nova Senha"}
+        </CardTitle>
+        <CardDescription>
+          {isSuccess 
+            ? "Sua senha foi alterada com sucesso" 
+            : "Digite sua nova senha para acessar o sistema"
+          }
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isSuccess ? (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <CheckCircle2 className="h-16 w-16 text-green-500" />
+            <p className="text-sm text-muted-foreground text-center">
+              Você será redirecionado para o dashboard em instantes...
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="password">Nova Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  disabled={isLoading}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="sr-only">Toggle password visibility</span>
+                </Button>
+              </div>
+            </div>
+            
+            {/* Password Strength Indicator */}
+            {password && (
+              <div className="space-y-2">
+                <div className="flex h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div 
+                    className={cn(
+                      "h-full transition-all duration-300 ease-in-out",
+                      strength === 0 && "w-0",
+                      strength === 1 && "w-1/4 bg-red-500",
+                      strength === 2 && "w-2/4 bg-orange-500",
+                      strength === 3 && "w-3/4 bg-yellow-500",
+                      strength === 4 && "w-full bg-green-500"
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {strength < 2 && "Senha fraca"}
+                  {strength === 2 && "Senha média"}
+                  {strength === 3 && "Senha boa"}
+                  {strength === 4 && "Senha forte"}
+                </p>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirmar Senha</Label>
+              <Input
+                id="confirm-password"
+                placeholder="••••••••"
+                type={showPassword ? "text" : "password"}
+                autoCapitalize="none"
+                autoComplete="new-password"
+                disabled={isLoading}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-xs text-red-500">As senhas não coincidem</p>
+              )}
+            </div>
+
+            <Button disabled={isLoading || password !== confirmPassword}>
+              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              Atualizar Senha
+            </Button>
+          </form>
+        )}
+      </CardContent>
+      <CardFooter>
+        <Button variant="link" className="w-full" asChild>
+          <Link href="/login">Voltar para login</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
     <div className="container relative flex h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0 bg-muted/40">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
         <div className="absolute inset-0 bg-zinc-900" />
@@ -134,114 +247,15 @@ export default function ResetPasswordPage() {
             />
           </div>
 
-          <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold tracking-tight">
-                {isSuccess ? "Senha Atualizada!" : "Nova Senha"}
-              </CardTitle>
-              <CardDescription>
-                {isSuccess 
-                  ? "Sua senha foi alterada com sucesso" 
-                  : "Digite sua nova senha para acessar o sistema"
-                }
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isSuccess ? (
-                <div className="flex flex-col items-center gap-4 py-4">
-                  <CheckCircle2 className="h-16 w-16 text-green-500" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Você será redirecionado para o dashboard em instantes...
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={onSubmit} className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Nova Senha</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        placeholder="••••••••"
-                        type={showPassword ? "text" : "password"}
-                        autoCapitalize="none"
-                        autoComplete="new-password"
-                        disabled={isLoading}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span className="sr-only">Toggle password visibility</span>
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Password Strength Indicator */}
-                  {password && (
-                    <div className="space-y-2">
-                      <div className="flex h-2 w-full overflow-hidden rounded-full bg-secondary">
-                        <div 
-                          className={cn(
-                            "h-full transition-all duration-300 ease-in-out",
-                            strength === 0 && "w-0",
-                            strength === 1 && "w-1/4 bg-red-500",
-                            strength === 2 && "w-2/4 bg-orange-500",
-                            strength === 3 && "w-3/4 bg-yellow-500",
-                            strength === 4 && "w-full bg-green-500"
-                          )}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {strength < 2 && "Senha fraca"}
-                        {strength === 2 && "Senha média"}
-                        {strength === 3 && "Senha boa"}
-                        {strength === 4 && "Senha forte"}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                    <Input
-                      id="confirm-password"
-                      placeholder="••••••••"
-                      type={showPassword ? "text" : "password"}
-                      autoCapitalize="none"
-                      autoComplete="new-password"
-                      disabled={isLoading}
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                    {confirmPassword && password !== confirmPassword && (
-                      <p className="text-xs text-red-500">As senhas não coincidem</p>
-                    )}
-                  </div>
-
-                  <Button disabled={isLoading || password !== confirmPassword}>
-                    {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
-                    Atualizar Senha
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button variant="link" className="w-full" asChild>
-                <Link href="/login">Voltar para login</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+          <Suspense fallback={
+            <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
+              <CardContent className="flex items-center justify-center py-8">
+                <Icons.spinner className="h-6 w-6 animate-spin" />
+              </CardContent>
+            </Card>
+          }>
+            <ResetPasswordForm />
+          </Suspense>
 
         </div>
       </div>

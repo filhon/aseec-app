@@ -118,7 +118,7 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
   };
 
   // Mock History Data
-  const [history, setHistory] = useState<ChatHistoryItem[]>([
+  const [history] = useState<ChatHistoryItem[]>([
       { id: "1", title: "Análise de Riscos - Projeto A", date: "Hoje", preview: "Quais são os riscos críticos..." },
       { id: "2", title: "Resumo Financeiro", date: "Ontem", preview: "Me dê um resumo do saldo..." },
       { id: "3", title: "Ideias para Expansão", date: "15/12", preview: "Liste ideias para expandir..." },
