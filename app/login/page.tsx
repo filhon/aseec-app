@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import Image from "next/image"
-
-
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -18,9 +16,40 @@ import { InviteCodeForm } from "@/components/auth/invite-code-form"
 import { SignUpForm } from "@/components/auth/signup-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { createClient } from "@/lib/supabase/client"
+import { Icons } from "@/components/icons"
+import { toast } from "sonner"
 
 export default function AuthenticationPage() {
   const [view, setView] = useState<"login" | "invite" | "forgot_password" | "register">("login")
+  const [inviteCode, setInviteCode] = useState<string>("")
+  const [inviteCodeId, setInviteCodeId] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
+
+  const handleInviteSuccess = (code: string, codeId: string) => {
+    setInviteCode(code)
+    setInviteCodeId(codeId)
+    setView("register")
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/configuracoes`,
+    })
+
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.")
+    }
+
+    setIsLoading(false)
+  }
 
   return (
     <div className="container relative flex h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0 bg-muted/40">
@@ -103,7 +132,7 @@ export default function AuthenticationPage() {
               <CardContent>
                 <InviteCodeForm 
                   onBack={() => setView("login")} 
-                  onSuccess={() => setView("register")}
+                  onSuccess={handleInviteSuccess}
                 />
               </CardContent>
             </Card>
@@ -120,7 +149,11 @@ export default function AuthenticationPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SignUpForm onLoginClick={() => setView("login")} />
+                <SignUpForm 
+                  onLoginClick={() => setView("login")} 
+                  inviteCode={inviteCode}
+                  inviteCodeId={inviteCodeId}
+                />
               </CardContent>
             </Card>
           )}
@@ -136,7 +169,7 @@ export default function AuthenticationPage() {
                  </CardDescription>
                </CardHeader>
                <CardContent>
-                 <div className="grid gap-4">
+                 <form onSubmit={handleForgotPassword} className="grid gap-4">
                    <div className="grid gap-2">
                      <Label htmlFor="reset-email">Email</Label>
                      <Input
@@ -146,10 +179,16 @@ export default function AuthenticationPage() {
                         autoCapitalize="none"
                         autoComplete="email"
                         required
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        disabled={isLoading}
                       />
                    </div>
-                   <Button>Enviar link</Button>
-                 </div>
+                   <Button disabled={isLoading}>
+                     {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                     Enviar link
+                   </Button>
+                 </form>
                </CardContent>
                <CardFooter>
                  <Button variant="link" className="w-full" onClick={() => setView("login")}>

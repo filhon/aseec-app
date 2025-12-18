@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons" 
 import { Eye, EyeOff } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 interface LoginFormProps {
   onForgotPassword: () => void
@@ -15,14 +18,36 @@ interface LoginFormProps {
 export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const router = useRouter()
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setIsLoading(true)
 
-    setTimeout(() => {
+    const supabase = createClient()
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
       setIsLoading(false)
-    }, 3000)
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Email ou senha incorretos")
+      } else if (error.message.includes("Email not confirmed")) {
+        toast.error("Email não confirmado. Verifique sua caixa de entrada.")
+      } else {
+        toast.error(error.message)
+      }
+      return
+    }
+
+    toast.success("Login realizado com sucesso!")
+    router.push("/dashboard")
+    router.refresh()
   }
 
   return (
@@ -40,6 +65,8 @@ export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
               autoCorrect="off"
               disabled={isLoading}
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
@@ -53,6 +80,8 @@ export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
                 autoComplete="current-password"
                 disabled={isLoading}
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <Button
                 type="button"

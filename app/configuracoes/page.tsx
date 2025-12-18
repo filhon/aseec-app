@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -36,20 +36,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check } from "lucide-react";
-import { toast } from "sonner"; // Assuming sonner is installed as per list_dir
+import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  getUsers,
+  getInviteCodes,
+  generateInviteCode as generateInviteCodeAction,
+  deleteInviteCode,
+  updateUserRole as updateUserRoleAction,
+  deleteUser as deleteUserAction,
+  getCurrentUser,
+} from "@/lib/actions/auth";
+import type { Profile, InviteCode as InviteCodeType } from "@/lib/types/database.types";
 
-// --- Mock Data & Types ---
-
+// --- Types ---
 type Role = "admin" | "user" | "editor";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  status: "active" | "pending";
-}
 
 interface Tag {
   id: string;
@@ -62,64 +63,7 @@ interface Category {
   name: string;
 }
 
-interface InviteCode {
-  id: string;
-  code: string;
-  used: boolean;
-  usedBy?: string;
-  createdAt: Date;
-  expiresAt: Date;
-}
-
-const initialInviteCodes: InviteCode[] = [
-  {
-    id: "1",
-    code: "ASEEC-2024-X1",
-    used: true,
-    usedBy: "maria@example.com",
-    createdAt: new Date("2024-11-20"),
-    expiresAt: new Date("2024-12-20"),
-  },
-  {
-    id: "2",
-    code: "ASEEC-FRIEND-99",
-    used: false,
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-  },
-];
-
-const initialUsers: User[] = [
-  {
-    id: "1",
-    name: "Filipe Honório",
-    email: "filipe@example.com",
-    role: "admin",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Wendel Nascimento",
-    email: "wendel@example.com",
-    role: "admin",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Maria Silva",
-    email: "maria@example.com",
-    role: "user",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "João Santos",
-    email: "joao@example.com",
-    role: "editor",
-    status: "pending",
-  },
-];
-
+// Keep categories and tags as local state for now (can be migrated later)
 const initialCategories: Category[] = [
   { id: "1", name: "Missões" },
   { id: "2", name: "Educação" },
@@ -133,16 +77,21 @@ const initialTags: Tag[] = [
 ];
 
 export default function SettingsPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  // Data from Supabase
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [inviteCodes, setInviteCodes] = useState<InviteCodeType[]>([]);
+  const [currentUser, setCurrentUser] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Local state for categories and tags (can be migrated to Supabase later)
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [tags, setTags] = useState<Tag[]>(initialTags);
-  const [inviteCodes, setInviteCodes] =
-    useState<InviteCode[]>(initialInviteCodes);
 
   // Invite Code State
-  const [inviteCode, setInviteCode] = useState("");
+  const [generatedCode, setGeneratedCode] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Content Management State
   const [newCategory, setNewCategory] = useState("");
@@ -150,49 +99,105 @@ export default function SettingsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
+  // Fetch data on mount
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [usersResult, codesResult, user] = await Promise.all([
+        getUsers(),
+        getInviteCodes(),
+        getCurrentUser(),
+      ]);
+
+      if (usersResult.success) setUsers(usersResult.data as Profile[]);
+      if (codesResult.success) setInviteCodes(codesResult.data as InviteCodeType[]);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Erro ao carregar dados");
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   // --- Actions ---
 
-  const generateInviteCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setInviteCode(code);
+  const handleGenerateInviteCode = async () => {
+    if (!currentUser) {
+      toast.error("Você precisa estar logado");
+      return;
+    }
 
-    const newCode: InviteCode = {
-      id: Date.now().toString(),
-      code: code,
-      used: false,
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    };
-    setInviteCodes((prev) => [newCode, ...prev]);
+    setIsGenerating(true);
+    const result = await generateInviteCodeAction(currentUser.id);
+    
+    if (result.success) {
+      setGeneratedCode(result.code!);
+      await fetchData(); // Refresh the list
+    } else {
+      toast.error(result.error || "Erro ao gerar código");
+    }
+    setIsGenerating(false);
   };
 
-  const handleDeleteInviteCode = (id: string) => {
-    setInviteCodes((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Código excluído");
+  const handleDeleteInviteCode = async (id: string) => {
+    const result = await deleteInviteCode(id);
+    if (result.success) {
+      toast.success("Código excluído");
+      await fetchData();
+    } else {
+      toast.error(result.error || "Erro ao excluir código");
+    }
   };
 
-  const calculateDaysRemaining = (expiresAt: Date) => {
+  const calculateDaysRemaining = (expiresAt: string) => {
     const today = new Date();
-    const diffTime = expiresAt.getTime() - today.getTime();
+    const expDate = new Date(expiresAt);
+    const diffTime = expDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(inviteCode);
+    navigator.clipboard.writeText(generatedCode);
     setIsCopied(true);
     toast.success("Código copiado!");
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter((u) => u.id !== id));
-    toast.success("Usuário removido");
+  const handleDeleteUser = async (id: string) => {
+    // Prevent self-deletion
+    if (id === currentUser?.id) {
+      toast.error("Você não pode excluir sua própria conta");
+      return;
+    }
+
+    const result = await deleteUserAction(id);
+    if (result.success) {
+      toast.success("Usuário removido");
+      await fetchData();
+    } else {
+      toast.error(result.error || "Erro ao remover usuário");
+    }
   };
 
-  const handleRoleChange = (id: string, newRole: Role) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
-    toast.success("Permissão atualizada");
+  const handleRoleChange = async (id: string, newRole: Role) => {
+    // Prevent self-demotion from admin
+    if (id === currentUser?.id && currentUser?.role === "admin" && newRole !== "admin") {
+      toast.error("Você não pode remover sua própria permissão de admin");
+      return;
+    }
+
+    const result = await updateUserRoleAction(id, newRole);
+    if (result.success) {
+      toast.success("Permissão atualizada");
+      await fetchData();
+    } else {
+      toast.error(result.error || "Erro ao atualizar permissão");
+    }
   };
 
   const handleAddCategory = () => {
@@ -241,6 +246,17 @@ export default function SettingsPage() {
     toast.success("Tag atualizada");
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6 lg:py-10 flex items-center justify-center min-h-[50vh]">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
       <div className="flex justify-between items-center">
@@ -276,11 +292,16 @@ export default function SettingsPage() {
               >
                 <DialogTrigger asChild>
                   <Button
-                    onClick={generateInviteCode}
+                    onClick={handleGenerateInviteCode}
                     size="sm"
                     className="w-auto gap-1 sm:gap-2"
+                    disabled={isGenerating}
                   >
-                    <Plus className="h-4 w-4" />
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
                     <span className="sm:hidden">Novo</span>
                     <span className="hidden sm:inline">Novo Usuário</span>
                   </Button>
@@ -296,7 +317,7 @@ export default function SettingsPage() {
                     <div className="grid flex-1 gap-2">
                       <Input
                         readOnly
-                        value={inviteCode}
+                        value={generatedCode}
                         className="text-center text-2xl font-mono tracking-widest uppercase"
                       />
                     </div>
@@ -321,9 +342,14 @@ export default function SettingsPage() {
                       variant="outline"
                       size="sm"
                       className="px-3"
-                      onClick={generateInviteCode}
+                      onClick={handleGenerateInviteCode}
+                      disabled={isGenerating}
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <DialogFooter>
@@ -346,7 +372,6 @@ export default function SettingsPage() {
                     <TableRow>
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead>Permissão</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -355,17 +380,10 @@ export default function SettingsPage() {
                     {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">
-                          {user.name}
+                          {user.full_name}
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              user.status === "active" ? "default" : "secondary"
-                            }
-                          >
-                            {user.status === "active" ? "Ativo" : "Pendente"}
-                          </Badge>
+                        <TableCell className="text-muted-foreground">
+                          {user.id === currentUser?.id ? "(você)" : ""}
                         </TableCell>
                         <TableCell>
                           <Select
@@ -373,6 +391,7 @@ export default function SettingsPage() {
                             onValueChange={(value) =>
                               handleRoleChange(user.id, value as Role)
                             }
+                            disabled={currentUser?.role !== "admin"}
                           >
                             <SelectTrigger className="w-[130px] h-8">
                               <SelectValue />
@@ -390,12 +409,20 @@ export default function SettingsPage() {
                             size="icon"
                             className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
                             onClick={() => handleDeleteUser(user.id)}
+                            disabled={user.id === currentUser?.id || currentUser?.role !== "admin"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {users.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                          Nenhum usuário encontrado.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -409,19 +436,12 @@ export default function SettingsPage() {
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{user.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {user.email}
+                        <p className="font-medium truncate">{user.full_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.id === currentUser?.id && "(você)"}
                         </p>
                       </div>
-                      <Badge
-                        variant={
-                          user.status === "active" ? "default" : "secondary"
-                        }
-                        className="shrink-0"
-                      >
-                        {user.status === "active" ? "Ativo" : "Pendente"}
-                      </Badge>
+                      <Badge variant="outline">{user.role}</Badge>
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t gap-2">
@@ -434,6 +454,7 @@ export default function SettingsPage() {
                           onValueChange={(value) =>
                             handleRoleChange(user.id, value as Role)
                           }
+                          disabled={currentUser?.role !== "admin"}
                         >
                           <SelectTrigger className="h-8 w-full max-w-[130px]">
                             <SelectValue />
@@ -451,6 +472,7 @@ export default function SettingsPage() {
                         size="icon"
                         className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
                         onClick={() => handleDeleteUser(user.id)}
+                        disabled={user.id === currentUser?.id || currentUser?.role !== "admin"}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -483,10 +505,8 @@ export default function SettingsPage() {
                   </TableHeader>
                   <TableBody>
                     {inviteCodes.map((code) => {
-                      const daysRemaining = calculateDaysRemaining(
-                        code.expiresAt
-                      );
-                      const isExpired = daysRemaining <= 0 && !code.used;
+                      const daysRemaining = calculateDaysRemaining(code.expires_at);
+                      const isExpired = daysRemaining <= 0 && code.status !== "used";
 
                       return (
                         <TableRow key={code.id}>
@@ -496,14 +516,14 @@ export default function SettingsPage() {
                             </code>
                           </TableCell>
                           <TableCell>
-                            {code.used ? (
+                            {code.status === "used" ? (
                               <Badge
                                 variant="secondary"
                                 className="bg-green-100 text-green-700 hover:bg-green-100"
                               >
                                 Usado
                               </Badge>
-                            ) : isExpired ? (
+                            ) : isExpired || code.status === "expired" ? (
                               <Badge variant="destructive">Expirado</Badge>
                             ) : (
                               <Badge
@@ -515,7 +535,7 @@ export default function SettingsPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {code.used ? (
+                            {code.status === "used" ? (
                               <span className="text-muted-foreground text-sm">
                                 -
                               </span>
@@ -532,7 +552,7 @@ export default function SettingsPage() {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-muted-foreground">
-                              {code.usedBy || "-"}
+                              {code.used_by_email || "-"}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -541,6 +561,7 @@ export default function SettingsPage() {
                               size="icon"
                               className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
                               onClick={() => handleDeleteInviteCode(code.id)}
+                              disabled={currentUser?.role !== "admin"}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -565,8 +586,8 @@ export default function SettingsPage() {
               {/* Mobile View */}
               <div className="md:hidden space-y-4">
                 {inviteCodes.map((code) => {
-                  const daysRemaining = calculateDaysRemaining(code.expiresAt);
-                  const isExpired = daysRemaining <= 0 && !code.used;
+                  const daysRemaining = calculateDaysRemaining(code.expires_at);
+                  const isExpired = daysRemaining <= 0 && code.status !== "used";
 
                   return (
                     <div
@@ -578,20 +599,20 @@ export default function SettingsPage() {
                           <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
                             {code.code}
                           </code>
-                          {code.usedBy && (
+                          {code.used_by_email && (
                             <p className="text-xs text-muted-foreground mt-1 truncate">
-                              Usado por: {code.usedBy}
+                              Usado por: {code.used_by_email}
                             </p>
                           )}
                         </div>
-                        {code.used ? (
+                        {code.status === "used" ? (
                           <Badge
                             variant="secondary"
                             className="bg-green-100 text-green-700 hover:bg-green-100 shrink-0"
                           >
                             Usado
                           </Badge>
-                        ) : isExpired ? (
+                        ) : isExpired || code.status === "expired" ? (
                           <Badge variant="destructive" className="shrink-0">
                             Expirado
                           </Badge>
@@ -610,7 +631,7 @@ export default function SettingsPage() {
                           <span className="text-xs font-medium text-muted-foreground shrink-0">
                             Expiração:
                           </span>
-                          {code.used ? (
+                          {code.status === "used" ? (
                             <span className="text-sm text-muted-foreground">
                               -
                             </span>
@@ -631,6 +652,7 @@ export default function SettingsPage() {
                           size="icon"
                           className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
                           onClick={() => handleDeleteInviteCode(code.id)}
+                          disabled={currentUser?.role !== "admin"}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

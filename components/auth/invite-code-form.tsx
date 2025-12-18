@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-
 import { Button } from "@/components/ui/button"
 import {
   InputOTP,
@@ -10,13 +9,15 @@ import {
 } from "@/components/ui/input-otp"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
+import { validateInviteCode } from "@/lib/actions/auth"
+import { toast } from "sonner"
 
 interface InviteCodeFormProps {
   onBack: () => void
-  onSuccess: (code: string) => void
+  onSuccess: (code: string, codeId: string) => void
 }
 
-export function InviteCodeForm({ onBack, onSuccess = () => {} }: InviteCodeFormProps) {
+export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [value, setValue] = useState("")
 
@@ -24,12 +25,17 @@ export function InviteCodeForm({ onBack, onSuccess = () => {} }: InviteCodeFormP
     event.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
+    const result = await validateInviteCode(value)
+
+    if (!result.success) {
       setIsLoading(false)
-      // Mock validation success
-      onSuccess(value)
-    }, 1500)
+      toast.error(result.error)
+      return
+    }
+
+    toast.success("Código válido! Prossiga com o cadastro.")
+    onSuccess(result.code!, result.codeId!)
+    setIsLoading(false)
   }
 
   return (
@@ -41,7 +47,7 @@ export function InviteCodeForm({ onBack, onSuccess = () => {} }: InviteCodeFormP
             <InputOTP
               maxLength={6}
               value={value}
-              onChange={(value) => setValue(value)}
+              onChange={(value) => setValue(value.toUpperCase())}
               disabled={isLoading}
             >
               <InputOTPGroup>
@@ -62,7 +68,7 @@ export function InviteCodeForm({ onBack, onSuccess = () => {} }: InviteCodeFormP
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Entrar
+            Validar código
           </Button>
         </div>
       </form>

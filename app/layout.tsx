@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Parkinsans, Titillium_Web } from "next/font/google"; // Verify imports work
+import { Parkinsans, Titillium_Web } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
 import { FloatingChatTrigger } from "@/components/aseec-ia/floating-chat-trigger"
 import { GlobalSearch } from "@/components/global-search"
+import { AuthProvider } from "@/components/providers/auth-provider"
+import { Toaster } from "sonner"
 
 const parkinsans = Parkinsans({
   variable: "--font-parkinsans",
@@ -41,9 +43,12 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <FloatingChatTrigger />
-            <GlobalSearch />
+            <AuthProvider>
+              {children}
+              <FloatingChatTrigger />
+              <GlobalSearch />
+            </AuthProvider>
+            <Toaster richColors position="top-right" />
           </ThemeProvider>
       </body>
     </html>
