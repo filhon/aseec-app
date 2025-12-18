@@ -43,7 +43,7 @@ export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: Se
           name="q"
           type="search"
           placeholder="Buscar endereço..."
-          className="w-full bg-background pl-8 shadow-md pr-10"
+          className="w-full bg-background dark:bg-background pl-8 shadow-md pr-10"
         />
         <Button
             type="button"

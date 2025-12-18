@@ -56,7 +56,7 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
             const cleanQuery = searchQuery.replace(/\D/g, "")
             const isCEP = /^\d{8}$/.test(cleanQuery)
 
-            let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=br`
+            let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5`
             
             if (isCEP) {
                 // For CEP, we use the postalcode parameter for better accuracy

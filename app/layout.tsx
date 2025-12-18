@@ -18,8 +18,11 @@ const titillium = Titillium_Web({
 });
 
 export const metadata: Metadata = {
-  title: "ASEEC App",
+  title: "aseec",
   description: "Gerenciamento estratégico de projetos.",
+  icons: {
+    icon: "/aseec-avatar.png",
+  },
 };
 
 export default function RootLayout({

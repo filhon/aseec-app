@@ -1,10 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -12,7 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,144 +27,227 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check } from "lucide-react"
-import { toast } from "sonner" // Assuming sonner is installed as per list_dir
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check } from "lucide-react";
+import { toast } from "sonner"; // Assuming sonner is installed as per list_dir
 
 // --- Mock Data & Types ---
 
-type Role = "admin" | "user" | "editor"
+type Role = "admin" | "user" | "editor";
 
 interface User {
-  id: string
-  name: string
-  email: string
-  role: Role
-  status: "active" | "pending"
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  status: "active" | "pending";
 }
 
 interface Tag {
-  id: string
-  name: string
-  color: string
+  id: string;
+  name: string;
+  color: string;
 }
 
 interface Category {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
+interface InviteCode {
+  id: string;
+  code: string;
+  used: boolean;
+  usedBy?: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+const initialInviteCodes: InviteCode[] = [
+  {
+    id: "1",
+    code: "ASEEC-2024-X1",
+    used: true,
+    usedBy: "maria@example.com",
+    createdAt: new Date("2024-11-20"),
+    expiresAt: new Date("2024-12-20"),
+  },
+  {
+    id: "2",
+    code: "ASEEC-FRIEND-99",
+    used: false,
+    createdAt: new Date(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  },
+];
+
 const initialUsers: User[] = [
-  { id: "1", name: "Filipe Honório", email: "filipe@example.com", role: "admin", status: "active" },
-  { id: "2", name: "Wendel Nascimento", email: "wendel@example.com", role: "admin", status: "active" },
-  { id: "3", name: "Maria Silva", email: "maria@example.com", role: "user", status: "active" },
-  { id: "4", name: "João Santos", email: "joao@example.com", role: "editor", status: "pending" },
-]
+  {
+    id: "1",
+    name: "Filipe Honório",
+    email: "filipe@example.com",
+    role: "admin",
+    status: "active",
+  },
+  {
+    id: "2",
+    name: "Wendel Nascimento",
+    email: "wendel@example.com",
+    role: "admin",
+    status: "active",
+  },
+  {
+    id: "3",
+    name: "Maria Silva",
+    email: "maria@example.com",
+    role: "user",
+    status: "active",
+  },
+  {
+    id: "4",
+    name: "João Santos",
+    email: "joao@example.com",
+    role: "editor",
+    status: "pending",
+  },
+];
 
 const initialCategories: Category[] = [
   { id: "1", name: "Missões" },
   { id: "2", name: "Educação" },
   { id: "3", name: "Saúde" },
-]
+];
 
 const initialTags: Tag[] = [
   { id: "1", name: "Urgente", color: "red" },
   { id: "2", name: "Em andamento", color: "blue" },
   { id: "3", name: "Concluído", color: "green" },
-]
+];
 
 export default function SettingsPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers)
-  const [categories, setCategories] = useState<Category[]>(initialCategories)
-  const [tags, setTags] = useState<Tag[]>(initialTags)
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [tags, setTags] = useState<Tag[]>(initialTags);
+  const [inviteCodes, setInviteCodes] =
+    useState<InviteCode[]>(initialInviteCodes);
 
   // Invite Code State
-  const [inviteCode, setInviteCode] = useState("")
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [isCopied, setIsCopied] = useState(false)
+  const [inviteCode, setInviteCode] = useState("");
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Content Management State
-  const [newCategory, setNewCategory] = useState("")
-  const [newTag, setNewTag] = useState("")
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [editingTag, setEditingTag] = useState<Tag | null>(null)
+  const [newCategory, setNewCategory] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
   // --- Actions ---
 
   const generateInviteCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    setInviteCode(code)
-  }
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setInviteCode(code);
+
+    const newCode: InviteCode = {
+      id: Date.now().toString(),
+      code: code,
+      used: false,
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    };
+    setInviteCodes((prev) => [newCode, ...prev]);
+  };
+
+  const handleDeleteInviteCode = (id: string) => {
+    setInviteCodes((prev) => prev.filter((c) => c.id !== id));
+    toast.success("Código excluído");
+  };
+
+  const calculateDaysRemaining = (expiresAt: Date) => {
+    const today = new Date();
+    const diffTime = expiresAt.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(inviteCode)
-    setIsCopied(true)
-    toast.success("Código copiado!")
-    setTimeout(() => setIsCopied(false), 2000)
-  }
+    navigator.clipboard.writeText(inviteCode);
+    setIsCopied(true);
+    toast.success("Código copiado!");
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   const handleDeleteUser = (id: string) => {
-    setUsers(users.filter(u => u.id !== id))
-    toast.success("Usuário removido")
-  }
+    setUsers(users.filter((u) => u.id !== id));
+    toast.success("Usuário removido");
+  };
 
   const handleRoleChange = (id: string, newRole: Role) => {
-    setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u))
-    toast.success("Permissão atualizada")
-  }
+    setUsers(users.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+    toast.success("Permissão atualizada");
+  };
 
   const handleAddCategory = () => {
-    if (!newCategory.trim()) return
-    setCategories([...categories, { id: Date.now().toString(), name: newCategory }])
-    setNewCategory("")
-    toast.success("Categoria adicionada")
-  }
+    if (!newCategory.trim()) return;
+    setCategories([
+      ...categories,
+      { id: Date.now().toString(), name: newCategory },
+    ]);
+    setNewCategory("");
+    toast.success("Categoria adicionada");
+  };
 
   const handleDeleteCategory = (id: string) => {
-    setCategories(categories.filter(c => c.id !== id))
-    toast.success("Categoria removida")
-  }
+    setCategories(categories.filter((c) => c.id !== id));
+    toast.success("Categoria removida");
+  };
 
   const handleUpdateCategory = () => {
-    if (!editingCategory || !editingCategory.name.trim()) return
-    setCategories(categories.map(c => c.id === editingCategory.id ? editingCategory : c))
-    setEditingCategory(null)
-    toast.success("Categoria atualizada")
-  }
+    if (!editingCategory || !editingCategory.name.trim()) return;
+    setCategories(
+      categories.map((c) => (c.id === editingCategory.id ? editingCategory : c))
+    );
+    setEditingCategory(null);
+    toast.success("Categoria atualizada");
+  };
 
   const handleAddTag = () => {
-    if (!newTag.trim()) return
-    setTags([...tags, { id: Date.now().toString(), name: newTag, color: "gray" }])
-    setNewTag("")
-    toast.success("Tag adicionada")
-  }
+    if (!newTag.trim()) return;
+    setTags([
+      ...tags,
+      { id: Date.now().toString(), name: newTag, color: "gray" },
+    ]);
+    setNewTag("");
+    toast.success("Tag adicionada");
+  };
 
   const handleDeleteTag = (id: string) => {
-    setTags(tags.filter(t => t.id !== id))
-    toast.success("Tag removida")
-  }
-  
-  const handleUpdateTag = () => {
-    if (!editingTag || !editingTag.name.trim()) return
-     setTags(tags.map(t => t.id === editingTag.id ? editingTag : t))
-     setEditingTag(null)
-     toast.success("Tag atualizada")
-  }
+    setTags(tags.filter((t) => t.id !== id));
+    toast.success("Tag removida");
+  };
 
+  const handleUpdateTag = () => {
+    if (!editingTag || !editingTag.name.trim()) return;
+    setTags(tags.map((t) => (t.id === editingTag.id ? editingTag : t)));
+    setEditingTag(null);
+    toast.success("Tag atualizada");
+  };
 
   return (
     <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">Configurações</h2>
+          <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">
+            Configurações
+          </h2>
           <p className="text-muted-foreground">
             Gerencie usuários, permissões e conteúdos do sistema.
           </p>
@@ -181,9 +270,16 @@ export default function SettingsPage() {
                   Lista de usuários com acesso ao sistema.
                 </CardDescription>
               </div>
-              <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+              <Dialog
+                open={isInviteDialogOpen}
+                onOpenChange={setIsInviteDialogOpen}
+              >
                 <DialogTrigger asChild>
-                  <Button onClick={generateInviteCode} size="sm" className="w-auto gap-1 sm:gap-2">
+                  <Button
+                    onClick={generateInviteCode}
+                    size="sm"
+                    className="w-auto gap-1 sm:gap-2"
+                  >
                     <Plus className="h-4 w-4" />
                     <span className="sm:hidden">Novo</span>
                     <span className="hidden sm:inline">Novo Usuário</span>
@@ -204,21 +300,38 @@ export default function SettingsPage() {
                         className="text-center text-2xl font-mono tracking-widest uppercase"
                       />
                     </div>
-                    <Button 
-                        type="submit" 
-                        size="sm" 
-                        className={`px-3 transition-all ${isCopied ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
-                        onClick={handleCopyCode}
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className={`px-3 transition-all ${
+                        isCopied
+                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          : ""
+                      }`}
+                      onClick={handleCopyCode}
                     >
                       <span className="sr-only">Copiar</span>
-                      {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {isCopied ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </Button>
-                    <Button variant="outline" size="sm" className="px-3" onClick={generateInviteCode}>
-                        <RefreshCw className="h-4 w-4" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-3"
+                      onClick={generateInviteCode}
+                    >
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="secondary" onClick={() => setIsInviteDialogOpen(false)}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setIsInviteDialogOpen(false)}
+                    >
                       Fechar
                     </Button>
                   </DialogFooter>
@@ -229,99 +342,307 @@ export default function SettingsPage() {
               {/* Desktop View */}
               <div className="hidden md:block overflow-x-auto">
                 <Table className="min-w-[600px]">
-                    <TableHeader>
+                  <TableHeader>
                     <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Permissão</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Permissão</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  </TableHeader>
+                  <TableBody>
                     {users.map((user) => (
-                        <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.name}
+                        </TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
-                            <Badge variant={user.status === "active" ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              user.status === "active" ? "default" : "secondary"
+                            }
+                          >
                             {user.status === "active" ? "Ativo" : "Pendente"}
-                            </Badge>
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                            <Select
+                          <Select
                             defaultValue={user.role}
-                            onValueChange={(value) => handleRoleChange(user.id, value as Role)}
-                            >
+                            onValueChange={(value) =>
+                              handleRoleChange(user.id, value as Role)
+                            }
+                          >
                             <SelectTrigger className="w-[130px] h-8">
-                                <SelectValue />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="editor">Editor</SelectItem>
-                                <SelectItem value="user">User</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="editor">Editor</SelectItem>
+                              <SelectItem value="user">User</SelectItem>
                             </SelectContent>
-                            </Select>
+                          </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                            <Button
+                          <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
                             onClick={() => handleDeleteUser(user.id)}
-                            >
+                          >
                             <Trash2 className="h-4 w-4" />
-                            </Button>
+                          </Button>
                         </TableCell>
-                        </TableRow>
+                      </TableRow>
                     ))}
-                    </TableBody>
+                  </TableBody>
                 </Table>
               </div>
 
               {/* Mobile View */}
               <div className="md:hidden space-y-4">
                 {users.map((user) => (
-                    <div key={user.id} className="border rounded-lg p-4 bg-card text-card-foreground shadow-sm space-y-3">
-                        <div className="flex justify-between items-start gap-2">
-                            <div className="min-w-0">
-                                <p className="font-medium truncate">{user.name}</p>
-                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                            </div>
-                            <Badge variant={user.status === "active" ? "default" : "secondary"} className="shrink-0">
-                                {user.status === "active" ? "Ativo" : "Pendente"}
-                            </Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between pt-3 border-t gap-2">
-                             <div className="flex items-center gap-2 flex-1">
-                                <span className="text-sm font-medium text-muted-foreground shrink-0">Role:</span>
-                                <Select
-                                    defaultValue={user.role}
-                                    onValueChange={(value) => handleRoleChange(user.id, value as Role)}
-                                >
-                                    <SelectTrigger className="h-8 w-full max-w-[130px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="editor">Editor</SelectItem>
-                                        <SelectItem value="user">User</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                             </div>
-                             
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
-                                onClick={() => handleDeleteUser(user.id)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
+                  <div
+                    key={user.id}
+                    className="border rounded-lg p-4 bg-card text-card-foreground shadow-sm space-y-3"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{user.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          user.status === "active" ? "default" : "secondary"
+                        }
+                        className="shrink-0"
+                      >
+                        {user.status === "active" ? "Ativo" : "Pendente"}
+                      </Badge>
                     </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-sm font-medium text-muted-foreground shrink-0">
+                          Role:
+                        </span>
+                        <Select
+                          defaultValue={user.role}
+                          onValueChange={(value) =>
+                            handleRoleChange(user.id, value as Role)
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-full max-w-[130px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="editor">Editor</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Códigos de Convite</CardTitle>
+              <CardDescription>
+                Gerencie os códigos de acesso gerados para novos usuários.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Expira em</TableHead>
+                      <TableHead>Usado por</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inviteCodes.map((code) => {
+                      const daysRemaining = calculateDaysRemaining(
+                        code.expiresAt
+                      );
+                      const isExpired = daysRemaining <= 0 && !code.used;
+
+                      return (
+                        <TableRow key={code.id}>
+                          <TableCell>
+                            <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+                              {code.code}
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            {code.used ? (
+                              <Badge
+                                variant="secondary"
+                                className="bg-green-100 text-green-700 hover:bg-green-100"
+                              >
+                                Usado
+                              </Badge>
+                            ) : isExpired ? (
+                              <Badge variant="destructive">Expirado</Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-blue-600 border-blue-600"
+                              >
+                                Disponível
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {code.used ? (
+                              <span className="text-muted-foreground text-sm">
+                                -
+                              </span>
+                            ) : (
+                              <span
+                                className={`text-sm font-medium ${
+                                  daysRemaining <= 5 ? "text-red-500" : ""
+                                }`}
+                              >
+                                {daysRemaining}{" "}
+                                {daysRemaining === 1 ? "dia" : "dias"}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">
+                              {code.usedBy || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                              onClick={() => handleDeleteInviteCode(code.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {inviteCodes.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-4 text-muted-foreground"
+                        >
+                          Nenhum código gerado ainda.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden space-y-4">
+                {inviteCodes.map((code) => {
+                  const daysRemaining = calculateDaysRemaining(code.expiresAt);
+                  const isExpired = daysRemaining <= 0 && !code.used;
+
+                  return (
+                    <div
+                      key={code.id}
+                      className="border rounded-lg p-4 bg-card text-card-foreground shadow-sm space-y-3"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0">
+                          <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+                            {code.code}
+                          </code>
+                          {code.usedBy && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate">
+                              Usado por: {code.usedBy}
+                            </p>
+                          )}
+                        </div>
+                        {code.used ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-700 hover:bg-green-100 shrink-0"
+                          >
+                            Usado
+                          </Badge>
+                        ) : isExpired ? (
+                          <Badge variant="destructive" className="shrink-0">
+                            Expirado
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-blue-600 border-blue-600 shrink-0"
+                          >
+                            Disponível
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t gap-2">
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-xs font-medium text-muted-foreground shrink-0">
+                            Expiração:
+                          </span>
+                          {code.used ? (
+                            <span className="text-sm text-muted-foreground">
+                              -
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-sm font-medium ${
+                                daysRemaining <= 5 ? "text-red-500" : ""
+                              }`}
+                            >
+                              {daysRemaining}{" "}
+                              {daysRemaining === 1 ? "dia" : "dias"}
+                            </span>
+                          )}
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
+                          onClick={() => handleDeleteInviteCode(code.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {inviteCodes.length === 0 && (
+                  <p className="text-center py-4 text-muted-foreground text-sm">
+                    Nenhum código gerado ainda.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -330,62 +651,90 @@ export default function SettingsPage() {
         {/* --- CONTENT TAB --- */}
         <TabsContent value="content" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            
             {/* CATEGORIES */}
             <Card>
               <CardHeader>
                 <CardTitle>Categorias</CardTitle>
-                <CardDescription>Gerencie as categorias de projetos.</CardDescription>
+                <CardDescription>
+                  Gerencie as categorias de projetos.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex space-x-2">
-                  <Input 
-                    placeholder="Nova categoria..." 
-                    value={newCategory} 
+                  <Input
+                    placeholder="Nova categoria..."
+                    value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
                   />
-                  <Button onClick={handleAddCategory}><Plus className="h-4 w-4" /></Button>
+                  <Button onClick={handleAddCategory}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="rounded-md border">
                   <Table>
-                     <TableBody>
-                        {categories.map((cat) => (
-                           <TableRow key={cat.id}>
-                              <TableCell className="font-medium py-2">
-                                 {editingCategory?.id === cat.id ? (
-                                    <div className="flex items-center gap-2">
-                                       <Input 
-                                          value={editingCategory.name} 
-                                          onChange={(e) => setEditingCategory({...editingCategory, name: e.target.value})}
-                                          className="h-8"
-                                       />
-                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleUpdateCategory}>
-                                          <RefreshCw className="h-3 w-3" />
-                                       </Button>
-                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingCategory(null)}>
-                                          <X className="h-3 w-3" />
-                                       </Button>
-                                    </div>
-                                 ) : (
-                                    cat.name
-                                 )}
-                              </TableCell>
-                              <TableCell className="py-2 text-right">
-                                 {editingCategory?.id !== cat.id && (
-                                    <div className="flex justify-end gap-1">
-                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCategory(cat)}>
-                                          <Edit2 className="h-3 w-3" />
-                                       </Button>
-                                       <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={() => handleDeleteCategory(cat.id)}>
-                                          <Trash2 className="h-3 w-3" />
-                                       </Button>
-                                    </div>
-                                 )}
-                              </TableCell>
-                           </TableRow>
-                        ))}
-                     </TableBody>
+                    <TableBody>
+                      {categories.map((cat) => (
+                        <TableRow key={cat.id}>
+                          <TableCell className="font-medium py-2">
+                            {editingCategory?.id === cat.id ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={editingCategory.name}
+                                  onChange={(e) =>
+                                    setEditingCategory({
+                                      ...editingCategory,
+                                      name: e.target.value,
+                                    })
+                                  }
+                                  className="h-8"
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={handleUpdateCategory}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => setEditingCategory(null)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              cat.name
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            {editingCategory?.id !== cat.id && (
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => setEditingCategory(cat)}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteCategory(cat.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
                   </Table>
                 </div>
               </CardContent>
@@ -395,67 +744,95 @@ export default function SettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Tags</CardTitle>
-                <CardDescription>Gerencie etiquetas para identificação.</CardDescription>
+                <CardDescription>
+                  Gerencie etiquetas para identificação.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex space-x-2">
-                  <Input 
-                    placeholder="Nova tag..." 
-                    value={newTag} 
+                  <Input
+                    placeholder="Nova tag..."
+                    value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
                   />
-                  <Button onClick={handleAddTag}><Plus className="h-4 w-4" /></Button>
+                  <Button onClick={handleAddTag}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
                 <div className="rounded-md border">
-                   <Table>
-                     <TableBody>
-                        {tags.map((tag) => (
-                           <TableRow key={tag.id}>
-                              <TableCell className="font-medium py-2">
-                                 {editingTag?.id === tag.id ? (
-                                    <div className="flex items-center gap-2">
-                                       <Input 
-                                          value={editingTag.name} 
-                                          onChange={(e) => setEditingTag({...editingTag, name: e.target.value})}
-                                          className="h-8"
-                                       />
-                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleUpdateTag}>
-                                          <RefreshCw className="h-3 w-3" />
-                                       </Button>
-                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingTag(null)}>
-                                          <X className="h-3 w-3" />
-                                       </Button>
-                                    </div>
-                                 ) : (
-                                    <div className="flex items-center gap-2">
-                                       <Badge variant="outline">{tag.name}</Badge>
-                                    </div>
-                                 )}
-                              </TableCell>
-                              <TableCell className="py-2 text-right">
-                                 {editingTag?.id !== tag.id && (
-                                    <div className="flex justify-end gap-1">
-                                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingTag(tag)}>
-                                          <Edit2 className="h-3 w-3" />
-                                       </Button>
-                                       <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700" onClick={() => handleDeleteTag(tag.id)}>
-                                          <Trash2 className="h-3 w-3" />
-                                       </Button>
-                                    </div>
-                                 )}
-                              </TableCell>
-                           </TableRow>
-                        ))}
-                     </TableBody>
+                  <Table>
+                    <TableBody>
+                      {tags.map((tag) => (
+                        <TableRow key={tag.id}>
+                          <TableCell className="font-medium py-2">
+                            {editingTag?.id === tag.id ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={editingTag.name}
+                                  onChange={(e) =>
+                                    setEditingTag({
+                                      ...editingTag,
+                                      name: e.target.value,
+                                    })
+                                  }
+                                  className="h-8"
+                                />
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={handleUpdateTag}
+                                >
+                                  <RefreshCw className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => setEditingTag(null)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{tag.name}</Badge>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            {editingTag?.id !== tag.id && (
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => setEditingTag(tag)}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteTag(tag.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
                   </Table>
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
