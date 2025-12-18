@@ -218,8 +218,9 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
        {/* Sidebar Wrapper */}
        <div className={cn(
            "transition-all duration-300 ease-in-out border-r bg-background/50 backdrop-blur-sm z-40 overflow-hidden",
-           // Mobile: Absolute positioning
-           "absolute inset-y-0 left-0 h-full lg:static lg:h-auto",
+           // Mobile: always absolute. Desktop: absolute when floating, static otherwise
+           "absolute inset-y-0 left-0 h-full",
+           !isFloating && "lg:static lg:h-auto",
            isSidebarOpen ? "w-[260px] opacity-100 border-r" : "w-0 opacity-0 border-r-0"
         )}>
             <div className="w-[260px] h-full flex flex-col bg-background">
@@ -233,10 +234,13 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
             </div>
        </div>
 
-       {/* Overlay for Mobile */}
+       {/* Overlay for Mobile / Floating */}
        {isSidebarOpen && (
            <div 
-                className="absolute inset-0 bg-background/80 backdrop-blur-sm z-30 lg:hidden animate-in fade-in duration-300"
+                className={cn(
+                    "absolute inset-0 bg-background/80 backdrop-blur-sm z-30 animate-in fade-in duration-300",
+                    !isFloating && "lg:hidden"
+                )}
                 onClick={() => setIsSidebarOpen(false)}
            />
        )}
