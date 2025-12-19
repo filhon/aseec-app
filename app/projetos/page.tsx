@@ -22,6 +22,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { useAdmin } from "@/hooks/use-admin"
+import { usePermissions } from "@/hooks/use-permissions"
 
 // Dynamically import MapView
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -47,6 +48,7 @@ export default function ProjectsPage() {
     const [mapFilteredIds, setMapFilteredIds] = useState<Set<string> | null>(null)
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
     const { isAdmin } = useAdmin()
+    const { canViewFinancials } = usePermissions()
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1)
@@ -291,12 +293,19 @@ export default function ProjectsPage() {
                                             <span className="truncate">{project.municipality}, {project.state}</span>
                                         </div>
                                         <div className="pt-3 border-t flex justify-between items-center mt-auto">
+                                        {canViewFinancials ? (
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] uppercase font-semibold text-muted-foreground">Investimento</span>
                                                 <span className="font-bold text-foreground text-sm">
                                                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(project.investment)}
                                                 </span>
                                             </div>
+                                        ) : (
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Investimento</span>
+                                                <span className="font-medium text-muted-foreground text-xs">Restrito</span>
+                                            </div>
+                                        )}
                                              <div className="flex flex-col items-end">
                                                 <span className="text-[10px] uppercase font-semibold text-muted-foreground">Extensão</span>
                                                 <span className="text-xs font-medium bg-secondary px-2 py-0.5 rounded text-secondary-foreground">

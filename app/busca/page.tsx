@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { FolderOpen, MapPin, Building2, User, ChevronRight, Tag as TagIcon, CreditCard, ThumbsUp, UserCheck, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useState, useMemo, Suspense } from "react"
+import { usePermissions } from "@/hooks/use-permissions"
 
 
 // Mock Data Types (Same as before)
@@ -157,6 +158,7 @@ const thankedLabels: Record<string, string> = {
 function SearchContent() {
     const searchParams = useSearchParams()
     const initialQuery = searchParams.get('q') || ''
+    const { canViewFinancials } = usePermissions()
     
     // Initial State
     const [filters, setFilters] = useState<AdvancedFiltersState>({
@@ -281,7 +283,7 @@ function SearchContent() {
                         filters={filters} 
                         onFilterChange={handleFilterChange} 
                         counts={counts}
-                        hasFinancialData={hasFinancialData}
+                        hasFinancialData={hasFinancialData && canViewFinancials}
                     />
                 </aside>
 
@@ -388,7 +390,7 @@ function SearchContent() {
                                                         {result.location}
                                                     </div>
                                                 )}
-                                                {result.financialValue && (
+                                                {result.financialValue && canViewFinancials && (
                                                     <div className="flex items-center gap-1">
                                                         <CreditCard className="w-3 h-3" />
                                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(result.financialValue)}

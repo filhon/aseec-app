@@ -16,7 +16,7 @@ export type AttachmentType = 'image' | 'video' | 'document';
 export type ReactionType = 'like' | 'prayer';
 export type FavoriteType = 'project' | 'entity';
 export type AIMessageRole = 'user' | 'assistant';
-export type UserRole = 'admin' | 'editor' | 'user';
+export type UserRole = 'admin' | 'editor' | 'director' | 'user';
 
 // =============================================================================
 // BASE TYPES

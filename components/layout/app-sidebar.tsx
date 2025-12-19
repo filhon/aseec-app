@@ -8,6 +8,8 @@ import { LayoutDashboard, FolderOpen, Settings, Sparkles, ChartNoAxesCombined, M
 import { UserNav } from "@/components/layout/user-nav";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/use-permissions";
+import type { Permission } from "@/lib/permissions";
 
 interface AppSidebarProps {
   mode?: "desktop" | "mobile"
@@ -15,17 +17,31 @@ interface AppSidebarProps {
   onNavigate?: () => void
 }
 
+interface NavItemConfig {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  requiredPermission?: Permission;
+}
+
 export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSidebarProps) {
   const pathname = usePathname()
+  const { can } = usePermissions()
 
-  const navItems = [
+  const allNavItems: NavItemConfig[] = [
     { href: "/", label: "Mapa", icon: MapIcon },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, requiredPermission: "view:dashboard" },
     { href: "/projetos", label: "Projetos", icon: FolderOpen },
-    { href: "/financeiro", label: "Financeiro", icon: ChartNoAxesCombined },
-    { href: "/aseec-ia", label: "aseecIA", icon: Sparkles },
-    { href: "/configuracoes", label: "Configurações", icon: Settings },
+    { href: "/financeiro", label: "Financeiro", icon: ChartNoAxesCombined, requiredPermission: "view:financeiro" },
+    { href: "/aseec-ia", label: "aseecIA", icon: Sparkles, requiredPermission: "view:aseecia" },
+    { href: "/configuracoes", label: "Configurações", icon: Settings, requiredPermission: "view:settings" },
   ]
+
+  // Filter nav items based on permissions
+  const navItems = allNavItems.filter(item => {
+    if (!item.requiredPermission) return true;
+    return can(item.requiredPermission);
+  });
 
   const isDesktop = mode === "desktop"
 
@@ -90,3 +106,4 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
     </aside>
   )
 }
+

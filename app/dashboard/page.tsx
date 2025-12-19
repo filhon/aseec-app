@@ -32,6 +32,7 @@ import {
 import { LayoutDashboard, Users, Building2, MapPin, TrendingUp, Globe, X, Filter, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FavoriteButton } from "@/components/ui/favorite-button"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
@@ -244,6 +245,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <ProtectedRoute requiredPermission="view:dashboard" accessDeniedMessage="Você não tem permissão para acessar o dashboard.">
     <div className="space-y-6 py-4 lg:py-8 animate-in fade-in duration-500">
       
       {/* Search & Filters */}
@@ -776,6 +778,7 @@ export default function DashboardPage() {
             </div>
         )}
     </div>
+    </ProtectedRoute>
   )
 }
 

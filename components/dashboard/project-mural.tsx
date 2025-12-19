@@ -18,9 +18,11 @@ import { Badge } from "@/components/ui/badge"
 interface ProjectMuralProps {
     feed?: ProjectPost[]
     onAddPost?: (post: ProjectPost) => void
+    /** Whether the user can add new posts (default: false) */
+    canEdit?: boolean
 }
 
-export function ProjectMural({ feed = [], onAddPost }: ProjectMuralProps) {
+export function ProjectMural({ feed = [], onAddPost, canEdit = false }: ProjectMuralProps) {
     const [filterType, setFilterType] = useState<PostType | 'all'>('all')
 
     const handleNewPost = (post: ProjectPost) => {
@@ -112,7 +114,7 @@ export function ProjectMural({ feed = [], onAddPost }: ProjectMuralProps) {
                 </div>
             </div>
 
-            <AddPostForm onPost={handleNewPost} />
+            {canEdit && <AddPostForm onPost={handleNewPost} />}
 
             <div className="mt-4">
                 {filteredFeed.length > 0 ? (

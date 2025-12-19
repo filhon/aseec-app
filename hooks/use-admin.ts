@@ -1,14 +1,19 @@
 "use client"
 
-// In a real app, this would check the user's role from the auth context/session.
-// For now, we mock it as true to facilitate development.
+import { usePermissions } from "@/hooks/use-permissions";
 
+/**
+ * useAdmin Hook
+ * 
+ * Checks if the current user has admin-level permissions.
+ * This hook uses the central permissions system.
+ */
 export function useAdmin() {
-    // TODO: Connect to real auth logic
-    const isAdmin = true
+    const { can, isLoading } = usePermissions();
     
     return {
-        isAdmin,
-        loading: false
+        isAdmin: can("manage:users"),
+        loading: isLoading
     }
 }
+

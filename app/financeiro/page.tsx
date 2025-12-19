@@ -23,6 +23,7 @@ import { CostCenterBudgetChart } from "@/components/financeiro/cost-center-budge
 import { Calculator, CalendarIcon, Search, FilterX, Filter } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 
 import { DateRange } from "react-day-picker"
 
@@ -260,6 +261,7 @@ export default function FinanceiroPage() {
     }
 
     return (
+        <ProtectedRoute requiredPermission="view:financeiro" accessDeniedMessage="Você não tem permissão para acessar a página financeira.">
         <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8 animate-in fade-in duration-500">
              {/* Header */}
              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -470,5 +472,6 @@ export default function FinanceiroPage() {
             </div>
 
         </div>
+        </ProtectedRoute>
     )
 }

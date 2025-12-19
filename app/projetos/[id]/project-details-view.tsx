@@ -25,6 +25,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Link from "next/link"
 import { FavoriteButton } from "@/components/ui/favorite-button"
+import { usePermissions } from "@/hooks/use-permissions"
 
 interface ProjectDetailsViewProps {
     initialProject: DashboardProject
@@ -40,6 +41,9 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             setLabel(project.id, project.title)
         }
     }, [project.id, project.title, setLabel])
+
+    // Permissions
+    const { canViewFinancials, canEditProjects } = usePermissions()
 
     // --- State for Editing ---
     const [isEditingClass, setIsEditingClass] = useState(false)
@@ -232,9 +236,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {project.municipality}, {project.state} - {project.country}</span>
                         <span className="flex items-center gap-1.5">
                             <Award className="h-4 w-4" /> 
-                            <Link href={`/dashboard/entidades/${slugify(project.institution)}`} className="hover:underline hover:text-primary transition-colors">
-                                {project.institution}
-                            </Link>
+                            <span>{project.institution}</span>
                         </span>
                     </div>
                 </div>
@@ -265,7 +267,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         title="Visão Geral"
                         icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
                         isEditing={isEditingOverview}
-                        setIsEditing={setIsEditingOverview}
+                        setIsEditing={canEditProjects ? setIsEditingOverview : undefined}
                         onSave={handleSaveOverview}
                         hasHistory={true}
                         editContent={
@@ -320,7 +322,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         title="Informações Básicas"
                         icon={<FileText className="h-4 w-4 text-primary" />}
                         isEditing={isEditingBasic}
-                        setIsEditing={setIsEditingBasic}
+                        setIsEditing={canEditProjects ? setIsEditingBasic : undefined}
                         onSave={handleSaveBasic}
                         hasHistory={true}
                         editContent={
@@ -496,13 +498,14 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         )}
                     </ProjectInfoCard>
 
-                    {/* FINANCIAL */}
+                    {/* FINANCIAL - Hidden for users without permission */}
+                    {canViewFinancials && (
                      <ProjectInfoCard
                         title="Financeiro"
                         icon={<DollarSign className="h-4 w-4 text-primary" />}
                         hasHistory={true}
                         isEditing={isEditingFinancial}
-                        setIsEditing={setIsEditingFinancial}
+                        setIsEditing={canEditProjects ? setIsEditingFinancial : undefined}
                         onSave={handleSaveFinancial}
                         editContent={
                             <div className="space-y-4">
@@ -641,13 +644,14 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
 
                         </CardContent>
                     </ProjectInfoCard>
+                    )}
 
                     {/* CLASSIFICATION */}
                     <ProjectInfoCard
                         title="Classificação"
                         icon={<Tag className="h-4 w-4 text-primary" />}
                         isEditing={isEditingClass}
-                        setIsEditing={setIsEditingClass}
+                        setIsEditing={canEditProjects ? setIsEditingClass : undefined}
                         onSave={handleSaveClass}
                         hasHistory={true}
                         editContent={
@@ -702,6 +706,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     <ProjectMural 
                         feed={feed} 
                         onAddPost={(post) => setFeed([post, ...feed])}
+                        canEdit={canEditProjects}
                     />
                 </div>
             </div>

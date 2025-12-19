@@ -50,9 +50,11 @@ import {
   getCurrentUser,
 } from "@/lib/actions/auth";
 import type { Profile, InviteCode as InviteCodeType } from "@/lib/types/database.types";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { getAvailableRoles } from "@/lib/permissions";
 
 // --- Types ---
-type Role = "admin" | "user" | "editor";
+type Role = "admin" | "user" | "editor" | "director";
 
 interface Tag {
   id: string;
@@ -316,6 +318,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <ProtectedRoute requiredPermission="view:settings" accessDeniedMessage="Apenas administradores podem acessar as configurações.">
     <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
       <div className="flex justify-between items-center">
         <div>
@@ -490,9 +493,11 @@ export default function SettingsPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">Admin</SelectItem>
-                              <SelectItem value="editor">Editor</SelectItem>
-                              <SelectItem value="user">User</SelectItem>
+                              {getAvailableRoles().map((r) => (
+                                <SelectItem key={r.value} value={r.value}>
+                                  {r.label}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -553,9 +558,11 @@ export default function SettingsPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="user">User</SelectItem>
+                            {getAvailableRoles().map((r) => (
+                              <SelectItem key={r.value} value={r.value}>
+                                {r.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -949,5 +956,6 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
+    </ProtectedRoute>
   );
 }

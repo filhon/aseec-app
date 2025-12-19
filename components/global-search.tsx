@@ -26,10 +26,12 @@ import {
 import { useRouter } from "next/navigation"
 
 import { useSearchStore } from "@/hooks/use-search-store"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export function GlobalSearch() {
   const { isOpen, setOpen, toggle } = useSearchStore()
   const router = useRouter()
+  const { can } = usePermissions()
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -78,6 +80,11 @@ export function GlobalSearch() {
       router.push(`/busca?${params.toString()}`)
   }
 
+  // Check permissions for pages
+  const canViewDashboard = can("view:dashboard")
+  const canViewFinanceiro = can("view:financeiro")
+  const canViewSettings = can("view:settings")
+
   return (
     <>
       <CommandDialog open={isOpen} onOpenChange={setOpen}>
@@ -86,24 +93,28 @@ export function GlobalSearch() {
           <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
           
           <CommandGroup heading="Páginas">
-            <CommandItem
-              onSelect={() => runCommand(() => router.push("/dashboard"))}
-            >
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              <span>Dashboard</span>
-            </CommandItem>
+            {canViewDashboard && (
+              <CommandItem
+                onSelect={() => runCommand(() => router.push("/dashboard"))}
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </CommandItem>
+            )}
             <CommandItem
               onSelect={() => runCommand(() => router.push("/projetos"))}
             >
               <FolderOpen className="mr-2 h-4 w-4" />
               <span>Projetos</span>
             </CommandItem>
-            <CommandItem
-              onSelect={() => runCommand(() => router.push("/financeiro"))}
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>Financeiro</span>
-            </CommandItem>
+            {canViewFinanceiro && (
+              <CommandItem
+                onSelect={() => runCommand(() => router.push("/financeiro"))}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Financeiro</span>
+              </CommandItem>
+            )}
              <CommandItem
               onSelect={() => runCommand(() => router.push("/"))}
             >
@@ -116,13 +127,15 @@ export function GlobalSearch() {
               <Sparkles className="mr-2 h-4 w-4" />
               <span>aseecIA</span>
             </CommandItem>
-            <CommandItem
-              onSelect={() => runCommand(() => router.push("/configuracoes"))}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configurações</span>
-              <CommandShortcut>⌘S</CommandShortcut>
-            </CommandItem>
+            {canViewSettings && (
+              <CommandItem
+                onSelect={() => runCommand(() => router.push("/configuracoes"))}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+                <CommandShortcut>⌘S</CommandShortcut>
+              </CommandItem>
+            )}
           </CommandGroup>
           
           <CommandSeparator />
@@ -182,3 +195,4 @@ export function GlobalSearch() {
     </>
   )
 }
+

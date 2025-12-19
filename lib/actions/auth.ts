@@ -166,7 +166,7 @@ export async function getUsers() {
   return { success: true, data: data || [] };
 }
 
-export async function updateUserRole(userId: string, role: "admin" | "editor" | "user") {
+export async function updateUserRole(userId: string, role: "admin" | "editor" | "director" | "user") {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
