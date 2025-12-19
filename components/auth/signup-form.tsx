@@ -68,7 +68,8 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId, initialName
         data: {
           full_name: name,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // Skip email confirmation for invited users by not setting emailRedirectTo
+        ...(inviteCodeId ? {} : { emailRedirectTo: `${window.location.origin}/auth/callback` }),
       },
     })
 
@@ -82,11 +83,6 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId, initialName
       return
     }
 
-    // Mark invite code as used
-    if (inviteCodeId && data.user) {
-      await markInviteCodeAsUsed(inviteCodeId)
-    }
-
     // Check if email confirmation is required
     if (data.user?.identities?.length === 0) {
       toast.error("Este email já está cadastrado")
@@ -94,13 +90,21 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId, initialName
       return
     }
 
-    if (data.session) {
-      // User was auto-confirmed (e.g., Supabase configured to skip email confirmation)
+    // Mark invite code as used (do this after successful signup)
+    if (inviteCodeId) {
+      const markResult = await markInviteCodeAsUsed(inviteCodeId)
+      if (!markResult.success) {
+        console.error("Failed to mark invite code as used:", markResult.error)
+      }
+    }
+
+    // For invited users or auto-confirmed users, redirect to dashboard
+    if (inviteCodeId || data.session) {
       toast.success("Conta criada com sucesso!")
-      router.push("/dashboard")
+      router.push("/")
       router.refresh()
     } else {
-      // Email confirmation required
+      // Email confirmation required (only for non-invited users)
       toast.success("Conta criada! Verifique seu email para confirmar o cadastro.")
       onLoginClick()
     }
