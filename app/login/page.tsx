@@ -24,12 +24,16 @@ export default function AuthenticationPage() {
   const [view, setView] = useState<"login" | "invite" | "forgot_password" | "register">("login")
   const [inviteCode, setInviteCode] = useState<string>("")
   const [inviteCodeId, setInviteCodeId] = useState<string>("")
+  const [invitedUserName, setInvitedUserName] = useState<string>("")
+  const [invitedUserEmail, setInvitedUserEmail] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
   const [resetEmail, setResetEmail] = useState("")
 
-  const handleInviteSuccess = (code: string, codeId: string) => {
+  const handleInviteSuccess = (code: string, codeId: string, name?: string, email?: string) => {
     setInviteCode(code)
     setInviteCodeId(codeId)
+    if (name) setInvitedUserName(name)
+    if (email) setInvitedUserEmail(email)
     setView("register")
   }
 
@@ -153,6 +157,8 @@ export default function AuthenticationPage() {
                   onLoginClick={() => setView("login")} 
                   inviteCode={inviteCode}
                   inviteCodeId={inviteCodeId}
+                  initialName={invitedUserName}
+                  initialEmail={invitedUserEmail}
                 />
               </CardContent>
             </Card>

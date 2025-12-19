@@ -169,8 +169,8 @@ export type InviteCodeStatus = 'pending' | 'used' | 'expired';
 export interface InviteCode extends BaseEntity {
   code: string;
   status: InviteCodeStatus;
-  used_by: string | null;
-  used_by_email: string | null;
+  invited_name: string | null;
+  invited_email: string | null;
   used_at: string | null;
   expires_at: string;
   created_by: string | null;

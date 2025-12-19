@@ -16,14 +16,18 @@ interface SignUpFormProps {
   onLoginClick: () => void
   inviteCode?: string
   inviteCodeId?: string
+  initialName?: string
+  initialEmail?: string
 }
 
-export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFormProps) {
+export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId, initialName, initialEmail }: SignUpFormProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [name, setName] = useState(initialName || "")
+  const [email, setEmail] = useState(initialEmail || "")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const router = useRouter()
 
   const getStrength = (pass: string) => {
@@ -43,6 +47,11 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     
+    if (password !== confirmPassword) {
+      toast.error("As senhas não coincidem")
+      return
+    }
+
     if (strength < 2) {
       toast.error("A senha deve ter pelo menos 8 caracteres com letras maiúsculas e números")
       return
@@ -75,7 +84,7 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
 
     // Mark invite code as used
     if (inviteCodeId && data.user) {
-      await markInviteCodeAsUsed(inviteCodeId, data.user.id, email)
+      await markInviteCodeAsUsed(inviteCodeId)
     }
 
     // Check if email confirmation is required
@@ -103,12 +112,20 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
     <div className="grid gap-6">
       <form onSubmit={onSubmit}>
         <div className="grid gap-4">
-          {inviteCode && (
+          {initialName && (
+            <div className="text-center mb-2">
+              <h3 className="font-semibold text-lg">Olá, {initialName}!</h3>
+              <p className="text-sm text-muted-foreground">Verifique o seu e-mail e crie uma senha.</p>
+            </div>
+          )}
+
+          {inviteCode && !initialName && (
             <div className="p-3 bg-muted rounded-lg text-center">
               <p className="text-xs text-muted-foreground">Código de convite</p>
               <p className="font-mono font-semibold">{inviteCode}</p>
             </div>
           )}
+
           <div className="grid gap-2">
             <Label htmlFor="name">Nome</Label>
             <Input
@@ -117,7 +134,7 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
               type="text"
               autoCapitalize="words"
               autoComplete="name"
-              disabled={isLoading}
+              disabled={isLoading || !!initialName}
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -132,7 +149,8 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
-              disabled={isLoading}
+              disabled={isLoading || !!initialEmail}
+              readOnly={!!initialEmail}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -160,6 +178,36 @@ export function SignUpForm({ onLoginClick, inviteCode, inviteCodeId }: SignUpFor
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="sr-only">Toggle password visibility</span>
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                placeholder="••••••••"
+                type={showConfirmPassword ? "text" : "password"}
+                autoCapitalize="none"
+                autoComplete="new-password"
+                disabled={isLoading}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
                   <Eye className="h-4 w-4 text-muted-foreground" />

@@ -14,7 +14,7 @@ import { toast } from "sonner"
 
 interface InviteCodeFormProps {
   onBack: () => void
-  onSuccess: (code: string, codeId: string) => void
+  onSuccess: (code: string, codeId: string, name?: string, email?: string) => void
 }
 
 export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
@@ -34,7 +34,13 @@ export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
     }
 
     toast.success("Código válido! Prossiga com o cadastro.")
-    onSuccess(result.code!, result.codeId!)
+    
+    onSuccess(
+      result.code!,
+      result.codeId!,
+      result.invitedName || undefined,
+      result.invitedEmail || undefined
+    )
     setIsLoading(false)
   }
 

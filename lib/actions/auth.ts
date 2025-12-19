@@ -40,10 +40,16 @@ export async function validateInviteCode(code: string) {
     return { success: false, error: "Este código expirou" };
   }
 
-  return { success: true, code: data.code, codeId: data.id };
+  return {
+    success: true,
+    code: data.code,
+    codeId: data.id,
+    invitedName: data.invited_name,
+    invitedEmail: data.invited_email,
+  };
 }
 
-export async function markInviteCodeAsUsed(codeId: string, userId: string, userEmail: string) {
+export async function markInviteCodeAsUsed(codeId: string) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -51,8 +57,6 @@ export async function markInviteCodeAsUsed(codeId: string, userId: string, userE
     .from("invite_codes")
     .update({
       status: "used",
-      used_by: userId,
-      used_by_email: userEmail,
       used_at: new Date().toISOString(),
     })
     .eq("id", codeId);
@@ -66,7 +70,11 @@ export async function markInviteCodeAsUsed(codeId: string, userId: string, userE
   return { success: true };
 }
 
-export async function generateInviteCode(createdBy: string) {
+export async function generateInviteCode(
+  createdBy: string,
+  invitedName: string,
+  invitedEmail: string
+) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -84,6 +92,8 @@ export async function generateInviteCode(createdBy: string) {
       status: "pending",
       expires_at: expiresAt.toISOString(),
       created_by: createdBy,
+      invited_name: invitedName,
+      invited_email: invitedEmail,
     })
     .select()
     .single();

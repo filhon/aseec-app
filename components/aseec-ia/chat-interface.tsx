@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle, useCallback } from "react";
 import { Send, Sparkles, User, Bot, Menu, MessageSquarePlus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

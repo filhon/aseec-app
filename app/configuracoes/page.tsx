@@ -36,8 +36,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 import {
   getUsers,
   getInviteCodes,
@@ -92,6 +94,8 @@ export default function SettingsPage() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
 
   // Content Management State
   const [newCategory, setNewCategory] = useState("");
@@ -120,8 +124,37 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        const [usersResult, codesResult, user] = await Promise.all([
+          getUsers(),
+          getInviteCodes(),
+          getCurrentUser(),
+        ]);
+
+        if (isMounted) {
+          if (usersResult.success) setUsers(usersResult.data as Profile[]);
+          if (codesResult.success) setInviteCodes(codesResult.data as InviteCodeType[]);
+          setCurrentUser(user);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        if (isMounted) {
+          toast.error("Erro ao carregar dados");
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // --- Actions ---
 
@@ -132,7 +165,11 @@ export default function SettingsPage() {
     }
 
     setIsGenerating(true);
-    const result = await generateInviteCodeAction(currentUser.id);
+    const result = await generateInviteCodeAction(
+      currentUser.id,
+      newUserName,
+      newUserEmail
+    );
     
     if (result.success) {
       setGeneratedCode(result.code!);
@@ -248,10 +285,31 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 lg:py-10 flex items-center justify-center min-h-[50vh]">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Carregando...</span>
+      <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
+        <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-96" />
+        </div>
+        
+        <div className="space-y-4">
+            <Skeleton className="h-10 w-48" /> {/* Tabs */}
+            <div className="border rounded-xl p-6 space-y-6">
+                 <div className="flex justify-between items-center">
+                    <div className="space-y-2">
+                         <Skeleton className="h-6 w-48" />
+                         <Skeleton className="h-4 w-64" />
+                    </div>
+                    <Skeleton className="h-9 w-32" />
+                 </div>
+                 <div className="space-y-2 pt-4">
+                    <Skeleton className="h-10 w-full" /> {/* Table Header */}
+                    {[1,2,3,4,5].map(i => (
+                        <div key={i} className="flex items-center space-x-4">
+                            <Skeleton className="h-14 w-full" />
+                        </div>
+                    ))}
+                 </div>
+            </div>
         </div>
       </div>
     );
@@ -292,7 +350,12 @@ export default function SettingsPage() {
               >
                 <DialogTrigger asChild>
                   <Button
-                    onClick={handleGenerateInviteCode}
+                    onClick={() => {
+                      setGeneratedCode("");
+                      setNewUserName("");
+                      setNewUserEmail("");
+                      setIsInviteDialogOpen(true);
+                    }}
                     size="sm"
                     className="w-auto gap-1 sm:gap-2"
                     disabled={isGenerating}
@@ -313,50 +376,80 @@ export default function SettingsPage() {
                       Envie este código para o novo usuário criar a conta.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="flex items-center space-x-2 py-4">
-                    <div className="grid flex-1 gap-2">
-                      <Input
-                        readOnly
-                        value={generatedCode}
-                        className="text-center text-2xl font-mono tracking-widest uppercase"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      className={`px-3 transition-all ${
-                        isCopied
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : ""
-                      }`}
-                      onClick={handleCopyCode}
-                    >
-                      <span className="sr-only">Copiar</span>
-                      {isCopied ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="px-3"
-                      onClick={handleGenerateInviteCode}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                    </Button>
+                  <div className="space-y-4 py-4">
+                    {!generatedCode ? (
+                      <>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-user-name">Nome do Usuário</Label>
+                          <Input
+                            id="new-user-name"
+                            value={newUserName}
+                            onChange={(e) => setNewUserName(e.target.value)}
+                            placeholder="Nome completo"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="new-user-email">E-mail do Usuário</Label>
+                          <Input
+                            id="new-user-email"
+                            type="email"
+                            value={newUserEmail}
+                            onChange={(e) => setNewUserEmail(e.target.value)}
+                            placeholder="email@exemplo.com"
+                          />
+                        </div>
+                        <Button
+                          onClick={handleGenerateInviteCode}
+                          className="w-full"
+                          disabled={isGenerating || !newUserName || !newUserEmail}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                          )}
+                          Gerar Código
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <div className="grid flex-1 gap-2">
+                          <Input
+                            readOnly
+                            value={generatedCode}
+                            className="text-center text-2xl font-mono tracking-widest uppercase"
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className={`px-3 transition-all ${
+                            isCopied
+                              ? "bg-green-600 hover:bg-green-700 text-white"
+                              : ""
+                          }`}
+                          onClick={handleCopyCode}
+                        >
+                          <span className="sr-only">Copiar</span>
+                          {isCopied ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setIsInviteDialogOpen(false)}
+                      onClick={() => {
+                        setIsInviteDialogOpen(false);
+                        setGeneratedCode("");
+                        setNewUserName("");
+                        setNewUserEmail("");
+                      }}
                     >
                       Fechar
                     </Button>
@@ -499,7 +592,7 @@ export default function SettingsPage() {
                       <TableHead>Código</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Expira em</TableHead>
-                      <TableHead>Usado por</TableHead>
+                      <TableHead>Convidado</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -552,7 +645,7 @@ export default function SettingsPage() {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-muted-foreground">
-                              {code.used_by_email || "-"}
+                              {code.invited_email || "-"}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -599,9 +692,9 @@ export default function SettingsPage() {
                           <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
                             {code.code}
                           </code>
-                          {code.used_by_email && (
+                          {code.invited_email && (
                             <p className="text-xs text-muted-foreground mt-1 truncate">
-                              Usado por: {code.used_by_email}
+                              Convidado: {code.invited_email}
                             </p>
                           )}
                         </div>

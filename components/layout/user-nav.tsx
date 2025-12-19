@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,55 +26,14 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-
-interface UserProfile {
-  id: string
-  full_name: string | null
-  avatar_url: string | null
-  role: string
-}
+import { useAuth } from "@/components/providers/auth-provider"
+import { useState } from "react"
 
 export function UserNav() {
   const router = useRouter()
   const { setTheme, theme } = useTheme()
-  const [user, setUser] = useState<UserProfile | null>(null)
-  const [email, setEmail] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, profile, isLoading } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createClient()
-      
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      
-      if (authUser) {
-        setEmail(authUser.email || "")
-        
-        // Get profile data
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authUser.id)
-          .single()
-        
-        if (profile) {
-          setUser(profile as UserProfile)
-        } else {
-          // Fallback to auth metadata if profile not found
-          setUser({
-            id: authUser.id,
-            full_name: authUser.user_metadata?.full_name || "Usuário",
-            avatar_url: authUser.user_metadata?.avatar_url || null,
-            role: "user"
-          })
-        }
-      }
-      setIsLoading(false)
-    }
-
-    fetchUser()
-  }, [])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -103,23 +62,26 @@ export function UserNav() {
 
   if (isLoading) {
     return (
-      <Button variant="ghost" className="relative h-8 w-8 rounded-full lg:h-auto lg:w-full lg:rounded-md lg:justify-start lg:px-2 lg:py-2 lg:gap-2" disabled>
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="hidden lg:block text-sm text-muted-foreground">Carregando...</span>
-      </Button>
+      <div className="flex items-center gap-2 px-2 py-2">
+        <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+        <div className="hidden lg:flex flex-col gap-1 min-w-0 flex-1">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
     )
   }
 
-  const displayName = user?.full_name || "Usuário"
-  const displayEmail = email || "email@exemplo.com"
-  const initials = getInitials(user?.full_name ?? null)
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || "Usuário"
+  const displayEmail = user?.email || "email@exemplo.com"
+  const initials = getInitials(profile?.full_name ?? user?.user_metadata?.full_name ?? null)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full lg:h-auto lg:w-full lg:rounded-md lg:justify-start lg:px-2 lg:py-2 lg:gap-2 lg:text-left hover:bg-muted/50" suppressHydrationWarning>
           <Avatar className="h-8 w-8 shrink-0">
-            <AvatarImage src={user?.avatar_url ?? undefined} alt={displayName} />
+            <AvatarImage src={profile?.avatar_url ?? undefined} alt={displayName} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div className="hidden lg:flex flex-col flex-1 min-w-0">
@@ -193,3 +155,4 @@ export function UserNav() {
     </DropdownMenu>
   )
 }
+

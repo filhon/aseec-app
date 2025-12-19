@@ -11,7 +11,7 @@ const MapView = dynamic(() => import("@/components/map/map-view"), {
   ssr: false,
   loading: () => (
     <div className="flex h-screen w-full items-center justify-center bg-muted">
-      <p className="text-muted-foreground animate-pulse">Carregando mapa...</p>
+       <div className="w-full h-full animate-pulse bg-muted-foreground/10" />
     </div>
   ),
 })
