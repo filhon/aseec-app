@@ -61,12 +61,12 @@ const isWeekend = (date: Date) => date.getDay() === 0 || date.getDay() === 6
 export const generateMockTransactions = (): Transaction[] => {
     const transactions: Transaction[] = []
     const today = new Date()
-    
+
     // Generate transactions for past 30 days and future 90 days
     for (let i = -30; i <= 90; i++) {
         const date = addDays(today, i)
         const dateStr = date.toISOString().split('T')[0]
-        
+
         if (isWeekend(date)) continue;
 
         // Daily Revenue Chance
@@ -99,7 +99,7 @@ export const generateMockTransactions = (): Transaction[] => {
 
         // Specific Monthly Bills
         if (date.getDate() === 5) {
-             transactions.push({
+            transactions.push({
                 id: `payroll-${i}`,
                 description: 'Folha de Pagamento',
                 date: dateStr,
@@ -110,22 +110,25 @@ export const generateMockTransactions = (): Transaction[] => {
             })
         }
     }
-    
+
     return transactions
 }
 
 export const mockTransactions = generateMockTransactions()
 
 // Calculate Cash Flow Data based on Transactions
-export const calculateCashFlowFromTransactions = (transactions: Transaction[], initialBalance: number = 1250000): CashFlowData[] => {
-    const data: CashFlowData[] = []
-    const today = new Date()
-    let currentBalance = initialBalance
-    
-    // Create map of days for O(1) lookup or just iterate days
-    // Iterating days is cleaner to ensure continuity
-    const transactionMap = new Map<string, { revenue: number, expenses: number }>()
-    
+// - Uses the real currentBalance from the API
+// - Derives timeline from the transaction dates
+// - Groups by week when the period exceeds 60 days
+export const calculateCashFlowFromTransactions = (
+    transactions: Transaction[],
+    currentBalance: number = 0
+): CashFlowData[] => {
+    if (transactions.length === 0) return []
+
+    // 1. Build a map of daily revenue / expenses
+    const transactionMap = new Map<string, { revenue: number; expenses: number }>()
+
     transactions.forEach(t => {
         const existing = transactionMap.get(t.date) || { revenue: 0, expenses: 0 }
         if (t.type === 'revenue') existing.revenue += t.amount
@@ -133,44 +136,84 @@ export const calculateCashFlowFromTransactions = (transactions: Transaction[], i
         transactionMap.set(t.date, existing)
     })
 
-    // Sort dates? No, we need continuous timeline
-    // Range: -30 to +90 from today
+    // 2. Determine the date range from transactions
+    const allDates = transactions.map(t => t.date).sort()
+    const minDate = new Date(allDates[0])
+    const maxDate = new Date(allDates[allDates.length - 1])
 
-    
-    // Backtrack to find balance at day -30
-    let balanceAtStart = initialBalance
-    for (let i = 0; i >= -30; i--) {
-         const date = addDays(today, i)
-         const dateStr = date.toISOString().split('T')[0]
-         const dayData = transactionMap.get(dateStr) || { revenue: 0, expenses: 0 }
-         
-         // If today is index 0, balance today includes today's transactions? 
-         // Let's assume initialBalance is "Balance at beginning of today" (before today's txs) or "End of today"?
-         // Usually "Current Balance" is accurate as of now.
-         // Let's assume it's "End of Today".
-         
-         // Balance[i-1] = Balance[i] - Revenue[i] + Expenses[i]
-         balanceAtStart = balanceAtStart - dayData.revenue + dayData.expenses
+    // 3. Generate continuous daily data points
+    const today = new Date()
+
+    // Calculate balance at minDate by working backwards from today's known balance
+    // currentBalance is the balance "now" (today).
+    // Balance(day) = Balance(day-1) + revenue(day) - expenses(day)
+    // So Balance(minDate-1) = currentBalance - Σ(revenue until today) + Σ(expenses until today)
+    // Then we simulate forward from there.
+
+    // Sum all transactions from minDate up to today (inclusive)
+    let revUpToToday = 0
+    let expUpToToday = 0
+    for (let d = new Date(minDate); d <= today; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0]
+        const dayData = transactionMap.get(dateStr)
+        if (dayData) {
+            revUpToToday += dayData.revenue
+            expUpToToday += dayData.expenses
+        }
     }
-    
-    // Now simulate forward
-    currentBalance = balanceAtStart
-    for (let i = -30; i <= 90; i++) {
-        const date = addDays(today, i)
-        const dateStr = date.toISOString().split('T')[0]
+
+    // Balance at start (before minDate's transactions) = currentBalance - netUpToToday
+    const balanceAtStart = currentBalance - revUpToToday + expUpToToday
+
+    // 4. Build daily data
+    const dailyData: CashFlowData[] = []
+    let runningBalance = balanceAtStart
+
+    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0]
         const dayData = transactionMap.get(dateStr) || { revenue: 0, expenses: 0 }
-        
-        currentBalance = currentBalance + dayData.revenue - dayData.expenses
-        
-        data.push({
+        runningBalance = runningBalance + dayData.revenue - dayData.expenses
+
+        dailyData.push({
             date: dateStr,
             revenue: dayData.revenue,
             expenses: dayData.expenses,
-            balance: currentBalance
+            balance: runningBalance
         })
     }
 
-    return data
+    // 5. If period > 60 days, group by ISO week
+    const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (diffDays > 60) {
+        return groupByWeek(dailyData)
+    }
+
+    return dailyData
+}
+
+// Group daily cash flow data by ISO week
+function groupByWeek(dailyData: CashFlowData[]): CashFlowData[] {
+    const weeks = new Map<string, CashFlowData>()
+
+    dailyData.forEach(d => {
+        const date = new Date(d.date)
+        // ISO week: get the Monday of this week as key
+        const dayOfWeek = date.getDay() || 7 // 1=Mon ... 7=Sun
+        const monday = new Date(date)
+        monday.setDate(date.getDate() - dayOfWeek + 1)
+        const weekKey = monday.toISOString().split('T')[0]
+
+        const existing = weeks.get(weekKey)
+        if (existing) {
+            existing.revenue += d.revenue
+            existing.expenses += d.expenses
+            existing.balance = d.balance // use end-of-week balance (last day wins)
+        } else {
+            weeks.set(weekKey, { ...d, date: weekKey })
+        }
+    })
+
+    return Array.from(weeks.values()).sort((a, b) => a.date.localeCompare(b.date))
 }
 
 

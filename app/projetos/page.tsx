@@ -1,15 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { FavoriteButton } from "@/components/ui/favorite-button"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Search, MapPin, Users, Building2, Globe, RefreshCcw, Filter, X, Plus } from "lucide-react"
-import { mockDashboardProjects } from "@/components/dashboard/data"
-import { mockProjects, ProjectLocation } from "@/components/map/data"
+import { Search, MapPin, Users, Building2, Globe, RefreshCcw, Filter, X, Plus, Loader2 } from "lucide-react"
 import { ProjectsPieChart } from "@/components/dashboard/projects-pie-chart"
 import { GlobalProjectUpdates } from "@/components/dashboard/global-project-updates"
 import {
@@ -23,6 +21,7 @@ import {
 } from "@/components/ui/pagination"
 import { useAdmin } from "@/hooks/use-admin"
 import { usePermissions } from "@/hooks/use-permissions"
+import { getProjectsForDashboard, getProjectsForMap, type DashboardProject, type ProjectLocation } from "@/lib/services/project-service"
 
 // Dynamically import MapView
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -50,6 +49,31 @@ export default function ProjectsPage() {
     const { isAdmin } = useAdmin()
     const { canViewFinancials } = usePermissions()
 
+    // Data state
+    const [projects, setProjects] = useState<DashboardProject[]>([])
+    const [mapProjects, setMapProjects] = useState<ProjectLocation[]>([])
+    const [loading, setLoading] = useState(true)
+
+    // Fetch projects on mount
+    useEffect(() => {
+        async function fetchData() {
+            setLoading(true)
+            try {
+                const [dashboardData, mapData] = await Promise.all([
+                    getProjectsForDashboard(),
+                    getProjectsForMap()
+                ])
+                setProjects(dashboardData)
+                setMapProjects(mapData)
+            } catch (error) {
+                console.error("Error fetching projects:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 8 // 2 rows * 4 cols (max)
@@ -59,17 +83,17 @@ export default function ProjectsPage() {
         const lowerSearch = searchTerm.toLowerCase().trim()
         
         // Base matching by search term
-        let result = mockDashboardProjects
+        let result = projects
         if (lowerSearch) {
             result = result.filter(project => {
-                const continent = getContinent(project.country).toLowerCase()
+                const continent = getContinent(project.country || '').toLowerCase()
                 return (
                     project.title.toLowerCase().includes(lowerSearch) ||
                     project.responsible.toLowerCase().includes(lowerSearch) ||
                     project.institution.toLowerCase().includes(lowerSearch) ||
-                    project.municipality.toLowerCase().includes(lowerSearch) ||
-                    project.state.toLowerCase().includes(lowerSearch) ||
-                    project.country.toLowerCase().includes(lowerSearch) ||
+                    (project.municipality || '').toLowerCase().includes(lowerSearch) ||
+                    (project.state || '').toLowerCase().includes(lowerSearch) ||
+                    (project.country || '').toLowerCase().includes(lowerSearch) ||
                     continent.includes(lowerSearch)
                 )
             })
@@ -86,7 +110,7 @@ export default function ProjectsPage() {
         }
 
         return result
-    }, [searchTerm, mapFilteredIds, categoryFilter])
+    }, [projects, searchTerm, mapFilteredIds, categoryFilter])
     
     // Pagination Logic
     const totalPages = Math.ceil(filteredProjects.length / itemsPerPage)
@@ -95,24 +119,22 @@ export default function ProjectsPage() {
         return filteredProjects.slice(startIndex, startIndex + itemsPerPage)
     }, [filteredProjects, currentPage])
 
-    // Reset page when filters change
-
     
     // Projects for Chart (excludes category filter so we can see other options)
     const projectsForChart = useMemo(() => {
         const lowerSearch = searchTerm.toLowerCase().trim()
-        let result = mockDashboardProjects
+        let result = projects
         
         if (lowerSearch) {
              result = result.filter(project => {
-                const continent = getContinent(project.country).toLowerCase()
+                const continent = getContinent(project.country || '').toLowerCase()
                 return (
                     project.title.toLowerCase().includes(lowerSearch) ||
                     project.responsible.toLowerCase().includes(lowerSearch) ||
                     project.institution.toLowerCase().includes(lowerSearch) ||
-                    project.municipality.toLowerCase().includes(lowerSearch) ||
-                    project.state.toLowerCase().includes(lowerSearch) ||
-                    project.country.toLowerCase().includes(lowerSearch) ||
+                    (project.municipality || '').toLowerCase().includes(lowerSearch) ||
+                    (project.state || '').toLowerCase().includes(lowerSearch) ||
+                    (project.country || '').toLowerCase().includes(lowerSearch) ||
                     continent.includes(lowerSearch)
                 )
             })
@@ -121,7 +143,7 @@ export default function ProjectsPage() {
             result = result.filter(p => mapFilteredIds.has(p.id))
         }
         return result
-    }, [searchTerm, mapFilteredIds])
+    }, [projects, searchTerm, mapFilteredIds])
 
     const handlePinClick = (project: ProjectLocation) => {
         setMapFilteredIds(new Set([project.id]))
@@ -133,21 +155,28 @@ export default function ProjectsPage() {
         setCurrentPage(1)
     }
 
-    // Map projects Logic: Filter map pins based on the filtered list IDs if possible, or just Show All if no search.
-    // Since map data and dashboard data are separate mocks, we'll filter the map pins roughly by matching titles or IDs if they aligned.
-    // For now, let's filter map pins by title match against the search term to keep it consistent visually.
+    // Map projects Logic: Filter map pins based on search term
     const filteredMapProjects = useMemo(() => {
          const lowerSearch = searchTerm.toLowerCase().trim()
-         if (!lowerSearch) return mockProjects
+         if (!lowerSearch) return mapProjects
 
-         return mockProjects.filter(p => 
+         return mapProjects.filter(p => 
             p.title.toLowerCase().includes(lowerSearch) ||
             p.responsible.toLowerCase().includes(lowerSearch) ||
             p.address.toLowerCase().includes(lowerSearch)
          )
-    }, [searchTerm])
+    }, [mapProjects, searchTerm])
 
-
+    if (loading) {
+        return (
+            <div className="container mx-auto py-6 lg:py-10 flex items-center justify-center min-h-[400px]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-muted-foreground">Carregando projetos...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="container mx-auto py-6 lg:py-10 space-y-8 animate-in fade-in duration-500">
@@ -198,6 +227,7 @@ export default function ProjectsPage() {
                 <Card className="lg:col-span-2 shadow-sm overflow-hidden flex flex-col h-[350px] lg:h-[450px] p-0 border-0 ring-1 ring-border">
                     <div className="flex-1 relative bg-slate-100 dark:bg-slate-900 w-full h-full">
                         <MapView 
+                            projects={filteredMapProjects}
                             onPinClick={handlePinClick} 
                             onClusterClick={handleClusterClick} 
                             style={{ height: '100%', width: '100%' }}
@@ -290,14 +320,14 @@ export default function ProjectsPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <MapPin className="h-3.5 w-3.5" />
-                                            <span className="truncate">{project.municipality}, {project.state}</span>
+                                            <span className="truncate">{project.municipality || 'N/A'}, {project.state || 'N/A'}</span>
                                         </div>
                                         <div className="pt-3 border-t flex justify-between items-center mt-auto">
                                         {canViewFinancials ? (
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] uppercase font-semibold text-muted-foreground">Investimento</span>
                                                 <span className="font-bold text-foreground text-sm">
-                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(project.investment)}
+                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(project.investment) || 0)}
                                                 </span>
                                             </div>
                                         ) : (

@@ -1,0 +1,402 @@
+import { createClient } from "@/lib/supabase/client"
+import type { Project, ProjectWithRelations, Entity, Category, ProjectPost, ProjectInvestment } from "@/lib/types/database.types"
+
+// =============================================================================
+// Types for service responses
+// =============================================================================
+
+export interface ProjectLocation {
+  id: string
+  title: string
+  responsible: string
+  address: string
+  lat: number
+  lng: number
+  type: "blue" | "green"
+  latestImage?: string
+}
+
+export interface DashboardProject extends Project {
+  institution: string
+  category: string
+  tags: string[]
+  investmentByYear: { year: number; value: number }[]
+  feed?: ProjectPost[]
+}
+
+export interface ProjectStats {
+  totalProjects: number
+  totalInvestment: number
+  projectsByStatus: Record<string, number>
+  projectsByCountry: Record<string, { count: number; investment: number }>
+  projectsByCategory: Record<string, number>
+  reachedPeople: number
+}
+
+// =============================================================================
+// Client-side Project Service
+// =============================================================================
+
+/**
+ * Get all projects with optional filters (client-side)
+ */
+export async function getProjects(filters?: {
+  status?: string
+  country?: string
+  entityId?: string
+  search?: string
+  limit?: number
+}): Promise<Project[]> {
+  const supabase = createClient()
+
+  let query = supabase
+    .from("projects")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+
+  if (filters?.status) {
+    query = query.eq("status", filters.status)
+  }
+  if (filters?.country) {
+    query = query.eq("country", filters.country)
+  }
+  if (filters?.entityId) {
+    query = query.eq("entity_id", filters.entityId)
+  }
+  if (filters?.search) {
+    query = query.or(`title.ilike.%${filters.search}%,responsible.ilike.%${filters.search}%,municipality.ilike.%${filters.search}%`)
+  }
+  if (filters?.limit) {
+    query = query.limit(filters.limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error("Error fetching projects:", error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * Get a single project by ID with all relations
+ */
+export async function getProjectById(id: string): Promise<ProjectWithRelations | null> {
+  const supabase = createClient()
+
+  // Get the project
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", id)
+    .eq("active", true)
+    .single()
+
+  if (projectError || !project) {
+    console.error("Error fetching project:", projectError)
+    return null
+  }
+
+  // Get entity if exists
+  let entity: Entity | null = null
+  if (project.entity_id) {
+    const { data: entityData } = await supabase
+      .from("entities")
+      .select("*")
+      .eq("id", project.entity_id)
+      .single()
+    entity = entityData
+  }
+
+  // Get categories
+  const { data: categoryLinks } = await supabase
+    .from("project_categories")
+    .select("category_id")
+    .eq("project_id", id)
+    .eq("active", true)
+
+  let categories: Category[] = []
+  if (categoryLinks && categoryLinks.length > 0) {
+    const categoryIds = categoryLinks.map(c => c.category_id)
+    const { data: categoriesData } = await supabase
+      .from("categories")
+      .select("*")
+      .in("id", categoryIds)
+    categories = categoriesData || []
+  }
+
+  // Get tags
+  const { data: tagsData } = await supabase
+    .from("project_tags")
+    .select("tag")
+    .eq("project_id", id)
+    .eq("active", true)
+  const tags = tagsData?.map(t => t.tag) || []
+
+  // Get investments
+  const { data: investmentsData } = await supabase
+    .from("project_investments")
+    .select("*")
+    .eq("project_id", id)
+    .eq("active", true)
+    .order("year", { ascending: true })
+
+  // Get posts
+  const { data: postsData } = await supabase
+    .from("project_posts")
+    .select("*")
+    .eq("project_id", id)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+
+  return {
+    ...project,
+    entity,
+    categories,
+    tags,
+    investments: investmentsData || [],
+    posts: postsData || [],
+  }
+}
+
+/**
+ * Get projects formatted for map display
+ */
+export async function getProjectsForMap(): Promise<ProjectLocation[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, title, responsible, address, latitude, longitude, status, featured_image_url")
+    .eq("active", true)
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+
+  if (error) {
+    console.error("Error fetching projects for map:", error)
+    return []
+  }
+
+  return (data || []).map(p => ({
+    id: p.id,
+    title: p.title,
+    responsible: p.responsible,
+    address: p.address || "",
+    lat: p.latitude!,
+    lng: p.longitude!,
+    type: p.status === "concluido" ? "green" : "blue",
+    latestImage: p.featured_image_url || undefined,
+  }))
+}
+
+/**
+ * Get projects formatted for dashboard display
+ */
+export async function getProjectsForDashboard(): Promise<DashboardProject[]> {
+  const supabase = createClient()
+
+  // Get all projects
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+
+  if (!projects || projects.length === 0) return []
+
+  // Get all entities in one query
+  const entityIds = [...new Set(projects.filter(p => p.entity_id).map(p => p.entity_id!))]
+  const entitiesMap: Record<string, Entity> = {}
+  if (entityIds.length > 0) {
+    const { data: entities } = await supabase
+      .from("entities")
+      .select("*")
+      .in("id", entityIds)
+    entities?.forEach(e => { entitiesMap[e.id] = e })
+  }
+
+  // Get all categories for projects
+  const projectIds = projects.map(p => p.id)
+  const { data: categoryLinks } = await supabase
+    .from("project_categories")
+    .select("project_id, category_id")
+    .in("project_id", projectIds)
+    .eq("active", true)
+
+  // Get category details
+  const categoryIds = [...new Set(categoryLinks?.map(c => c.category_id) || [])]
+  const categoriesMap: Record<string, Category> = {}
+  if (categoryIds.length > 0) {
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("*")
+      .in("id", categoryIds)
+    categories?.forEach(c => { categoriesMap[c.id] = c })
+  }
+
+  // Build project-to-category mapping
+  const projectCategoryMap: Record<string, string> = {}
+  categoryLinks?.forEach(link => {
+    if (!projectCategoryMap[link.project_id] && categoriesMap[link.category_id]) {
+      projectCategoryMap[link.project_id] = categoriesMap[link.category_id].name
+    }
+  })
+
+  // Get all tags for projects
+  const { data: tagsData } = await supabase
+    .from("project_tags")
+    .select("project_id, tag")
+    .in("project_id", projectIds)
+    .eq("active", true)
+
+  const projectTagsMap: Record<string, string[]> = {}
+  tagsData?.forEach(t => {
+    if (!projectTagsMap[t.project_id]) projectTagsMap[t.project_id] = []
+    projectTagsMap[t.project_id].push(t.tag)
+  })
+
+  // Get all investments
+  const { data: investmentsData } = await supabase
+    .from("project_investments")
+    .select("*")
+    .in("project_id", projectIds)
+    .eq("active", true)
+
+  const projectInvestmentsMap: Record<string, ProjectInvestment[]> = {}
+  investmentsData?.forEach(inv => {
+    if (!projectInvestmentsMap[inv.project_id]) projectInvestmentsMap[inv.project_id] = []
+    projectInvestmentsMap[inv.project_id].push(inv)
+  })
+
+  return projects.map(p => ({
+    ...p,
+    institution: p.entity_id && entitiesMap[p.entity_id] ? entitiesMap[p.entity_id].name : "Sem entidade",
+    category: projectCategoryMap[p.id] || "Sem categoria",
+    tags: projectTagsMap[p.id] || [],
+    investmentByYear: (projectInvestmentsMap[p.id] || [])
+      .sort((a, b) => a.year - b.year)
+      .map(inv => ({ year: inv.year, value: Number(inv.value) })),
+  }))
+}
+
+/**
+ * Get project statistics for dashboard
+ */
+export async function getProjectStats(): Promise<ProjectStats> {
+  const projects = await getProjectsForDashboard()
+
+  const stats: ProjectStats = {
+    totalProjects: projects.length,
+    totalInvestment: projects.reduce((sum, p) => sum + (Number(p.investment) || 0), 0),
+    projectsByStatus: {},
+    projectsByCountry: {},
+    projectsByCategory: {},
+    reachedPeople: projects.reduce((sum, p) => sum + (p.reached_people || 0), 0),
+  }
+
+  projects.forEach(p => {
+    // By status
+    stats.projectsByStatus[p.status] = (stats.projectsByStatus[p.status] || 0) + 1
+
+    // By country
+    const country = p.country || "Desconhecido"
+    if (!stats.projectsByCountry[country]) {
+      stats.projectsByCountry[country] = { count: 0, investment: 0 }
+    }
+    stats.projectsByCountry[country].count++
+    stats.projectsByCountry[country].investment += Number(p.investment) || 0
+
+    // By category
+    stats.projectsByCategory[p.category] = (stats.projectsByCategory[p.category] || 0) + 1
+  })
+
+  return stats
+}
+
+/**
+ * Create a new project
+ */
+export async function createProject(data: Partial<Project>): Promise<Project | null> {
+  const supabase = createClient()
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      title: data.title!,
+      responsible: data.responsible!,
+      description: data.description,
+      entity_id: data.entity_id,
+      country: data.country,
+      state: data.state,
+      municipality: data.municipality,
+      address: data.address,
+      street: data.street,
+      number: data.number,
+      neighborhood: data.neighborhood,
+      zip_code: data.zip_code,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      status: data.status || "pendente",
+      extension: data.extension || "parcial",
+      requested_value: data.requested_value,
+      approved_value: data.approved_value,
+      investment: data.investment || 0,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      indication: data.indication,
+      observations: data.observations,
+      active: true,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error creating project:", error)
+    return null
+  }
+
+  return project
+}
+
+/**
+ * Get all entities
+ */
+export async function getEntities(): Promise<Entity[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("entities")
+    .select("*")
+    .eq("active", true)
+    .order("name")
+
+  if (error) {
+    console.error("Error fetching entities:", error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * Get all categories
+ */
+export async function getCategories(): Promise<Category[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("active", true)
+    .order("name")
+
+  if (error) {
+    console.error("Error fetching categories:", error)
+    return []
+  }
+
+  return data || []
+}

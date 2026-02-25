@@ -12,9 +12,9 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-    Calendar as CalendarIcon, MapPin, DollarSign, Users, Award, 
-    Edit2, Save, X, 
+import {
+    Calendar as CalendarIcon, MapPin, DollarSign, Users, Award,
+    Edit2, Save, X,
     CheckCircle2, AlertCircle, Tag, Globe, User,
     LayoutDashboard, FileText, ChevronDown
 } from "lucide-react"
@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import Link from "next/link"
+
 import { FavoriteButton } from "@/components/ui/favorite-button"
 import { usePermissions } from "@/hooks/use-permissions"
 
@@ -97,7 +97,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         if (classForm.category !== project.category) changes.push(`Categoria alterada de "${project.category}" para "${classForm.category}"`)
         if (classForm.extension !== project.extension) changes.push(`Extensão alterada de "${project.extension}" para "${classForm.extension}"`)
         if (JSON.stringify(newTags) !== JSON.stringify(project.tags)) changes.push(`Tags atualizadas`)
-        
+
         if (changes.length > 0) {
             setProject({
                 ...project,
@@ -160,11 +160,11 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         const changes = []
         if (financialForm.requestedValue !== (project.requestedValue || project.investment)) changes.push(`Valor solicitado atualizado para ${formatCurrency(financialForm.requestedValue)}`)
         if (financialForm.approvedValue !== (project.approvedValue || project.investment)) changes.push(`Valor aprovado atualizado para ${formatCurrency(financialForm.approvedValue)}`)
-        
+
         // Check for specific year changes
         const oldYears = new Map(project.investmentByYear.map(i => [i.year, i.value]))
         const newYears = new Map(financialForm.investmentByYear.map(i => [i.year, i.value]))
-        
+
         let historyChanged = false
         if (oldYears.size !== newYears.size) historyChanged = true
         else {
@@ -196,7 +196,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     // Helper formatter
     const formatDate = (dateString?: string) => {
         if (!dateString) return "N/A"
-        
+
         // Handle YYYY-MM-DD
         if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const [year, month, day] = dateString.split('-')
@@ -216,17 +216,17 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
 
     return (
         <div className="min-h-screen bg-transparent space-y-6">
-            
+
             {/* Header / Hero */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                     {/* Previous Navigation Removed */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
-                        <FavoriteButton 
-                            id={project.id} 
-                            type="project" 
-                            title={project.title} 
+                        <FavoriteButton
+                            id={project.id}
+                            type="project"
+                            title={project.title}
                             subtitle={project.institution}
                             className="h-8 w-8"
                         />
@@ -235,7 +235,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
                         <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {project.municipality}, {project.state} - {project.country}</span>
                         <span className="flex items-center gap-1.5">
-                            <Award className="h-4 w-4" /> 
+                            <Award className="h-4 w-4" />
                             <span>{project.institution}</span>
                         </span>
                     </div>
@@ -243,7 +243,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             </div>
 
             {/* Mobile: Toggle Details Row */}
-            <div 
+            <div
                 className="lg:hidden flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => setShowMobileDetails(!showMobileDetails)}
             >
@@ -258,10 +258,10 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
                 {/* Left Column - Details */}
                 <div className={cn("space-y-6 lg:col-span-1", !showMobileDetails && "hidden lg:block")}>
-                    
+
                     {/* OVERVIEW */}
                     <ProjectInfoCard
                         title="Visão Geral"
@@ -274,24 +274,24 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             <div className="space-y-3">
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Descrição</label>
-                                    <Textarea 
-                                        value={overviewForm.description} 
-                                        onChange={e => setOverviewForm({...overviewForm, description: e.target.value})} 
+                                    <Textarea
+                                        value={overviewForm.description}
+                                        onChange={e => setOverviewForm({ ...overviewForm, description: e.target.value })}
                                         className="min-h-[100px]"
                                     />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Observações</label>
-                                    <Textarea 
-                                        value={overviewForm.observations} 
-                                        onChange={e => setOverviewForm({...overviewForm, observations: e.target.value})} 
+                                    <Textarea
+                                        value={overviewForm.observations}
+                                        onChange={e => setOverviewForm({ ...overviewForm, observations: e.target.value })}
                                         className="min-h-[60px]"
                                     />
                                 </div>
                             </div>
                         }
                     >
-                         <div className="space-y-4">
+                        <div className="space-y-4">
                             <div className="text-sm text-muted-foreground leading-relaxed">
                                 {project.description || "Nenhuma descrição disponível para este projeto."}
                             </div>
@@ -306,7 +306,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                     </div>
                                 </div>
                             )}
-                             {project.observations && (
+                            {project.observations && (
                                 <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-3 rounded-lg text-xs">
                                     <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-1.5">
                                         <AlertCircle className="h-3 w-3" /> Observações
@@ -314,7 +314,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                     <p className="text-yellow-700 dark:text-yellow-400 leading-snug">{project.observations}</p>
                                 </div>
                             )}
-                         </div>
+                        </div>
                     </ProjectInfoCard>
 
                     {/* BASIC INFO */}
@@ -329,7 +329,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             <div className="space-y-3">
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Responsável</label>
-                                    <Input value={basicForm.responsible} onChange={e => setBasicForm({...basicForm, responsible: e.target.value})} />
+                                    <Input value={basicForm.responsible} onChange={e => setBasicForm({ ...basicForm, responsible: e.target.value })} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="space-y-1 flex flex-col">
@@ -355,7 +355,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                                 <Calendar
                                                     mode="single"
                                                     selected={basicForm.startDate ? new Date(basicForm.startDate + 'T12:00:00') : undefined}
-                                                    onSelect={(date) => setBasicForm({...basicForm, startDate: date ? format(date, 'yyyy-MM-dd') : ''})}
+                                                    onSelect={(date) => setBasicForm({ ...basicForm, startDate: date ? format(date, 'yyyy-MM-dd') : '' })}
                                                     initialFocus
                                                     locale={ptBR}
                                                 />
@@ -385,7 +385,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                                 <Calendar
                                                     mode="single"
                                                     selected={basicForm.endDate ? new Date(basicForm.endDate + 'T12:00:00') : undefined}
-                                                    onSelect={(date) => setBasicForm({...basicForm, endDate: date ? format(date, 'yyyy-MM-dd') : ''})}
+                                                    onSelect={(date) => setBasicForm({ ...basicForm, endDate: date ? format(date, 'yyyy-MM-dd') : '' })}
                                                     initialFocus
                                                     locale={ptBR}
                                                 />
@@ -396,36 +396,36 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                 <div className="space-y-1 flex flex-col">
                                     <label className="text-xs font-semibold">Última Visita (Staff)</label>
                                     <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !basicForm.lastVisit && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {basicForm.lastVisit ? (
-                                                        format(new Date(basicForm.lastVisit + 'T12:00:00'), "dd/MM/yyyy")
-                                                    ) : (
-                                                        <span>Escolha uma data</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={basicForm.lastVisit ? new Date(basicForm.lastVisit + 'T12:00:00') : undefined}
-                                                    onSelect={(date) => setBasicForm({...basicForm, lastVisit: date ? format(date, 'yyyy-MM-dd') : ''})}
-                                                    initialFocus
-                                                    locale={ptBR}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full pl-3 text-left font-normal",
+                                                    !basicForm.lastVisit && "text-muted-foreground"
+                                                )}
+                                            >
+                                                {basicForm.lastVisit ? (
+                                                    format(new Date(basicForm.lastVisit + 'T12:00:00'), "dd/MM/yyyy")
+                                                ) : (
+                                                    <span>Escolha uma data</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={basicForm.lastVisit ? new Date(basicForm.lastVisit + 'T12:00:00') : undefined}
+                                                onSelect={(date) => setBasicForm({ ...basicForm, lastVisit: date ? format(date, 'yyyy-MM-dd') : '' })}
+                                                initialFocus
+                                                locale={ptBR}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Indicação</label>
-                                    <Input value={basicForm.indication || ''} onChange={e => setBasicForm({...basicForm, indication: e.target.value})} />
+                                    <Input value={basicForm.indication || ''} onChange={e => setBasicForm({ ...basicForm, indication: e.target.value })} />
                                 </div>
                             </div>
                         }
@@ -459,8 +459,8 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                 <>
                                     <Separator />
                                     <div>
-                                         <span className="text-muted-foreground text-xs font-medium uppercase">Última Visita (Staff)</span>
-                                          <div className="flex items-center gap-2 mt-1 text-blue-600 dark:text-blue-400">
+                                        <span className="text-muted-foreground text-xs font-medium uppercase">Última Visita (Staff)</span>
+                                        <div className="flex items-center gap-2 mt-1 text-blue-600 dark:text-blue-400">
                                             <CalendarIcon className="h-3.5 w-3.5" />
                                             <span className="font-semibold">{formatDate(project.lastVisit)}</span>
                                         </div>
@@ -477,7 +477,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                 </>
                             )}
                         </div>
-                        
+
                         {(project.thanked || feed.some(p => p.type === 'acknowledgment' && new Date(p.date).getFullYear() === new Date().getFullYear())) && (
                             <>
                                 <Separator className="my-4" />
@@ -488,7 +488,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             </>
                         )}
                         {!project.thanked && !feed.some(p => p.type === 'acknowledgment' && new Date(p.date).getFullYear() === new Date().getFullYear()) && (
-                             <>
+                            <>
                                 <Separator className="my-4" />
                                 <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                                     <AlertCircle className="h-4 w-4" />
@@ -500,150 +500,150 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
 
                     {/* FINANCIAL - Hidden for users without permission */}
                     {canViewFinancials && (
-                     <ProjectInfoCard
-                        title="Financeiro"
-                        icon={<DollarSign className="h-4 w-4 text-primary" />}
-                        hasHistory={true}
-                        isEditing={isEditingFinancial}
-                        setIsEditing={canEditProjects ? setIsEditingFinancial : undefined}
-                        onSave={handleSaveFinancial}
-                        editContent={
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                     <div className="flex items-center justify-between">
-                                        <label className="text-xs font-semibold">Histórico de Investimentos</label>
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline" 
-                                            className="h-6 text-xs"
-                                            onClick={() => {
-                                                setFinancialForm({
-                                                    ...financialForm,
-                                                    investmentByYear: [...financialForm.investmentByYear, { year: new Date().getFullYear() - 1, value: 0 }]
-                                                })
-                                            }}
-                                        >
-                                            + Adicionar Ano
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                                        {financialForm.investmentByYear.sort((a, b) => b.year - a.year).map((item, index) => (
-                                            <div key={index} className="flex items-center gap-2">
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="Ano"
-                                                    className="w-24" 
-                                                    value={item.year}
-                                                    onChange={(e) => {
-                                                        const newInvestments = [...financialForm.investmentByYear]
-                                                        newInvestments.find(i => i === item)!.year = parseInt(e.target.value) || 0
-                                                        setFinancialForm({...financialForm, investmentByYear: newInvestments})
-                                                    }}
-                                                />
-                                                <div className="relative w-full">
-                                                    <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                                    <Input 
-                                                        type="number" 
-                                                        placeholder="Valor"
-                                                        className="pl-8"
-                                                        value={item.value}
+                        <ProjectInfoCard
+                            title="Financeiro"
+                            icon={<DollarSign className="h-4 w-4 text-primary" />}
+                            hasHistory={true}
+                            isEditing={isEditingFinancial}
+                            setIsEditing={canEditProjects ? setIsEditingFinancial : undefined}
+                            onSave={handleSaveFinancial}
+                            editContent={
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold">Histórico de Investimentos</label>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-6 text-xs"
+                                                onClick={() => {
+                                                    setFinancialForm({
+                                                        ...financialForm,
+                                                        investmentByYear: [...financialForm.investmentByYear, { year: new Date().getFullYear() - 1, value: 0 }]
+                                                    })
+                                                }}
+                                            >
+                                                + Adicionar Ano
+                                            </Button>
+                                        </div>
+                                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                            {financialForm.investmentByYear.sort((a, b) => b.year - a.year).map((item, index) => (
+                                                <div key={index} className="flex items-center gap-2">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Ano"
+                                                        className="w-24"
+                                                        value={item.year}
                                                         onChange={(e) => {
                                                             const newInvestments = [...financialForm.investmentByYear]
-                                                            newInvestments.find(i => i === item)!.value = parseFloat(e.target.value) || 0
-                                                            setFinancialForm({...financialForm, investmentByYear: newInvestments})
+                                                            newInvestments.find(i => i === item)!.year = parseInt(e.target.value) || 0
+                                                            setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
                                                         }}
                                                     />
+                                                    <div className="relative w-full">
+                                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="Valor"
+                                                            className="pl-8"
+                                                            value={item.value}
+                                                            onChange={(e) => {
+                                                                const newInvestments = [...financialForm.investmentByYear]
+                                                                newInvestments.find(i => i === item)!.value = parseFloat(e.target.value) || 0
+                                                                setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                        onClick={() => {
+                                                            const newInvestments = financialForm.investmentByYear.filter(i => i !== item)
+                                                            setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
+                                                        }}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => {
-                                                        const newInvestments = financialForm.investmentByYear.filter(i => i !== item)
-                                                        setFinancialForm({...financialForm, investmentByYear: newInvestments})
-                                                    }}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        {financialForm.investmentByYear.length === 0 && (
-                                            <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
-                                                Nenhum registro histórico.
-                                            </div>
-                                        )}
+                                            ))}
+                                            {financialForm.investmentByYear.length === 0 && (
+                                                <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
+                                                    Nenhum registro histórico.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <Separator />
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold">Valor Solicitado</label>
+                                        <div className="relative w-full">
+                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                            <Input
+                                                type="number"
+                                                className="pl-8"
+                                                value={financialForm.requestedValue}
+                                                onChange={e => setFinancialForm({ ...financialForm, requestedValue: parseFloat(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold">Valor Aprovado</label>
+                                        <div className="relative w-full">
+                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
+                                            <Input
+                                                type="number"
+                                                className="pl-8"
+                                                value={financialForm.approvedValue}
+                                                onChange={e => setFinancialForm({ ...financialForm, approvedValue: parseFloat(e.target.value) || 0 })}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <Separator />
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Valor Solicitado</label>
-                                     <div className="relative w-full">
-                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                        <Input 
-                                            type="number" 
-                                            className="pl-8"
-                                            value={financialForm.requestedValue} 
-                                            onChange={e => setFinancialForm({...financialForm, requestedValue: parseFloat(e.target.value) || 0})} 
-                                        />
+                            }
+                        >
+                            <CardContent className="space-y-5 p-0">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground uppercase font-semibold">Solicitado</span>
+                                        <p className="text-lg font-bold">
+                                            {formatCurrency(project.requestedValue || project.investment)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-muted-foreground uppercase font-semibold">Aprovado</span>
+                                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                                            {formatCurrency(project.approvedValue || project.investment)}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Valor Aprovado</label>
-                                    <div className="relative w-full">
-                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                        <Input 
-                                            type="number" 
-                                            className="pl-8"
-                                            value={financialForm.approvedValue} 
-                                            onChange={e => setFinancialForm({...financialForm, approvedValue: parseFloat(e.target.value) || 0})} 
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    >
-                         <CardContent className="space-y-5 p-0">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <span className="text-xs text-muted-foreground uppercase font-semibold">Solicitado</span>
-                                    <p className="text-lg font-bold">
-                                        {formatCurrency(project.requestedValue || project.investment)}
-                                    </p>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground uppercase font-semibold">Aprovado</span>
-                                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                                        {formatCurrency(project.approvedValue || project.investment)}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Investido até o momento</span>
-                                    <span className="font-medium">
-                                        {formatCurrency(project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0))}
-                                    </span>
-                                </div>
-                                <Progress value={75} className="h-2" /> 
-                            </div>
 
-                             {project.investmentByYear.length > 0 && (
-                                <div className="mt-4 pt-4 border-t space-y-2">
-                                    <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Histórico Anual</span>
-                                    <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
-                                        {project.investmentByYear.sort((a, b) => b.year - a.year).map((item) => (
-                                            <div key={item.year} className="flex justify-between text-sm p-1.5 hover:bg-muted/50 rounded-md transition-colors">
-                                                <span className="text-muted-foreground font-medium">{item.year}</span>
-                                                <span>{formatCurrency(item.value)}</span>
-                                            </div>
-                                        ))}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">Investido até o momento</span>
+                                        <span className="font-medium">
+                                            {formatCurrency(project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0))}
+                                        </span>
                                     </div>
+                                    <Progress value={75} className="h-2" />
                                 </div>
-                            )}
 
-                        </CardContent>
-                    </ProjectInfoCard>
+                                {project.investmentByYear.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t space-y-2">
+                                        <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Histórico Anual</span>
+                                        <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                            {project.investmentByYear.sort((a, b) => b.year - a.year).map((item) => (
+                                                <div key={item.year} className="flex justify-between text-sm p-1.5 hover:bg-muted/50 rounded-md transition-colors">
+                                                    <span className="text-muted-foreground font-medium">{item.year}</span>
+                                                    <span>{formatCurrency(item.value)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                            </CardContent>
+                        </ProjectInfoCard>
                     )}
 
                     {/* CLASSIFICATION */}
@@ -655,23 +655,23 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                         onSave={handleSaveClass}
                         hasHistory={true}
                         editContent={
-                             <div className="space-y-3">
+                            <div className="space-y-3">
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Categoria</label>
-                                    <Input value={classForm.category} onChange={e => setClassForm({...classForm, category: e.target.value})} />
+                                    <Input value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value })} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Extensão</label>
-                                    <Input value={classForm.extension} onChange={e => setClassForm({...classForm, extension: e.target.value})} />
+                                    <Input value={classForm.extension} onChange={e => setClassForm({ ...classForm, extension: e.target.value })} />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Tags (separadas por vírgula)</label>
-                                    <Input value={classForm.tags} onChange={e => setClassForm({...classForm, tags: e.target.value})} />
+                                    <Input value={classForm.tags} onChange={e => setClassForm({ ...classForm, tags: e.target.value })} />
                                 </div>
                             </div>
                         }
                     >
-                         <div className="space-y-4">
+                        <div className="space-y-4">
                             <div>
                                 <span className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Categoria</span>
                                 <Badge variant="secondary">{project.category}</Badge>
@@ -702,9 +702,9 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
 
                 {/* Right Column - Mural Feed */}
                 <div className="space-y-6 lg:col-span-2">
-                     {/* We pass the FULL controlled feed here */}
-                    <ProjectMural 
-                        feed={feed} 
+                    {/* We pass the FULL controlled feed here */}
+                    <ProjectMural
+                        feed={feed}
                         onAddPost={(post) => setFeed([post, ...feed])}
                         canEdit={canEditProjects}
                     />
@@ -756,7 +756,7 @@ const ProjectInfoCard = ({ title, icon, children, isEditing, setIsEditing, onSav
 
 
 function BadgeStatus({ status }: { status: string }) {
-     const styles: Record<string, string> = {
+    const styles: Record<string, string> = {
         'concluido': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
         'em_andamento': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
         'pendente': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
@@ -784,14 +784,3 @@ function formatCurrency(value: number) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
 }
 
-function slugify(text: string) {
-    return text
-      .toString()
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]+/g, '')
-      .replace(/--+/g, '-')
-}

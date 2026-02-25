@@ -16,7 +16,7 @@ interface FinancialCardsProps {
 
 export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, predictedBalance }: FinancialCardsProps) {
     const [isExpanded, setIsExpanded] = useState(false)
-    
+
 
     return (
         <div className="space-y-2">
@@ -33,7 +33,7 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                             <span className="hidden lg:inline">{formatCurrency(currentBalance)}</span>
                         </div>
                         <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
-                             Posição atual
+                            Posição atual
                         </p>
                     </CardContent>
                 </Card>
@@ -41,7 +41,7 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                 {/* 2. Predicted Balance (Moved up for Mobile first row) */}
                 <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow lg:border-l lg:border-l-border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Previsto (30d)</CardTitle>
+                        <CardTitle className="text-sm font-medium">Saldo Previsto</CardTitle>
                         <TrendingUp className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent className="px-4 pb-4">
@@ -50,7 +50,7 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                             <span className="hidden lg:inline">{formatCurrency(predictedBalance)}</span>
                         </div>
                         <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
-                            Projeção
+                            Final do período
                         </p>
                     </CardContent>
                 </Card>
@@ -66,8 +66,8 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                             <span className="lg:hidden">{formatCompactCurrency(totalRevenue)}</span>
                             <span className="hidden lg:inline">{formatCurrency(totalRevenue)}</span>
                         </div>
-                         <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
-                            Acumulado Ano
+                        <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
+                            No período
                         </p>
                     </CardContent>
                 </Card>
@@ -83,18 +83,18 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                             <span className="lg:hidden">{formatCompactCurrency(totalExpenses)}</span>
                             <span className="hidden lg:inline">{formatCurrency(totalExpenses)}</span>
                         </div>
-                         <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
-                            Acumulado Ano
+                        <p className="text-[10px] lg:text-xs text-muted-foreground mt-1 truncate">
+                            No período
                         </p>
                     </CardContent>
                 </Card>
             </div>
-            
+
             {/* Mobile Toggle Button */}
             <div className="flex justify-center lg:hidden">
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
+                <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-6 gap-1 text-xs text-muted-foreground"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >

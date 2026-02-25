@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css"
 import L from "leaflet"
 import { RotateCcw, Plus, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { mockProjects, ProjectLocation } from "./data"
+import { type ProjectLocation } from "@/lib/services/project-service"
 
 // Fix for default Leaflet marker icons
 const iconUrl = "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png"
@@ -136,6 +136,7 @@ function MapController({ flyTo }: MapControllerProps) {
 }
 
 interface MapViewProps {
+  projects?: ProjectLocation[]
   onPinClick: (project: ProjectLocation) => void
   onClusterClick: (projects: ProjectLocation[]) => void
   className?: string
@@ -144,7 +145,7 @@ interface MapViewProps {
   hideControls?: boolean
 }
 
-export default function MapView({ onPinClick, onClusterClick, className, style, flyTo, hideControls }: MapViewProps) {
+export default function MapView({ projects = [], onPinClick, onClusterClick, className, style, flyTo, hideControls }: MapViewProps) {
   const [mounted, setMounted] = useState(false)
 
   // Move hook to top level
@@ -196,7 +197,7 @@ export default function MapView({ onPinClick, onClusterClick, className, style, 
                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                markers.forEach((marker: any) => {
                   const { lat, lng } = marker.getLatLng()
-                  const found = mockProjects.find(p => Math.abs(p.lat - lat) < 0.0001 && Math.abs(p.lng - lng) < 0.0001)
+                  const found = projects.find(p => Math.abs(p.lat - lat) < 0.0001 && Math.abs(p.lng - lng) < 0.0001)
                   if (found) clusterProjects.push(found)
                })
                
@@ -206,7 +207,7 @@ export default function MapView({ onPinClick, onClusterClick, className, style, 
             }
           }}
         >
-          {mockProjects.map((project) => (
+          {projects.map((project) => (
             <Marker 
               key={project.id}
               position={[project.lat, project.lng]} 

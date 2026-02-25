@@ -3,8 +3,12 @@
 import { useMemo, useState } from "react"
 import { PieChart, Pie, Sector, ResponsiveContainer, Cell } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { DashboardProject } from "@/components/dashboard/data"
 import { cn } from "@/lib/utils"
+
+// Minimal interface for pie chart - compatible with both old mock data and new service types
+interface PieChartProject {
+  category: string
+}
 
 // Modern palette using hex codes to ensure visibility and for a specific look.
 const MODERN_COLORS = [
@@ -54,7 +58,7 @@ const renderActiveShape = (props: any) => {
 }
 
 interface ProjectsPieChartProps {
-  projects: DashboardProject[]
+  projects: PieChartProject[]
   onCategoryClick?: (category: string) => void
   selectedCategory?: string | null
 }

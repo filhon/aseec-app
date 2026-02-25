@@ -2,13 +2,13 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
 } from "@/components/ui/pagination"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -19,13 +19,14 @@ import { Transaction, mockCostCenters } from "./data"
 
 interface FinancialTransactionListProps {
     transactions: Transaction[]
+    costCenterNames?: Map<string, string>
 }
 
-export function FinancialTransactionList({ transactions }: FinancialTransactionListProps) {
+export function FinancialTransactionList({ transactions, costCenterNames }: FinancialTransactionListProps) {
     const [currentPage, setCurrentPage] = useState(1)
     const [typeFilter, setTypeFilter] = useState<'all' | 'revenue' | 'expense'>('all')
     const itemsPerPage = 10
-    
+
 
 
     // Filter and Sort
@@ -46,8 +47,8 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
             currency: 'BRL'
         }).format(value)
     }
-    
-    const getCostCenterName = (id: string) => mockCostCenters.find(c => c.id === id)?.name || id
+
+    const getCostCenterName = (id: string) => costCenterNames?.get(id) || mockCostCenters.find(c => c.id === id)?.name || id
 
     return (
         <Card>
@@ -139,12 +140,12 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                                         {formatCurrency(t.amount)}
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex justify-between items-center pt-2 border-t mt-1">
                                     <Badge variant="secondary" className="text-[10px] font-normal px-2 py-0.5 h-auto">
                                         {getCostCenterName(t.costCenterId)}
                                     </Badge>
-                                    
+
                                     {t.type === 'revenue' ? (
                                         <div className="flex items-center gap-1 text-xs text-green-600 font-medium">
                                             <ArrowUpCircle className="h-3.5 w-3.5" />
@@ -160,7 +161,7 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                             </div>
                         ))
                     ) : (
-                         <div className="text-center py-8 text-muted-foreground text-sm">
+                        <div className="text-center py-8 text-muted-foreground text-sm">
                             Nenhuma transação encontrada.
                         </div>
                     )}
@@ -173,37 +174,37 @@ export function FinancialTransactionList({ transactions }: FinancialTransactionL
                         <Pagination>
                             <PaginationContent>
                                 <PaginationItem>
-                                    <PaginationPrevious 
-                                        href="#" 
+                                    <PaginationPrevious
+                                        href="#"
                                         onClick={(e) => { e.preventDefault(); if (currentPage > 1) setCurrentPage(p => p - 1); }}
                                         className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                     />
                                 </PaginationItem>
-                                
+
                                 {Array.from({ length: totalPages }).map((_, i) => {
-                                     const page = i + 1;
-                                     if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                                         return (
+                                    const page = i + 1;
+                                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                        return (
                                             <PaginationItem key={page}>
-                                                <PaginationLink 
-                                                    href="#" 
+                                                <PaginationLink
+                                                    href="#"
                                                     isActive={page === currentPage}
                                                     onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}
                                                 >
                                                     {page}
                                                 </PaginationLink>
                                             </PaginationItem>
-                                         )
-                                     }
-                                     if (page === currentPage - 2 || page === currentPage + 2) {
-                                         return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>
-                                     }
-                                     return null;
+                                        )
+                                    }
+                                    if (page === currentPage - 2 || page === currentPage + 2) {
+                                        return <PaginationItem key={page}><PaginationEllipsis /></PaginationItem>
+                                    }
+                                    return null;
                                 })}
 
                                 <PaginationItem>
-                                    <PaginationNext 
-                                        href="#" 
+                                    <PaginationNext
+                                        href="#"
                                         onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setCurrentPage(p => p + 1); }}
                                         className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                                     />
