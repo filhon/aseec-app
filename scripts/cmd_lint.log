@@ -2,34 +2,3 @@
 > aseec-app@0.1.0 lint
 > eslint
 
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\app\financeiro\actions.ts
-  40:9  error  'metrics' is never reassigned. Use 'const' instead  prefer-const
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\components\financeiro\data.ts
-  146:11  warning  'todayStr' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\scripts\test-all-endpoints.js
-  2:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  3:16  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  6:65  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\scripts\test-finance-api.ts
-    9:10  warning  'e' is defined but never used               @typescript-eslint/no-unused-vars
-   85:18  warning  'e' is defined but never used               @typescript-eslint/no-unused-vars
-  124:11  warning  'month' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  125:11  warning  'day' is assigned a value but never used    @typescript-eslint/no-unused-vars
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\scripts\test-minimal.js
-  1:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  2:16  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  5:65  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
-
-C:\Users\Filipe Hon├│rio\Documents\aseec-app\scripts\test-tx.js
-  1:12  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  2:16  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-  5:65  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
-
-Ô£û 15 problems (7 errors, 8 warnings)
-  1 error and 0 warnings potentially fixable with the `--fix` option.
-

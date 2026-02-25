@@ -9,23 +9,24 @@ baseline-browser-mapping@latest -D`
 No linha:1 caractere:1
 + & "C:\Program Files\nodejs/node.exe" "C:\Program 
 Files\nodejs/node_mo ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ([baseli 
-   ne-brows...ping@latest -D`:String) [], RemoteExc  
-  eption
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([base 
+   line-brows...ping@latest -D`:String) [], Remot  
+  eException
     + FullyQualifiedErrorId : NativeCommandError
  
    Ôû▓ Next.js 16.0.10 (Turbopack)
    - Environments: .env.local
 
- ÔÜá The "middleware" file convention is deprecated. 
-Please use "proxy" instead. Learn more: 
-https://nextjs.org/docs/messages/middleware-to-proxy
+ ÔÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. Learn 
+more: https://nextjs.org/docs/messages/middleware-t
+o-proxy
    Creating an optimized production build ...
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 Turbopack build encountered 1 warnings:
 ./
@@ -34,46 +35,46 @@ Failed to find font override values for font
 Skipping generating a fallback font.
 
 
- Ô£ô Compiled successfully in 14.6s
+ Ô£ô Compiled successfully in 21.0s
    Running TypeScript ...
    Collecting page data using 7 workers ...
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
    Generating static pages using 7 workers (0/18) ...
 [baseline-browser-mapping] The data in this module 
-is over two months old.  To ensure accurate Baseline 
-data, please update: `npm i 
+is over two months old.  To ensure accurate 
+Baseline data, please update: `npm i 
 baseline-browser-mapping@latest -D`
    Generating static pages using 7 workers (4/18) 
    Generating static pages using 7 workers (8/18) 
    Generating static pages using 7 workers (13/18) 
- Ô£ô Generating static pages using 7 workers (18/18) in 2.8s
+ Ô£ô Generating static pages using 7 workers (18/18) in 3.7s
    Finalizing page optimization ...
 
 Route (app)

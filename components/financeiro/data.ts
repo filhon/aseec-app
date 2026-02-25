@@ -43,7 +43,7 @@ export interface Transaction {
     type: 'revenue' | 'expense'
     costCenterId: string
     projectId?: string
-    status: 'pending' | 'paid'
+    status: 'pending' | 'paid' | 'draft' | 'approved' | 'authorized' | 'rejected' | 'cancelled' | 'deleted'
 }
 
 export const mockCostCenters: CostCenter[] = [
@@ -136,54 +136,91 @@ export const calculateCashFlowFromTransactions = (
         transactionMap.set(t.date, existing)
     })
 
-    // 2. Determine the date range from transactions
+    // 2. Determine the date range
     const allDates = transactions.map(t => t.date).sort()
-    const minDate = new Date(allDates[0])
-    const maxDate = new Date(allDates[allDates.length - 1])
 
-    // 3. Generate continuous daily data points
-    const today = new Date()
-
-    // Calculate balance at minDate by working backwards from today's known balance
-    // currentBalance is the balance "now" (today).
-    // Balance(day) = Balance(day-1) + revenue(day) - expenses(day)
-    // So Balance(minDate-1) = currentBalance - Σ(revenue until today) + Σ(expenses until today)
-    // Then we simulate forward from there.
-
-    // Sum all transactions from minDate up to today (inclusive)
-    let revUpToToday = 0
-    let expUpToToday = 0
-    for (let d = new Date(minDate); d <= today; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0]
-        const dayData = transactionMap.get(dateStr)
-        if (dayData) {
-            revUpToToday += dayData.revenue
-            expUpToToday += dayData.expenses
-        }
+    const formatDateObj = (date: Date) => {
+        const y = date.getFullYear()
+        const m = String(date.getMonth() + 1).padStart(2, '0')
+        const d = String(date.getDate()).padStart(2, '0')
+        return `${y}-${m}-${d}`
     }
 
-    // Balance at start (before minDate's transactions) = currentBalance - netUpToToday
-    const balanceAtStart = currentBalance - revUpToToday + expUpToToday
+    const todayObj = new Date()
+    todayObj.setHours(12, 0, 0, 0)
+    const todayYMD = formatDateObj(todayObj)
 
-    // 4. Build daily data
-    const dailyData: CashFlowData[] = []
-    let runningBalance = balanceAtStart
+    // Ensure we start at least at the earliest transaction OR today, whichever is older
+    const minDateObj = new Date(`${allDates[0]}T12:00:00`)
+    // Ensure we end at least at the latest transaction OR today, whichever is newer
+    const maxDateObj = new Date(`${allDates[allDates.length - 1]}T12:00:00`)
 
-    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0]
-        const dayData = transactionMap.get(dateStr) || { revenue: 0, expenses: 0 }
-        runningBalance = runningBalance + dayData.revenue - dayData.expenses
+    // Fallbacks to anchor on today if array boundaries are somehow weird
+    const minD = minDateObj < todayObj ? minDateObj : todayObj
+    const maxD = maxDateObj > todayObj ? maxDateObj : todayObj
 
-        dailyData.push({
-            date: dateStr,
-            revenue: dayData.revenue,
-            expenses: dayData.expenses,
+    // 3. Generate the continuous array of date strings
+    const days: string[] = []
+    for (let d = new Date(minD); d <= maxD; d.setDate(d.getDate() + 1)) {
+        days.push(formatDateObj(d))
+    }
+
+    // 4. Build daily data by anchoring D+0 to `currentBalance`
+    const dataMap = new Map<string, CashFlowData>()
+
+    // Set Today (D+0)
+    const todayData = transactionMap.get(todayYMD) || { revenue: 0, expenses: 0 }
+    dataMap.set(todayYMD, {
+        date: todayYMD,
+        revenue: todayData.revenue,
+        expenses: todayData.expenses,
+        balance: currentBalance
+    })
+
+    const todayIndex = days.indexOf(todayYMD)
+
+    // Compute past (backwards from yesterday down to minD)
+    let runningBalance = currentBalance
+    for (let i = todayIndex - 1; i >= 0; i--) {
+        const dDate = days[i]
+        const dNext = days[i + 1]
+
+        // Reverse engineering yesterday's balance:
+        // YesterdayBalance = TodayBalance - TodayRevenue + TodayExpense
+        const nextDayTrans = transactionMap.get(dNext) || { revenue: 0, expenses: 0 }
+        runningBalance = runningBalance - nextDayTrans.revenue + nextDayTrans.expenses
+
+        const currentTrans = transactionMap.get(dDate) || { revenue: 0, expenses: 0 }
+        dataMap.set(dDate, {
+            date: dDate,
+            revenue: currentTrans.revenue,
+            expenses: currentTrans.expenses,
             balance: runningBalance
         })
     }
 
+    // Compute future (forwards from tomorrow up to maxD)
+    runningBalance = currentBalance
+    for (let i = todayIndex + 1; i < days.length; i++) {
+        const dDate = days[i]
+        const currentTrans = transactionMap.get(dDate) || { revenue: 0, expenses: 0 }
+
+        // Projecting tomorrow's balance:
+        // TomorrowBalance = TodayBalance + TomorrowRevenue - TomorrowExpense
+        runningBalance = runningBalance + currentTrans.revenue - currentTrans.expenses
+
+        dataMap.set(dDate, {
+            date: dDate,
+            revenue: currentTrans.revenue,
+            expenses: currentTrans.expenses,
+            balance: runningBalance
+        })
+    }
+
+    const dailyData = days.map(d => dataMap.get(d)!)
+
     // 5. If period > 60 days, group by ISO week
-    const diffDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24))
+    const diffDays = Math.ceil((maxD.getTime() - minD.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays > 60) {
         return groupByWeek(dailyData)
     }
@@ -196,12 +233,17 @@ function groupByWeek(dailyData: CashFlowData[]): CashFlowData[] {
     const weeks = new Map<string, CashFlowData>()
 
     dailyData.forEach(d => {
-        const date = new Date(d.date)
+        // Force midday parsing to avoid timezone boundary shifts
+        const date = new Date(`${d.date}T12:00:00`)
         // ISO week: get the Monday of this week as key
         const dayOfWeek = date.getDay() || 7 // 1=Mon ... 7=Sun
         const monday = new Date(date)
         monday.setDate(date.getDate() - dayOfWeek + 1)
-        const weekKey = monday.toISOString().split('T')[0]
+
+        const year = monday.getFullYear()
+        const month = String(monday.getMonth() + 1).padStart(2, '0')
+        const day = String(monday.getDate()).padStart(2, '0')
+        const weekKey = `${year}-${month}-${day}`
 
         const existing = weeks.get(weekKey)
         if (existing) {

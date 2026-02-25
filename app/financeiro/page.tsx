@@ -25,6 +25,7 @@ import { Calculator, CalendarIcon, Search, FilterX, Filter } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { ProtectedRoute } from "@/components/auth/protected-route"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { DateRange } from "react-day-picker"
 
@@ -116,29 +117,34 @@ export default function FinanceiroPage() {
     }, [dateFilteredTransactions, searchQuery, selectedCostCenter, costCenters])
 
     // 3. Computed KPI metrics from filtered transactions
+    // Revenue and Expenses: sum ALL transactions regardless of status
     const currentMetrics = useMemo(() => {
-        const paidRevenue = filteredTransactions
-            .filter(t => t.type === 'revenue' && t.status === 'paid')
+        const totalRevenue = filteredTransactions
+            .filter(t => t.type === 'revenue')
             .reduce((acc, t) => acc + t.amount, 0)
 
-        const paidExpenses = filteredTransactions
-            .filter(t => t.type === 'expense' && t.status === 'paid')
+        const totalExpenses = filteredTransactions
+            .filter(t => t.type === 'expense')
             .reduce((acc, t) => acc + t.amount, 0)
 
-        // Predicted = current balance + net paid movement in the period
-        const predictedBalance = financialMetrics.currentBalance + paidRevenue - paidExpenses
+        // Predicted = current balance + all revenue - all expenses in the period
+        const predictedBalance = financialMetrics.currentBalance + totalRevenue - totalExpenses
 
         return {
             currentBalance: financialMetrics.currentBalance,
-            totalRevenue: paidRevenue,
-            totalExpenses: paidExpenses,
+            totalRevenue,
+            totalExpenses,
             predictedBalance,
         }
     }, [filteredTransactions, financialMetrics.currentBalance])
 
     // 4. Cash flow chart data (uses filtered transactions + real balance)
+    // Exclude cancelled/deleted transactions from projection
     const chartData = useMemo(() => {
-        const cashFlow = calculateCashFlowFromTransactions(filteredTransactions, financialMetrics.currentBalance)
+        const projectedTransactions = filteredTransactions.filter(
+            t => t.status !== 'cancelled' && t.status !== 'deleted' && t.status !== 'rejected'
+        )
+        const cashFlow = calculateCashFlowFromTransactions(projectedTransactions, financialMetrics.currentBalance)
         return cashFlow
     }, [filteredTransactions, financialMetrics.currentBalance])
 
@@ -192,7 +198,7 @@ export default function FinanceiroPage() {
             if (firstNegativeDate) {
                 impactMessage = {
                     type: 'danger' as const,
-                    text: `Atenção: O saldo ficará negativo em ${new Date(firstNegativeDate).toLocaleDateString('pt-BR')}.`,
+                    text: `Atenção: O saldo ficará negativo em ${new Date(`${firstNegativeDate}T12:00:00`).toLocaleDateString('pt-BR')}.`,
                     installments: installmentDetails
                 }
             } else {
@@ -208,10 +214,11 @@ export default function FinanceiroPage() {
     }, [chartData, simulatedExpense])
 
     // 6. Cost Center Budget vs Actuals
+    // Sum ALL expense transactions per cost center (dynamic by filter, not just paid)
     const costCenterData = useMemo(() => {
         return costCenters.map(cc => {
             const used = filteredTransactions
-                .filter(t => t.costCenterId === cc.id && t.type === 'expense' && t.status === 'paid')
+                .filter(t => t.costCenterId === cc.id && t.type === 'expense')
                 .reduce((acc, t) => acc + t.amount, 0)
 
             return {
@@ -219,7 +226,7 @@ export default function FinanceiroPage() {
                 budget: cc.budget,
                 used
             }
-        })
+        }).sort((a, b) => b.budget - a.budget) // Sort descending by budget
     }, [filteredTransactions, costCenters])
 
     // 7. Transaction list for table (already filtered)
@@ -437,42 +444,66 @@ export default function FinanceiroPage() {
                 </div>
 
                 {/* KPI Cards */}
-                <FinancialCards
-                    currentBalance={currentMetrics.currentBalance}
-                    totalRevenue={currentMetrics.totalRevenue}
-                    totalExpenses={currentMetrics.totalExpenses}
-                    predictedBalance={currentMetrics.predictedBalance}
-                />
+                {isLoading ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Skeleton className="h-[120px] w-full rounded-xl" />
+                        <Skeleton className="h-[120px] w-full rounded-xl" />
+                        <Skeleton className="h-[120px] w-full rounded-xl" />
+                        <Skeleton className="h-[120px] w-full rounded-xl" />
+                    </div>
+                ) : (
+                    <FinancialCards
+                        currentBalance={currentMetrics.currentBalance}
+                        totalRevenue={currentMetrics.totalRevenue}
+                        totalExpenses={currentMetrics.totalExpenses}
+                        predictedBalance={currentMetrics.predictedBalance}
+                    />
+                )}
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
 
                     {/* Cash Flow Chart Section */}
                     <div className="lg:col-span-2 h-[400px] lg:h-[500px] flex flex-col gap-2">
-                        <CashFlowChart
-                            data={finalChartData}
-                            title="Fluxo de Caixa"
-                            description={simulatedExpense ? "Simulação aplicada." : "Projeção baseada nos filtros atuais."}
-                            onDateClick={(date) => {
-                                setDateRange({ from: date, to: date })
-                                setPresetName(null)
-                            }}
-                        />
+                        {isLoading ? (
+                            <Skeleton className="w-full h-full rounded-xl" />
+                        ) : (
+                            <CashFlowChart
+                                data={finalChartData}
+                                title="Fluxo de Caixa"
+                                description={simulatedExpense ? "Simulação aplicada." : "Projeção baseada nos filtros atuais."}
+                                onDateClick={(date) => {
+                                    setDateRange({ from: date, to: date })
+                                    setPresetName(null)
+                                }}
+                            />
+                        )}
                     </div>
 
                     {/* Cost Center Budget Chart Section */}
                     <div className="h-[400px] lg:h-[500px]">
-                        <CostCenterBudgetChart data={costCenterData} />
+                        {isLoading ? (
+                            <Skeleton className="w-full h-full rounded-xl" />
+                        ) : (
+                            <CostCenterBudgetChart data={costCenterData} />
+                        )}
                     </div>
                 </div>
 
                 {/* Transaction List Section */}
                 <div className="mt-8">
-                    <FinancialTransactionList
-                        key={JSON.stringify(transactionList.map(t => t.id).join(','))}
-                        transactions={transactionList}
-                        costCenterNames={new Map(costCenters.map(cc => [cc.id, cc.name]))}
-                    />
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-[250px] rounded-xl" />
+                            <Skeleton className="h-[400px] w-full rounded-xl" />
+                        </div>
+                    ) : (
+                        <FinancialTransactionList
+                            key={JSON.stringify(transactionList.map(t => t.id).join(','))}
+                            transactions={transactionList}
+                            costCenterNames={new Map(costCenters.map(cc => [cc.id, cc.name]))}
+                        />
+                    )}
                 </div>
 
             </div>

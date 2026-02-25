@@ -12,13 +12,13 @@ interface CashFlowChartProps {
     onDateClick?: (date: Date) => void
 }
 
-export function CashFlowChart({ 
-    data, 
-    title = "Fluxo de Caixa", 
+export function CashFlowChart({
+    data,
+    title = "Fluxo de Caixa",
     description = "Projeção financeira baseada nas receitas e despesas previstas.",
     onDateClick
 }: CashFlowChartProps) {
-    
+
     // Find today's index to draw a reference line
     // const todayStr = new Date().toISOString().split('T')[0]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,8 +47,8 @@ export function CashFlowChart({
             </CardHeader>
             <CardContent className="px-2 pt-4 h-[calc(100%-80px)]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart 
-                        data={data} 
+                    <AreaChart
+                        data={data}
                         margin={{ top: 10, right: 10, left: 25, bottom: 0 }}
                         onClick={handleChartClick}
                         className="cursor-pointer"
@@ -67,7 +67,7 @@ export function CashFlowChart({
                             tickMargin={8}
                             minTickGap={32}
                             tickFormatter={(value) => {
-                                const date = new Date(value)
+                                const date = new Date(`${value}T12:00:00`)
                                 return date.toLocaleDateString("pt-BR", {
                                     month: "short",
                                     day: "numeric",
@@ -98,7 +98,7 @@ export function CashFlowChart({
                                                         Data
                                                     </span>
                                                     <span className="font-bold text-muted-foreground">
-                                                        {new Date(data.date).toLocaleDateString('pt-BR')}
+                                                        {new Date(`${data.date}T12:00:00`).toLocaleDateString('pt-BR')}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col">

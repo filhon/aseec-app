@@ -39,10 +39,10 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
     const formatCurrencyInput = (value: string) => {
         // Remove non-digits
         const digits = value.replace(/\D/g, "")
-        
+
         // Convert to number (cents)
         const numberValue = parseInt(digits) / 100
-        
+
         if (isNaN(numberValue)) return ""
 
         return new Intl.NumberFormat('pt-BR', {
@@ -68,7 +68,7 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
             installments: parseInt(installments) || 1,
             startDate: date
         }
-        
+
         onSimulate(expense)
         setIsSimulating(true)
     }
@@ -87,10 +87,10 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
             <CardContent className="space-y-4 flex-1">
                 <div className="space-y-2">
                     <Label htmlFor="amount">Valor Total (R$)</Label>
-                    <Input 
-                        id="amount" 
-                        type="text" 
-                        placeholder="R$ 0,00" 
+                    <Input
+                        id="amount"
+                        type="text"
+                        placeholder="R$ 0,00"
                         value={amount}
                         onChange={handleChangeAmount}
                     />
@@ -98,9 +98,9 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
 
                 <div className="space-y-2">
                     <Label htmlFor="installments">Parcelas</Label>
-                    <Input 
-                        id="installments" 
-                        type="number" 
+                    <Input
+                        id="installments"
+                        type="number"
                         min="1"
                         max="60"
                         value={installments}
@@ -145,15 +145,15 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
                         </Button>
                     )}
                 </div>
-                
+
                 {/* Result Display Area */}
                 <div className="w-full space-y-4">
                     {/* Status Message */}
                     <div className={cn(
                         "w-full p-3 rounded-md text-sm flex items-center justify-center text-center",
-                        simulationResult 
-                            ? (simulationResult.type === 'danger' 
-                                ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 border" 
+                        simulationResult
+                            ? (simulationResult.type === 'danger'
+                                ? "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 border"
                                 : "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 border")
                             : "bg-muted/50 text-muted-foreground border border-dashed"
                     )}>
@@ -180,7 +180,7 @@ export function ExpenseSimulator({ onSimulate, simulationResult }: ExpenseSimula
                                     {simulationResult.installments.map((inst) => (
                                         <tr key={inst.number} className="border-t last:border-0 hover:bg-muted/50 transition-colors">
                                             <td className="px-2 py-2 text-center text-muted-foreground">{inst.number}</td>
-                                            <td className="px-2 py-2 text-left font-medium">{format(new Date(inst.date), "dd/MM/yyyy")}</td>
+                                            <td className="px-2 py-2 text-left font-medium">{format(new Date(`${inst.date}T12:00:00`), "dd/MM/yyyy")}</td>
                                             <td className="px-2 py-2 text-right text-red-500 font-mono">
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(inst.amount)}
                                             </td>

@@ -56,7 +56,7 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                 </Card>
 
                 {/* 3. Revenue (Collapsible on mobile) */}
-                <Card className={`${!isExpanded ? 'hidden' : 'block'} lg:block animate-in fade-in slide-in-from-top-2 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow lg:border-l lg:border-l-border`}>
+                <Card className={`${!isExpanded ? 'hidden' : 'flex'} lg:flex animate-in fade-in slide-in-from-top-2 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow lg:border-l lg:border-l-border`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Receitas</CardTitle>
                         <ArrowUp className="h-4 w-4 text-green-500" />
@@ -73,7 +73,7 @@ export function FinancialCards({ currentBalance, totalRevenue, totalExpenses, pr
                 </Card>
 
                 {/* 4. Expenses (Collapsible on mobile) */}
-                <Card className={`${!isExpanded ? 'hidden' : 'block'} lg:block animate-in fade-in slide-in-from-top-2 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow lg:border-l lg:border-l-border`}>
+                <Card className={`${!isExpanded ? 'hidden' : 'flex'} lg:flex animate-in fade-in slide-in-from-top-2 border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow lg:border-l lg:border-l-border`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Despesas</CardTitle>
                         <ArrowDown className="h-4 w-4 text-red-500" />

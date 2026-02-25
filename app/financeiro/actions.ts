@@ -4,6 +4,7 @@ import { financeApi } from "@/lib/api/finance/client";
 import { Transaction } from "@/components/financeiro/data";
 import { FinanceTransaction } from "@/lib/api/finance/types";
 import { format, addDays } from "date-fns";
+import { unstable_cache } from "next/cache";
 
 export interface CostCenterBudget {
     id: string;
@@ -14,6 +15,17 @@ export interface CostCenterBudget {
 
 // Map from external API to Frontend format
 function mapTransaction(t: FinanceTransaction): Transaction {
+    // Map the API status to the frontend status type
+    const statusMap: Record<string, Transaction['status']> = {
+        draft: 'draft',
+        pending_approval: 'pending',
+        approved: 'approved',
+        pending_authorization: 'pending',
+        authorized: 'authorized',
+        paid: 'paid',
+        rejected: 'rejected',
+    };
+
     return {
         id: t.id,
         description: t.description || t.notes || "Transação sem descrição",
@@ -21,21 +33,16 @@ function mapTransaction(t: FinanceTransaction): Transaction {
         amount: t.amount,
         type: t.type === "payable" ? "expense" : "revenue",
         costCenterId: t.costCenter?.id || "",
-        status: t.status === "paid" ? "paid" : "pending"
+        status: statusMap[t.status] || 'pending'
     };
 }
 
-export async function getDashboardData(options?: { startDate?: string; endDate?: string }) {
-    const today = new Date();
-    const defaultStart = format(addDays(today, -30), "yyyy-MM-dd");
-    const defaultEnd = format(addDays(today, 90), "yyyy-MM-dd");
-    const startDate = options?.startDate || defaultStart;
-    const endDate = options?.endDate || defaultEnd;
-    const year = today.getFullYear();
+// Inner fetching function (not exported directly, instead we export a cached version wrapper)
+async function fetchDashboardData(startDate: string, endDate: string, year: number) {
 
     // Each endpoint is called independently so a single failure doesn't
     // bring down the entire dashboard.
-    let transactions: Transaction[] = [];
+    const transactions: Transaction[] = [];
     let costCenters: CostCenterBudget[] = [];
     const metrics = {
         currentBalance: 0,
@@ -44,16 +51,27 @@ export async function getDashboardData(options?: { startDate?: string; endDate?:
         predictedBalance: 0,
     };
 
-    // 1. Transactions
+    // 1. Transactions — fetch ALL pages
     try {
-        const txResponse = await financeApi.getTransactions({
-            limit: 100,
-            startDate,
-            endDate,
-            sortBy: "dueDate",
-            sortOrder: "asc"
-        });
-        transactions = txResponse.data.map(mapTransaction);
+        let page = 1;
+        const PAGE_LIMIT = 100;
+        const MAX_PAGES = 20; // safety cap to avoid infinite loops
+        let hasNext = true;
+
+        while (hasNext && page <= MAX_PAGES) {
+            const txResponse = await financeApi.getTransactions({
+                page,
+                limit: PAGE_LIMIT,
+                startDate,
+                endDate,
+                sortBy: "dueDate",
+                sortOrder: "asc"
+            });
+
+            transactions.push(...txResponse.data.map(mapTransaction));
+            hasNext = txResponse.pagination?.hasNext ?? false;
+            page++;
+        }
     } catch (err) {
         console.warn("[Financeiro] Falha ao buscar transações:", err instanceof Error ? err.message : err);
     }
@@ -95,4 +113,28 @@ export async function getDashboardData(options?: { startDate?: string; endDate?:
         costCenters,
         metrics,
     };
+}
+
+// Create a cached version of the fetch function.
+// This caches the API responses for 60 seconds based on the arguments (dates).
+const getCachedDashboardData = unstable_cache(
+    fetchDashboardData,
+    ['finance-dashboard-data'],
+    { revalidate: 60 } // Cache lifespan in seconds
+);
+
+// Final exported server action: resolves the query params and invokes the cached fetcher
+export async function getDashboardData(options?: { startDate?: string; endDate?: string }) {
+    const today = new Date();
+    // Default: past 30 days to future 90 days if nothing is provided
+    const defaultStart = format(addDays(today, -30), "yyyy-MM-dd");
+    const defaultEnd = format(addDays(today, 90), "yyyy-MM-dd");
+
+    // Resolve dates
+    const startDate = options?.startDate || defaultStart;
+    const endDate = options?.endDate || defaultEnd;
+    const year = today.getFullYear();
+
+    // Call the fast, cached layer
+    return getCachedDashboardData(startDate, endDate, year);
 }
