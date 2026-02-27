@@ -15,32 +15,33 @@ export function MobileHeader() {
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 sm:hidden justify-between sticky top-0 z-30 w-full backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      
+
       {/* Left Slot: Action Button (Search) */}
       <div className="flex-1 flex justify-start">
-         <Button variant="ghost" size="icon" onClick={onOpen}>
-            <Search className="h-5 w-5" />
-            <span className="sr-only">Buscar</span>
-         </Button>
+        <Button variant="ghost" size="icon" onClick={onOpen}>
+          <Search className="h-5 w-5" />
+          <span className="sr-only">Buscar</span>
+        </Button>
       </div>
-      
+
       {/* Center Slot: Logo */}
       <div className="flex-initial flex justify-center">
-         <Link href="/dashboard" className="flex items-center gap-2">
-             <Image 
-                src="/logo-hebron.png" 
-                alt="Hebron Logo" 
-                width={100} 
-                height={28} 
-                className="h-7 w-auto object-contain brightness-0 dark:invert"
-                priority
-              />
-         </Link>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/logo-hebron.png"
+            alt="Hebron Logo"
+            width={100}
+            height={28}
+            className="h-7 w-auto object-contain brightness-0 dark:invert"
+            style={{ width: "auto", height: "auto" }}
+            priority
+          />
+        </Link>
       </div>
-      
+
       {/* Right Slot: User Nav */}
       <div className="flex-1 flex justify-end">
-          <UserNav />
+        <UserNav />
       </div>
     </header>
   )

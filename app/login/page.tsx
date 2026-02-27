@@ -60,22 +60,23 @@ export default function AuthenticationPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
         <div className="absolute inset-0 bg-zinc-900" />
         <Image
-           src="/login-bg.jpg"
-           alt="Fundo Hebron ASEEC"
-           fill
-           className="object-cover opacity-80"
-           priority
-           quality={75}
+          src="/login-bg.jpg"
+          alt="Fundo Hebron ASEEC"
+          fill
+          className="object-cover opacity-80"
+          priority
+          quality={75}
         />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-20 flex items-center text-lg font-medium user-select-none">
           <Image
-             src="/logo-hebron.png"
-             alt="Logo Hebron ASEEC"
-             width={180}
-             height={60}
-             className="h-auto w-auto object-contain"
-             priority
+            src="/logo-hebron.png"
+            alt="Logo Hebron ASEEC"
+            width={180}
+            height={60}
+            className="h-auto w-auto object-contain"
+            style={{ width: "auto", height: "auto" }}
+            priority
           />
         </div>
         <div className="relative z-20 mt-auto">
@@ -89,7 +90,7 @@ export default function AuthenticationPage() {
       </div>
       <div className="p-4 lg:p-8 h-full flex items-center justify-center">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          
+
           <div className="flex flex-col space-y-2 text-center lg:hidden">
             <Image
               src="/logo-hebron.png"
@@ -97,29 +98,30 @@ export default function AuthenticationPage() {
               width={128}
               height={42}
               className="mx-auto h-auto w-auto object-contain mb-4"
+              style={{ width: "auto", height: "auto" }}
               priority
             />
           </div>
 
           {view === "login" && (
             <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
-               <CardHeader className="space-y-1">
-                 <CardTitle className="text-2xl font-bold tracking-tight">
-                   Bem-vindo de volta
-                 </CardTitle>
-                 <CardDescription>
-                   Entre com seu email e senha para acessar sua conta
-                 </CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <LoginForm 
-                   onForgotPassword={() => setView("forgot_password")} 
-                   onInviteClick={() => setView("invite")}
-                 />
-               </CardContent>
-               <CardFooter className="flex flex-wrap items-center justify-center gap-2">
-                 {/* Footer content removed as requested */}
-               </CardFooter>
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight">
+                  Bem-vindo de volta
+                </CardTitle>
+                <CardDescription>
+                  Entre com seu email e senha para acessar sua conta
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LoginForm
+                  onForgotPassword={() => setView("forgot_password")}
+                  onInviteClick={() => setView("invite")}
+                />
+              </CardContent>
+              <CardFooter className="flex flex-wrap items-center justify-center gap-2">
+                {/* Footer content removed as requested */}
+              </CardFooter>
             </Card>
           )}
 
@@ -134,8 +136,8 @@ export default function AuthenticationPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <InviteCodeForm 
-                  onBack={() => setView("login")} 
+                <InviteCodeForm
+                  onBack={() => setView("login")}
                   onSuccess={handleInviteSuccess}
                 />
               </CardContent>
@@ -153,8 +155,8 @@ export default function AuthenticationPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <SignUpForm 
-                  onLoginClick={() => setView("login")} 
+                <SignUpForm
+                  onLoginClick={() => setView("login")}
                   inviteCode={inviteCode}
                   inviteCodeId={inviteCodeId}
                   initialName={invitedUserName}
@@ -165,43 +167,43 @@ export default function AuthenticationPage() {
           )}
 
           {view === "forgot_password" && (
-             <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
-               <CardHeader className="space-y-1">
-                 <CardTitle className="text-2xl font-bold tracking-tight">
-                   Recuperar senha
-                 </CardTitle>
-                 <CardDescription>
-                   Digite seu email para receber um link de redefinição
-                 </CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <form onSubmit={handleForgotPassword} className="grid gap-4">
-                   <div className="grid gap-2">
-                     <Label htmlFor="reset-email">Email</Label>
-                     <Input
-                        id="reset-email"
-                        placeholder="nome@exemplo.com"
-                        type="email"
-                        autoCapitalize="none"
-                        autoComplete="email"
-                        required
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                   </div>
-                   <Button disabled={isLoading}>
-                     {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
-                     Enviar link
-                   </Button>
-                 </form>
-               </CardContent>
-               <CardFooter>
-                 <Button variant="link" className="w-full" onClick={() => setView("login")}>
-                   Voltar para login
-                 </Button>
-               </CardFooter>
-             </Card>
+            <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold tracking-tight">
+                  Recuperar senha
+                </CardTitle>
+                <CardDescription>
+                  Digite seu email para receber um link de redefinição
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleForgotPassword} className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="reset-email">Email</Label>
+                    <Input
+                      id="reset-email"
+                      placeholder="nome@exemplo.com"
+                      type="email"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      required
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <Button disabled={isLoading}>
+                    {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+                    Enviar link
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter>
+                <Button variant="link" className="w-full" onClick={() => setView("login")}>
+                  Voltar para login
+                </Button>
+              </CardFooter>
+            </Card>
           )}
 
         </div>

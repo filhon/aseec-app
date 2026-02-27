@@ -68,7 +68,7 @@ function ResetPasswordForm() {
     setIsLoading(true)
 
     const supabase = createClient()
-    
+
     const { error } = await supabase.auth.updateUser({
       password: password,
     })
@@ -81,7 +81,7 @@ function ResetPasswordForm() {
 
     setIsSuccess(true)
     toast.success("Senha atualizada com sucesso!")
-    
+
     // Redirect to dashboard after 2 seconds
     setTimeout(() => {
       router.push("/dashboard")
@@ -95,8 +95,8 @@ function ResetPasswordForm() {
           {isSuccess ? "Senha Atualizada!" : "Nova Senha"}
         </CardTitle>
         <CardDescription>
-          {isSuccess 
-            ? "Sua senha foi alterada com sucesso" 
+          {isSuccess
+            ? "Sua senha foi alterada com sucesso"
             : "Digite sua nova senha para acessar o sistema"
           }
         </CardDescription>
@@ -141,12 +141,12 @@ function ResetPasswordForm() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Password Strength Indicator */}
             {password && (
               <div className="space-y-2">
                 <div className="flex h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div 
+                  <div
                     className={cn(
                       "h-full transition-all duration-300 ease-in-out",
                       strength === 0 && "w-0",
@@ -206,22 +206,23 @@ export default function ResetPasswordPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
         <div className="absolute inset-0 bg-zinc-900" />
         <Image
-           src="/login-bg.jpg"
-           alt="Fundo Hebron ASEEC"
-           fill
-           className="object-cover opacity-80"
-           priority
-           quality={75}
+          src="/login-bg.jpg"
+          alt="Fundo Hebron ASEEC"
+          fill
+          className="object-cover opacity-80"
+          priority
+          quality={75}
         />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-20 flex items-center text-lg font-medium user-select-none">
           <Image
-             src="/logo-hebron.png"
-             alt="Logo Hebron ASEEC"
-             width={180}
-             height={60}
-             className="h-auto w-auto object-contain"
-             priority
+            src="/logo-hebron.png"
+            alt="Logo Hebron ASEEC"
+            width={180}
+            height={60}
+            className="h-auto w-auto object-contain"
+            style={{ width: "auto", height: "auto" }}
+            priority
           />
         </div>
         <div className="relative z-20 mt-auto">
@@ -235,7 +236,7 @@ export default function ResetPasswordPage() {
       </div>
       <div className="p-4 lg:p-8 h-full flex items-center justify-center">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          
+
           <div className="flex flex-col space-y-2 text-center lg:hidden">
             <Image
               src="/logo-hebron.png"
@@ -243,6 +244,7 @@ export default function ResetPasswordPage() {
               width={128}
               height={42}
               className="mx-auto h-auto w-auto object-contain mb-4"
+              style={{ width: "auto", height: "auto" }}
               priority
             />
           </div>

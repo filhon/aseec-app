@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,73 +9,94 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from "@/components/ui/form"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select"
 
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-// Keep existing Lucide imports and add CalendarIcon
 import { Loader2, Search, Link as LinkIcon, CalendarIcon } from "lucide-react"
-import { financialService, FinancialProject } from "@/lib/services/financial-service"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-// ... (imports command, popover, etc) - assuming they align
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { projectTags } from "@/lib/constants/project-tags"
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete"
 import { Calendar } from "@/components/ui/calendar"
+import { useRouter } from "next/navigation"
+import { createProject, getCategories, getTags } from "@/lib/services/project-service"
+import { ProjectExtension, Category } from "@/lib/types/database.types"
+import { fetchAggregatedTransactions, AggregatedTransaction } from "@/lib/actions/finance/sync-actions"
 
 const projectSchema = z.object({
-  title: z.string().min(2, "Título deve ter pelo menos 2 caracteres"),
-  institution: z.string().min(2, "Instituição é obrigatória"),
-  responsible: z.string().min(2, "Responsável é obrigatório"),
-  category: z.string().min(1, "Selecione uma categoria"),
-  country: z.string().optional(),
-  state: z.string().optional(),
-  municipality: z.string().optional(),
-  description: z.string().optional(),
-  financialProjectId: z.string().optional(), // Link to external ID
-  extension: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  indication: z.string().optional(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
-  // New Address Fields
-  address: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  street: z.string().optional(),
-  number: z.string().optional(),
-  neighborhood: z.string().optional(),
-  zipCode: z.string().optional(),
+    title: z.string().min(2, "Título deve ter pelo menos 2 caracteres"),
+    institution: z.string().min(2, "Instituição é obrigatória"),
+    responsible: z.string().min(2, "Responsável é obrigatório"),
+    category: z.string().min(1, "Selecione uma categoria"),
+    country: z.string().optional(),
+    state: z.string().optional(),
+    municipality: z.string().optional(),
+    description: z.string().optional(),
+    financialProjectId: z.string().optional(), // Link to external ID
+    extension: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    indication: z.string().optional(),
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    // New Address Fields
+    address: z.string().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    street: z.string().optional(),
+    number: z.string().optional(),
+    neighborhood: z.string().optional(),
+    zipCode: z.string().optional(),
 })
 
 type ProjectFormValues = z.infer<typeof projectSchema>
 
 export function NewProjectForm() {
-    const [searching, setSearching] = useState(false)
-    const [searchResults, setSearchResults] = useState<FinancialProject[]>([])
-    const [selectedFinancialProject, setSelectedFinancialProject] = useState<FinancialProject | null>(null)
+    const [searching] = useState(false)
+    const [allTransactions, setAllTransactions] = useState<AggregatedTransaction[]>([])
+    const [searchResults, setSearchResults] = useState<AggregatedTransaction[]>([])
+    const [selectedFinancialProject, setSelectedFinancialProject] = useState<AggregatedTransaction | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [categories, setCategories] = useState<Category[]>([])
+    const [tagsList, setTagsList] = useState<{ id: string; name: string; color: string }[]>([])
+
+    useEffect(() => {
+        async function loadInitialData() {
+            try {
+                const [cats, tgs, txs] = await Promise.all([
+                    getCategories(),
+                    getTags(),
+                    fetchAggregatedTransactions(1, 1000)
+                ])
+                setCategories(cats)
+                setTagsList(tgs)
+                setAllTransactions(txs.data)
+            } catch (error) {
+                console.error("Error loading initial data", error)
+            }
+        }
+        loadInitialData()
+    }, [])
 
     const form = useForm<ProjectFormValues>({
         resolver: zodResolver(projectSchema),
@@ -104,50 +125,82 @@ export function NewProjectForm() {
         },
     })
 
-    const handleSearchFinancial = async (query: string) => {
-        if (query.length < 3) {
+    const handleSearchFinancial = (query: string) => {
+        if (query.length < 1) {
             setSearchResults([])
             return
         }
-        setSearching(true)
-        try {
-            const results = await financialService.searchFinancialProjects(query)
-            setSearchResults(results)
-        } catch {
-            // Ignore errors for search autocomplete
-        } finally {
-            setSearching(false)
-        }
+
+        const normalizedQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+
+        const filtered = allTransactions.filter(tx => {
+            const normalizedDesc = tx.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            return normalizedDesc.includes(normalizedQuery)
+        })
+
+        setSearchResults(filtered)
     }
 
-    const selectFinancialProject = (project: FinancialProject) => {
+    const selectFinancialProject = (project: AggregatedTransaction) => {
         setSelectedFinancialProject(project)
         form.setValue("financialProjectId", project.id)
-        
+
         // Auto-fill fields if empty
         if (!form.getValues("title")) form.setValue("title", project.description)
-        if (!form.getValues("responsible")) form.setValue("responsible", project.managerName)
-        
+        if (!form.getValues("institution")) form.setValue("institution", project.provider)
+
         setSearchResults([])
         toast.info("Vínculo financeiro selecionado", {
             description: `Valores de aprovado e investido serão sincronizados de: ${project.description}`
         })
     }
 
+    const router = useRouter()
     const onSubmit = async (values: ProjectFormValues) => {
         setSubmitting(true)
-        // Simulate API create
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        console.log("Submitting values:", values)
-        toast.success("Projeto criado com sucesso!")
-        setSubmitting(false)
-        // Redirect logic would go here
+        try {
+            const result = await createProject({
+                title: values.title,
+                responsible: values.responsible,
+                country: values.country,
+                state: values.state,
+                municipality: values.municipality,
+                description: values.description,
+                extension: (values.extension as ProjectExtension) || "parcial",
+                start_date: values.startDate?.toISOString(),
+                end_date: values.endDate?.toISOString(),
+                indication: values.indication,
+                address: values.address,
+                latitude: values.latitude,
+                longitude: values.longitude,
+                street: values.street,
+                number: values.number,
+                neighborhood: values.neighborhood,
+                zip_code: values.zipCode,
+                financial_project_id: values.financialProjectId,
+                // If there's a selected financial project, we might want to sync these values immediately:
+                approved_value: selectedFinancialProject?.totalAmount || 0,
+                requested_value: selectedFinancialProject?.totalAmount || 0,
+            }, values.category, values.tags, values.institution)
+
+            if (result) {
+                toast.success("Projeto criado com sucesso!")
+                router.push("/projetos")
+            } else {
+                toast.error("Erro ao criar projeto. Verifique os dados e tente novamente.")
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Erro inesperado ao criar projeto.")
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                
+
                 {/* Financial Link Section */}
                 <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
                     <div className="flex items-start gap-4">
@@ -165,8 +218,8 @@ export function NewProjectForm() {
                             {!selectedFinancialProject ? (
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input 
-                                        placeholder="Buscar por nome ou centro de custo..." 
+                                    <Input
+                                        placeholder="Buscar por nome ou centro de custo..."
                                         className="pl-9"
                                         onChange={(e) => handleSearchFinancial(e.target.value)}
                                     />
@@ -185,7 +238,12 @@ export function NewProjectForm() {
                                                     onClick={() => selectFinancialProject(p)}
                                                 >
                                                     <span className="font-medium">{p.description}</span>
-                                                    <span className="text-xs text-muted-foreground">{p.costCenterCode} • {p.managerName}</span>
+                                                    <span className="text-xs text-muted-foreground flex items-center justify-between mt-1">
+                                                        <span>{p.provider} {p.costCenterCode ? `• CC: ${p.costCenterCode}` : ''}</span>
+                                                        <span className="font-medium text-foreground">
+                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.totalAmount)}
+                                                        </span>
+                                                    </span>
                                                 </button>
                                             ))}
                                         </div>
@@ -196,13 +254,17 @@ export function NewProjectForm() {
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium flex items-center gap-2">
                                             {selectedFinancialProject.description}
-                                            <Badge variant="outline" className="text-[10px] h-5 bg-green-50 text-green-700 border-green-200">VInculado</Badge>
+                                            <Badge variant="outline" className="text-[10px] h-5 bg-green-50 text-green-700 border-green-200">Vinculado</Badge>
                                         </span>
-                                        <span className="text-xs text-muted-foreground">{selectedFinancialProject.costCenterCode}</span>
+                                        <span className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                                            {selectedFinancialProject.provider}
+                                            {selectedFinancialProject.costCenterCode && `• CC: ${selectedFinancialProject.costCenterCode}`}
+                                            • <span className="font-medium text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedFinancialProject.totalAmount)}</span>
+                                        </span>
                                     </div>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={() => {
                                             setSelectedFinancialProject(null)
                                             form.setValue("financialProjectId", undefined)
@@ -230,7 +292,7 @@ export function NewProjectForm() {
                             </FormItem>
                         )}
                     />
-                    
+
                     <FormField
                         control={form.control}
                         name="institution"
@@ -248,8 +310,8 @@ export function NewProjectForm() {
                     {/* Address Autocomplete Section */}
                     <div className="col-span-1 md:col-span-2 space-y-4">
                         <div className="flex flex-col space-y-2">
-                             <FormLabel>Localização</FormLabel>
-                             <AddressAutocomplete 
+                            <FormLabel>Localização</FormLabel>
+                            <AddressAutocomplete
                                 onAddressSelect={(data) => {
                                     form.setValue("address", data.display_name)
                                     form.setValue("street", data.street)
@@ -262,10 +324,10 @@ export function NewProjectForm() {
                                     form.setValue("latitude", data.latitude)
                                     form.setValue("longitude", data.longitude)
                                 }}
-                             />
-                             <FormDescription>
+                            />
+                            <FormDescription>
                                 Digite o endereço ou CEP para preencher automaticamente os dados de localização.
-                             </FormDescription>
+                            </FormDescription>
                         </div>
 
                         {/* Detailed Address Fields (Auto-filled but editable) */}
@@ -354,7 +416,7 @@ export function NewProjectForm() {
                                     </FormItem>
                                 )}
                             />
-                        </div>      
+                        </div>
                     </div>
 
 
@@ -387,11 +449,9 @@ export function NewProjectForm() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="Educação">Educação</SelectItem>
-                                            <SelectItem value="Saúde">Saúde</SelectItem>
-                                            <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
-                                            <SelectItem value="Social">Social</SelectItem>
-                                            <SelectItem value="Evangelismo">Evangelismo</SelectItem>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -423,7 +483,7 @@ export function NewProjectForm() {
                     </div>
 
 
-                    
+
                     {/* Tags Checkbox Group - Full Width with Visual Feedback */}
                     <div className="col-span-1 md:col-span-2">
                         <FormField
@@ -438,9 +498,9 @@ export function NewProjectForm() {
                                         </FormDescription>
                                     </div>
                                     <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                                        {projectTags.map((tag) => {
-                                             const isChecked = field.value?.includes(tag.label)
-                                             return (
+                                        {tagsList.map((tag) => {
+                                            const isChecked = field.value?.includes(tag.name)
+                                            return (
                                                 <div
                                                     key={tag.id}
                                                     className={cn(
@@ -455,20 +515,21 @@ export function NewProjectForm() {
                                                         onCheckedChange={(checked) => {
                                                             const currentTags = field.value || []
                                                             const newTags = checked
-                                                                ? [...currentTags, tag.label]
-                                                                : currentTags.filter((value) => value !== tag.label)
+                                                                ? [...currentTags, tag.name]
+                                                                : currentTags.filter((value) => value !== tag.name)
                                                             field.onChange(newTags)
                                                         }}
                                                     />
-                                                    <span className="text-xs font-normal pointer-events-none z-10">
-                                                        {tag.label}
+                                                    <span className="text-xs font-normal pointer-events-none z-10 flex items-center gap-1.5">
+                                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                                                        {tag.name}
                                                     </span>
                                                     {/* Overlay label to make the whole card clickable */}
-                                                    <label 
+                                                    <label
                                                         htmlFor={`tag-${tag.id}`}
                                                         className="absolute inset-0 cursor-pointer"
                                                     >
-                                                        <span className="sr-only">{tag.label}</span>
+                                                        <span className="sr-only">{tag.name}</span>
                                                     </label>
                                                 </div>
                                             )
@@ -480,7 +541,7 @@ export function NewProjectForm() {
                         />
                     </div>
 
-                     <FormField
+                    <FormField
                         control={form.control}
                         name="startDate"
                         render={({ field }) => (
@@ -523,7 +584,7 @@ export function NewProjectForm() {
                         )}
                     />
 
-                     <FormField
+                    <FormField
                         control={form.control}
                         name="endDate"
                         render={({ field }) => (
@@ -565,8 +626,8 @@ export function NewProjectForm() {
                             </FormItem>
                         )}
                     />
-                    
-                     <FormField
+
+                    <FormField
                         control={form.control}
                         name="indication"
                         render={({ field }) => (
@@ -588,10 +649,10 @@ export function NewProjectForm() {
                         <FormItem>
                             <FormLabel>Descrição</FormLabel>
                             <FormControl>
-                                <Textarea 
-                                    placeholder="Descreva os objetivos e escopo do projeto..." 
+                                <Textarea
+                                    placeholder="Descreva os objetivos e escopo do projeto..."
                                     className="resize-none min-h-[100px]"
-                                    {...field} 
+                                    {...field}
                                 />
                             </FormControl>
                             <FormMessage />

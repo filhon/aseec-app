@@ -136,6 +136,7 @@ export class FinanceAPIClient {
         endDate?: string;
         allDates?: boolean;
         costCenterId?: string;
+        costCenterIds?: string; // Comma-separated list of cost center IDs (max 10). Takes priority over costCenterId.
         entityId?: string;
         minAmount?: number;
         maxAmount?: number;

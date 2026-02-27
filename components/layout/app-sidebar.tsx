@@ -46,7 +46,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
   const isDesktop = mode === "desktop"
 
   return (
-    <aside 
+    <aside
       className={cn(
         "bg-background flex flex-col",
         isDesktop ? "fixed inset-y-0 left-0 z-10 hidden w-64 border-r sm:flex" : "w-full h-full",
@@ -59,21 +59,22 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
       */}
       <div className={cn("flex h-16 items-center justify-between px-6", isDesktop && "border-b")}>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg" onClick={onNavigate}>
-          <Image 
-            src="/logo-hebron.png" 
-            alt="Hebron Logo" 
-            width={120} 
-            height={32} 
+          <Image
+            src="/logo-hebron.png"
+            alt="Hebron Logo"
+            width={120}
+            height={32}
             className="h-8 w-auto object-contain brightness-0 dark:invert"
+            style={{ width: "auto", height: "auto" }}
             priority
           />
         </Link>
         {pathname !== "/" && (
-            <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-muted-foreground hover:text-primary">
-                <Link href="/busca" title="Buscar">
-                    <Search className="h-4 w-4" />
-                </Link>
-            </Button>
+          <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-muted-foreground hover:text-primary">
+            <Link href="/busca" title="Buscar">
+              <Search className="h-4 w-4" />
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -86,11 +87,10 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary ${
-                isActive
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:text-primary ${isActive
                   ? "bg-muted text-primary"
                   : "text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}
@@ -101,7 +101,7 @@ export function AppSidebar({ mode = "desktop", className, onNavigate }: AppSideb
 
       {/* Footer: User & Theme (Integrated) */}
       <div className={cn("p-4", isDesktop && "border-t")}>
-          <UserNav />
+        <UserNav />
       </div>
     </aside>
   )

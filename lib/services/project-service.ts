@@ -131,10 +131,11 @@ export async function getProjectById(id: string): Promise<ProjectWithRelations |
   // Get tags
   const { data: tagsData } = await supabase
     .from("project_tags")
-    .select("tag")
+    .select("tags(name)")
     .eq("project_id", id)
     .eq("active", true)
-  const tags = tagsData?.map(t => t.tag) || []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tags = tagsData?.map((t: any) => t.tags?.name).filter(Boolean) as string[] || []
 
   // Get investments
   const { data: investmentsData } = await supabase
@@ -248,14 +249,17 @@ export async function getProjectsForDashboard(): Promise<DashboardProject[]> {
   // Get all tags for projects
   const { data: tagsData } = await supabase
     .from("project_tags")
-    .select("project_id, tag")
+    .select("project_id, tags(name)")
     .in("project_id", projectIds)
     .eq("active", true)
 
   const projectTagsMap: Record<string, string[]> = {}
-  tagsData?.forEach(t => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tagsData?.forEach((t: any) => {
     if (!projectTagsMap[t.project_id]) projectTagsMap[t.project_id] = []
-    projectTagsMap[t.project_id].push(t.tag)
+    if (t.tags?.name) {
+      projectTagsMap[t.project_id].push(t.tags.name)
+    }
   })
 
   // Get all investments
@@ -319,8 +323,40 @@ export async function getProjectStats(): Promise<ProjectStats> {
 /**
  * Create a new project
  */
-export async function createProject(data: Partial<Project>): Promise<Project | null> {
+export async function createProject(
+  data: Partial<Project>,
+  categoryName?: string,
+  tags: string[] = [],
+  institutionName?: string
+): Promise<Project | null> {
   const supabase = createClient()
+
+  let finalEntityId = data.entity_id
+
+  if (institutionName && !finalEntityId) {
+    const { data: existingEntity } = await supabase
+      .from("entities")
+      .select("id")
+      .eq("name", institutionName)
+      .single()
+
+    if (existingEntity) {
+      finalEntityId = existingEntity.id
+    } else {
+      const { data: newEntity } = await supabase
+        .from("entities")
+        .insert({
+          name: institutionName,
+          slug: institutionName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
+          active: true
+        })
+        .select()
+        .single()
+      if (newEntity) {
+        finalEntityId = newEntity.id
+      }
+    }
+  }
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -328,7 +364,7 @@ export async function createProject(data: Partial<Project>): Promise<Project | n
       title: data.title!,
       responsible: data.responsible!,
       description: data.description,
-      entity_id: data.entity_id,
+      entity_id: finalEntityId,
       country: data.country,
       state: data.state,
       municipality: data.municipality,
@@ -348,14 +384,47 @@ export async function createProject(data: Partial<Project>): Promise<Project | n
       end_date: data.end_date,
       indication: data.indication,
       observations: data.observations,
+      financial_project_id: data.financial_project_id,
       active: true,
     })
     .select()
     .single()
 
-  if (error) {
+  if (error || !project) {
     console.error("Error creating project:", error)
     return null
+  }
+
+  // Insert Category Link
+  if (categoryName) {
+    const { data: cat } = await supabase.from('categories').select('id').eq('name', categoryName).single()
+    if (cat) {
+      await supabase.from('project_categories').insert({
+        project_id: project.id,
+        category_id: cat.id,
+        active: true
+      })
+    }
+  }
+
+  // Insert tags
+  if (tags && tags.length > 0) {
+    const { data: dbTags } = await supabase
+      .from('tags')
+      .select('id')
+      .in('name', tags)
+
+    if (dbTags && dbTags.length > 0) {
+      const tagsToInsert = dbTags.map(dbTag => ({
+        project_id: project.id,
+        tag_id: dbTag.id,
+        active: true
+      }))
+      const { error: tagsError } = await supabase.from('project_tags').insert(tagsToInsert)
+      if (tagsError) {
+        console.error("Error creating tags:", tagsError)
+      }
+    }
   }
 
   return project
@@ -399,4 +468,65 @@ export async function getCategories(): Promise<Category[]> {
   }
 
   return data || []
+}
+
+/**
+ * Get all tags
+ */
+export async function getTags(): Promise<{ id: string; name: string; color: string }[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("tags")
+    .select("id, name, color")
+    .eq("active", true)
+    .order("name")
+
+  if (error) {
+    console.error("Error fetching tags:", error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * Get all project posts for the global feed
+ */
+export async function getGlobalProjectPosts() {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from("project_posts")
+    .select(`
+      *,
+      projects (
+        id,
+        title
+      )
+    `)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching global posts:", error)
+    return []
+  }
+
+  // Clean up format matching the frontend structure EnrichedPost expects
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data || []).map((post: any) => ({
+    id: post.id,
+    type: post.type,
+    title: post.title || undefined,
+    content: post.content,
+    author: post.author_name,
+    avatar: undefined, // Optional
+    role: post.author_role || undefined,
+    date: post.created_at,
+    likes: post.likes_count,
+    prayers: post.prayers_count,
+    projectTitle: post.projects?.title || 'Projeto Desconhecido',
+    projectId: post.project_id
+  }))
 }
