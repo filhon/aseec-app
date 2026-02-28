@@ -1,6 +1,6 @@
 # API Financeira — Documentação para Integração Externa
 
-> **Versão:** 1.0  
+> **Versão:** 1.2  
 > **Base URL:** `https://{seu-dominio}/api/v1`  
 > **Protocolo:** HTTPS obrigatório
 
@@ -150,23 +150,28 @@ GET /api/v1/transactions
 
 Retorna as transações da empresa com paginação e filtros.
 
+> **Intervalo padrão de datas:** quando `startDate` e `endDate` são omitidos (e `allDates` não é `true`), o endpoint retorna apenas transações com vencimento entre **hoje** e **hoje + 30 dias**. Esse comportamento melhora a performance e reflete a visualização padrão de dashboards. Para outros períodos, envie `startDate` e/ou `endDate` explicitamente. Para remover o filtro de data por completo, use `allDates=true`.
+
 **Parâmetros de query:**
 
-| Param          | Tipo     | Default       | Descrição                                                                                                              |
-| -------------- | -------- | ------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `page`         | integer  | `1`           | Número da página                                                                                                       |
-| `limit`        | integer  | `25`          | Itens por página (máximo: 100)                                                                                         |
-| `type`         | string   | —             | Filtrar por tipo: `payable` (a pagar) ou `receivable` (a receber)                                                      |
-| `status`       | string   | —             | Filtrar por status: `draft`, `pending_approval`, `approved`, `pending_authorization`, `authorized`, `paid`, `rejected` |
-| `startDate`    | ISO 8601 | hoje (00:00)  | Data de vencimento mínima (ex: `2026-01-01`). Quando omitido, aplica `hoje 00:00` automaticamente                      |
-| `endDate`      | ISO 8601 | hoje+30 (23:59:59) | Data de vencimento máxima (ex: `2026-12-31`). Quando omitido, aplica `hoje+30 23:59:59` automaticamente           |
-| `allDates`     | boolean  | `false`       | Se `true`, desativa o filtro de data padrão (ignora `startDate`/`endDate` defaults)                                    |
-| `costCenterId` | string   | —             | Filtrar por centro de custo                                                                                            |
-| `entityId`     | string   | —             | Filtrar por fornecedor/cliente                                                                                         |
-| `minAmount`    | number   | —             | Valor mínimo                                                                                                           |
-| `maxAmount`    | number   | —             | Valor máximo                                                                                                           |
-| `sortBy`       | string   | `dueDate`     | Ordenar por: `dueDate`, `amount`, `createdAt`                                                                          |
-| `sortOrder`    | string   | `desc`        | Direção: `asc` ou `desc`                                                                                               |
+| Param             | Tipo     | Default        | Descrição                                                                                                                                            |
+| ----------------- | -------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `page`            | integer  | `1`            | Número da página                                                                                                                                     |
+| `limit`           | integer  | `25`           | Itens por página (máximo: 100)                                                                                                                       |
+| `type`            | string   | —              | Filtrar por tipo: `payable` (a pagar) ou `receivable` (a receber)                                                                                    |
+| `status`          | string   | —              | Filtrar por status: `draft`, `pending_approval`, `approved`, `pending_authorization`, `authorized`, `paid`, `rejected`                               |
+| `startDate`       | ISO 8601 | hoje           | Data de vencimento mínima (ex: `2026-01-01`). Padrão: data atual                                                                                     |
+| `endDate`         | ISO 8601 | hoje + 30 dias | Data de vencimento máxima (ex: `2026-12-31`). Padrão: 30 dias à frente da data atual                                                                 |
+| `allDates`        | boolean  | `false`        | Quando `true`, desativa o filtro de datas e retorna transações de qualquer período                                                                   |
+| `costCenterId`    | string   | —              | Filtrar por um único centro de custo pelo ID (retrocompatível)                                                                                       |
+| `costCenterIds`   | string   | —              | Filtrar por um ou mais centros de custo pelo ID, separados por vírgula (máx. 10). Prioridade sobre `costCenterId`                                    |
+| `costCenterCodes` | string   | —              | Filtrar por um ou mais centros de custo pelo **código** (`code`), separados por vírgula (máx. 10). Prioridade sobre `costCenterIds` e `costCenterId` |
+| `entityId`        | string   | —              | Filtrar por fornecedor/cliente                                                                                                                       |
+| `minAmount`       | number   | —              | Valor mínimo                                                                                                                                         |
+| `maxAmount`       | number   | —              | Valor máximo                                                                                                                                         |
+| `search`          | string   | —              | Busca textual (mín. 2, máx. 100 caracteres). Pesquisa case-insensitive nos campos `description`, `notes` e `supplier`                                |
+| `sortBy`          | string   | `dueDate`      | Ordenar por: `dueDate`, `amount`, `createdAt`                                                                                                        |
+| `sortOrder`       | string   | `desc`         | Direção: `asc` ou `desc`                                                                                                                             |
 
 **Resposta:**
 
@@ -237,19 +242,93 @@ Retorna as transações da empresa com paginação e filtros.
     "companyId": "abc123",
     "requestId": "req_a1b2c3d4",
     "dateRange": {
-      "startDate": "2026-02-25T00:00:00.000Z",
-      "endDate": "2026-03-27T23:59:59.999Z",
+      "startDate": "2026-02-25",
+      "endDate": "2026-03-27",
       "isDefault": true
     }
   }
 }
 ```
 
-> **Nota:** Quando `startDate` e `endDate` são omitidos (e `allDates` não é `true`), a API aplica automaticamente um intervalo de `hoje (00:00)` até `hoje+30 (23:59:59)`. O campo `meta.dateRange` informa qual janela foi aplicada. Se `isDefault: true`, o intervalo padrão do servidor foi usado. Datas em formato inválido retornam erro `400 BAD_REQUEST`.
+---
+
+### 4.3 Buscar Transações (Typeahead)
+
+```
+GET /api/v1/transactions/search
+```
+
+Endpoint leve e otimizado para busca textual de transações. Projetado para uso em **Typeahead/Combobox** — retorna payload mínimo com no máximo 20 resultados.
+
+> **Diferença do parâmetro `search` em `GET /api/v1/transactions`:** este endpoint retorna apenas os campos essenciais para uma lista de sugestões, sem alocações, parcelas, recorrência ou notas completas. É significativamente mais leve e possui rate limit maior (60 req/min vs. 30 req/min).
+
+**Parâmetros de query:**
+
+| Param             | Tipo     | Default         | Descrição                                                                                                     |
+| ----------------- | -------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `q`               | string   | — (obrigatório) | Termo de busca (mín. 2, máx. 100 caracteres). Pesquisa case-insensitive em `description`, `notes`, `supplier` |
+| `type`            | string   | —               | Filtrar por tipo: `payable` ou `receivable`                                                                   |
+| `status`          | string   | —               | Filtrar por status                                                                                            |
+| `startDate`       | ISO 8601 | hoje            | Data de vencimento mínima                                                                                     |
+| `endDate`         | ISO 8601 | hoje + 30 dias  | Data de vencimento máxima                                                                                     |
+| `allDates`        | boolean  | `false`         | Quando `true`, desativa o filtro de datas                                                                     |
+| `costCenterId`    | string   | —               | Filtrar por centro de custo (ID)                                                                              |
+| `costCenterIds`   | string   | —               | Filtrar por múltiplos centros de custo (IDs)                                                                  |
+| `costCenterCodes` | string   | —               | Filtrar por múltiplos centros de custo (códigos)                                                              |
+| `limit`           | integer  | `10`            | Máximo de resultados (1–20)                                                                                   |
+
+**Resposta:**
+
+```json
+{
+  "data": [
+    {
+      "id": "txn_abc123",
+      "description": "Pagamento fornecedor XYZ",
+      "amount": 5000.0,
+      "type": "payable",
+      "status": "paid",
+      "dueDate": "2026-02-20T00:00:00.000Z",
+      "supplier": "Fornecedor XYZ Ltda",
+      "costCenter": {
+        "id": "cc_001",
+        "name": "Marketing",
+        "code": "MKT-001"
+      }
+    }
+  ],
+  "meta": {
+    "companyId": "abc123",
+    "requestId": "req_a1b2c3d4",
+    "totalResults": 1,
+    "scannedDocuments": 342,
+    "scanCapped": false
+  }
+}
+```
+
+> **Nota sobre `scanCapped`:** quando `true`, indica que o número de documentos na query base excedeu o limite de segurança (5.000). Os resultados podem não refletir a totalidade dos dados. Utilize filtros de data e/ou centro de custo para refinar a busca.
+
+**Caso de uso — Combobox com Typeahead:**
+
+```javascript
+const searchTransactions = async (query) => {
+  const response = await apiClient.request(
+    "GET",
+    "/api/v1/transactions/search",
+    {
+      q: query,
+      allDates: true,
+      limit: 10,
+    },
+  );
+  return response.data; // Array leve para popular o combobox
+};
+```
 
 ---
 
-### 4.3 Consultar Transação Individual
+### 4.5 Consultar Transação Individual
 
 ```
 GET /api/v1/transactions/{id}
@@ -261,7 +340,7 @@ Retorna os detalhes de uma transação específica.
 
 ---
 
-### 4.4 Consultar Orçamentos
+### 4.6 Consultar Orçamentos
 
 ```
 GET /api/v1/budgets
@@ -319,7 +398,7 @@ Retorna os orçamentos dos centros de custo com saldo projetado vs. consumido.
 
 ---
 
-### 4.5 Listar Centros de Custo
+### 4.7 Listar Centros de Custo
 
 ```
 GET /api/v1/cost-centers
@@ -359,7 +438,7 @@ Retorna os centros de custo da empresa.
 
 ---
 
-### 4.6 Resumo Financeiro Mensal
+### 4.8 Resumo Financeiro Mensal
 
 ```
 GET /api/v1/financial-summary
@@ -713,7 +792,7 @@ public class FinanceAPIClient
 
 ## Changelog
 
-| Versão | Data       | Descrição                                                                                        |
-| ------ | ---------- | ------------------------------------------------------------------------------------------------ |
-| 1.1    | 25/02/2026 | `transactions`: intervalo padrão (hoje→hoje+30), param `allDates`, `meta.dateRange`, validação de datas |
-| 1.0    | 24/02/2026 | Versão inicial — endpoints de saldo, transações, orçamentos, centros de custo, resumo financeiro |
+| Versão | Data       | Descrição                                                                                                                                                       |
+| ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.2    | 28/02/2026 | Novo parâmetro `search` em `GET /api/v1/transactions`; novo endpoint `GET /api/v1/transactions/search` otimizado para typeahead; cap de segurança de 5.000 docs |
+| 1.0    | 24/02/2026 | Versão inicial — endpoints de saldo, transações, orçamentos, centros de custo, resumo financeiro                                                                |

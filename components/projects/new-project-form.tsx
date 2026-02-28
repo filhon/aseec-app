@@ -42,7 +42,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { useRouter } from "next/navigation"
 import { createProject, getCategories, getTags } from "@/lib/services/project-service"
 import { ProjectExtension, Category } from "@/lib/types/database.types"
-import { fetchAggregatedTransactions, AggregatedTransaction } from "@/lib/actions/finance/sync-actions"
+import { searchFinanceProjects } from "@/lib/actions/finance/sync-actions"
+import { FinanceTransaction } from "@/lib/api/finance/types"
+
 
 const projectSchema = z.object({
     title: z.string().min(2, "Título deve ter pelo menos 2 caracteres"),
@@ -72,10 +74,10 @@ const projectSchema = z.object({
 type ProjectFormValues = z.infer<typeof projectSchema>
 
 export function NewProjectForm() {
-    const [searching] = useState(false)
-    const [allTransactions, setAllTransactions] = useState<AggregatedTransaction[]>([])
-    const [searchResults, setSearchResults] = useState<AggregatedTransaction[]>([])
-    const [selectedFinancialProject, setSelectedFinancialProject] = useState<AggregatedTransaction | null>(null)
+    const [searching, setSearching] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [searchResults, setSearchResults] = useState<FinanceTransaction[]>([])
+    const [selectedFinancialProject, setSelectedFinancialProject] = useState<FinanceTransaction | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
     const [tagsList, setTagsList] = useState<{ id: string; name: string; color: string }[]>([])
@@ -83,20 +85,40 @@ export function NewProjectForm() {
     useEffect(() => {
         async function loadInitialData() {
             try {
-                const [cats, tgs, txs] = await Promise.all([
+                const [cats, tgs] = await Promise.all([
                     getCategories(),
                     getTags(),
-                    fetchAggregatedTransactions(1, 1000)
                 ])
                 setCategories(cats)
                 setTagsList(tgs)
-                setAllTransactions(txs.data)
             } catch (error) {
                 console.error("Error loading initial data", error)
             }
         }
         loadInitialData()
     }, [])
+
+    useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            if (searchQuery.length < 2) {
+                setSearchResults([])
+                return
+            }
+            setSearching(true)
+            try {
+                const res = await searchFinanceProjects(searchQuery)
+                setSearchResults(res)
+            } catch {
+                setSearchResults([])
+            } finally {
+                setSearching(false)
+            }
+        }, 400)
+
+        return () => clearTimeout(timeoutId)
+    }, [searchQuery])
+
+
 
     const form = useForm<ProjectFormValues>({
         resolver: zodResolver(projectSchema),
@@ -125,31 +147,16 @@ export function NewProjectForm() {
         },
     })
 
-    const handleSearchFinancial = (query: string) => {
-        if (query.length < 1) {
-            setSearchResults([])
-            return
-        }
-
-        const normalizedQuery = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-
-        const filtered = allTransactions.filter(tx => {
-            const normalizedDesc = tx.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            return normalizedDesc.includes(normalizedQuery)
-        })
-
-        setSearchResults(filtered)
-    }
-
-    const selectFinancialProject = (project: AggregatedTransaction) => {
+    const selectFinancialProject = (project: FinanceTransaction) => {
         setSelectedFinancialProject(project)
         form.setValue("financialProjectId", project.id)
 
         // Auto-fill fields if empty
         if (!form.getValues("title")) form.setValue("title", project.description)
-        if (!form.getValues("institution")) form.setValue("institution", project.provider)
+        if (!form.getValues("institution")) form.setValue("institution", project.supplier || "")
 
         setSearchResults([])
+        setSearchQuery("")
         toast.info("Vínculo financeiro selecionado", {
             description: `Valores de aprovado e investido serão sincronizados de: ${project.description}`
         })
@@ -179,8 +186,8 @@ export function NewProjectForm() {
                 zip_code: values.zipCode,
                 financial_project_id: values.financialProjectId,
                 // If there's a selected financial project, we might want to sync these values immediately:
-                approved_value: selectedFinancialProject?.totalAmount || 0,
-                requested_value: selectedFinancialProject?.totalAmount || 0,
+                approved_value: selectedFinancialProject?.amount || 0,
+                requested_value: selectedFinancialProject?.amount || 0,
             }, values.category, values.tags, values.institution)
 
             if (result) {
@@ -221,7 +228,8 @@ export function NewProjectForm() {
                                     <Input
                                         placeholder="Buscar por nome ou centro de custo..."
                                         className="pl-9"
-                                        onChange={(e) => handleSearchFinancial(e.target.value)}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
                                     />
                                     {searching && (
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -239,9 +247,9 @@ export function NewProjectForm() {
                                                 >
                                                     <span className="font-medium">{p.description}</span>
                                                     <span className="text-xs text-muted-foreground flex items-center justify-between mt-1">
-                                                        <span>{p.provider} {p.costCenterCode ? `• CC: ${p.costCenterCode}` : ''}</span>
+                                                        <span>{p.supplier || "Sem Instituição"} {p.costCenter?.code ? `• CC: ${p.costCenter.code}` : ''}</span>
                                                         <span className="font-medium text-foreground">
-                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.totalAmount)}
+                                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.amount)}
                                                         </span>
                                                     </span>
                                                 </button>
@@ -257,9 +265,9 @@ export function NewProjectForm() {
                                             <Badge variant="outline" className="text-[10px] h-5 bg-green-50 text-green-700 border-green-200">Vinculado</Badge>
                                         </span>
                                         <span className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                                            {selectedFinancialProject.provider}
-                                            {selectedFinancialProject.costCenterCode && `• CC: ${selectedFinancialProject.costCenterCode}`}
-                                            • <span className="font-medium text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedFinancialProject.totalAmount)}</span>
+                                            {selectedFinancialProject.supplier || "Sem Instituição"}
+                                            {selectedFinancialProject.costCenter?.code && `• CC: ${selectedFinancialProject.costCenter.code}`}
+                                            • <span className="font-medium text-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedFinancialProject.amount)}</span>
                                         </span>
                                     </div>
                                     <Button

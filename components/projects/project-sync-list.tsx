@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Loader2, RefreshCw, ArrowRight, Wallet, ChevronLeft, ChevronRight } from "lucide-react"
+import { Loader2, RefreshCw, ArrowRight, Wallet, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 import {
     Table,
@@ -25,6 +25,7 @@ export function ProjectSyncList() {
     const [projects, setProjects] = useState<AggregatedTransaction[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [syncing, setSyncing] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     // Pagination state
     const [page, setPage] = useState(1)
@@ -34,12 +35,17 @@ export function ProjectSyncList() {
     const fetchUnsynced = async (currentPage = page, currentLimit = limit) => {
         setLoading(true)
         setSelectedIds(new Set()) // Reset selection on page change
+        setError(null)
         try {
             const result = await fetchAggregatedTransactions(currentPage, currentLimit)
             setProjects(result.data)
             setTotal(result.total)
+            if (result.error) {
+                setError(result.error)
+            }
         } catch (error: unknown) {
             console.error(error)
+            setError("Erro ao buscar transações financeiras.")
             toast.error("Erro ao buscar transações financeiras.")
         } finally {
             setLoading(false)
@@ -111,6 +117,24 @@ export function ProjectSyncList() {
             <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                 <Loader2 className="h-8 w-8 animate-spin mb-2" />
                 <p>Buscando atualizações do sistema financeiro...</p>
+            </div>
+        )
+    }
+
+    if (error && projects.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-muted-foreground border border-dashed rounded-lg bg-destructive/5 border-destructive/20">
+                <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+                    <AlertTriangle className="h-6 w-6 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold text-destructive">Sistema financeiro indisponível</h3>
+                <p className="text-sm text-center max-w-sm mt-1">
+                    {error}
+                </p>
+                <Button variant="outline" className="mt-4" onClick={() => fetchUnsynced()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Tentar novamente
+                </Button>
             </div>
         )
     }

@@ -17,7 +17,8 @@ export interface AggregatedTransaction {
 }
 
 // Cost centers allowed for project sync: CC-OFERTAS and all its children.
-const SYNC_COST_CENTER_CODES = new Set([
+// Passed directly to the API via the costCenterCodes parameter (v1.1).
+const SYNC_COST_CENTER_CODES = [
     "CC-OFERTAS",
     "CC-CAPELOWSKI",
     "CC-CONST",
@@ -28,114 +29,87 @@ const SYNC_COST_CENTER_CODES = new Set([
     "CC-MISTRANS",
     "CC-PROJSOC",
     "CC-SAUDE",
-]);
+] as const;
 
-// Internally fetches transactions from SYNC_COST_CENTER_CODES, filtering
-// at the API level via costCenterIds, then groups them by description.
+/** Retry a function up to `maxRetries` times with exponential backoff. */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, baseDelayMs = 1000): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            const isServerError = err instanceof Error && /5\d{2}/.test(err.message);
+            if (!isServerError || attempt === maxRetries) break;
+            const delay = baseDelayMs * Math.pow(2, attempt - 1);
+            console.warn(`[Sync] Attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`, err);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    throw lastError;
+}
+
+// Fetches ALL transactions from SYNC_COST_CENTER_CODES via the API's
+// costCenterCodes + allDates parameters, then groups them by description.
 async function fetchAndGroupTransactions() {
-    // Step 1: Resolve cost center codes → IDs via the cost centers endpoint
-    let allCostCenters: { id: string; name: string; code: string }[] = [];
-    try {
-        // Try flat list first (simpler, more reliable)
-        const costCentersResponse = await financeApi.getCostCenters();
-        allCostCenters = (costCentersResponse.data || []).map(cc => ({
-            id: cc.id, name: cc.name, code: cc.code
-        }));
+    const costCenterCodesParam = SYNC_COST_CENTER_CODES.join(",");
+    console.log(`[Sync] Using costCenterCodes filter: ${costCenterCodesParam}`);
 
-        // If flat list returned nothing, try with hierarchy and flatten
-        if (allCostCenters.length === 0) {
-            const hierarchicalResponse = await financeApi.getCostCenters(true);
-            allCostCenters = flattenCostCenters(hierarchicalResponse.data || []);
-        }
-    } catch (err) {
-        console.error("[Sync] Failed to fetch cost centers:", err);
-        throw new Error("[Sync] Cannot resolve cost center IDs — cost centers endpoint failed");
-    }
-
-    console.log(`[Sync] Fetched ${allCostCenters.length} cost centers. Codes: ${allCostCenters.map(c => c.code).join(", ")}`);
-
-    const relevantIds = allCostCenters
-        .filter(cc => SYNC_COST_CENTER_CODES.has(cc.code))
-        .map(cc => cc.id);
-
-    if (relevantIds.length === 0) {
-        console.warn("[Sync] No matching cost center IDs found for codes:", [...SYNC_COST_CENTER_CODES]);
-        console.warn("[Sync] Available codes:", allCostCenters.map(c => c.code));
-        return [];
-    }
-
-    // The API supports up to 10 IDs at once — we have exactly 10, perfect fit.
-    const costCenterIdsParam = relevantIds.join(",");
-    console.log(`[Sync] Resolved ${relevantIds.length} cost center IDs: ${costCenterIdsParam}`);
-
-
-    // Step 2: Fetch transactions filtered by cost centers (API-level filter)
+    // Single paginated pass: costCenterCodes filters at the API level,
+    // allDates=true removes date range restrictions, so we get EVERYTHING.
     const transactions: FinanceTransaction[] = [];
-    const seenIds = new Set<string>();
-    const currentYear = new Date().getFullYear();
+    let currentPage = 1;
+    const PAGE_LIMIT = 100;
+    const MAX_PAGES = 200; // Safety cap (up to 20,000 transactions)
+    let hasNext = true;
 
-    // Iterate year by year to avoid max date range limits from external APIs.
-    // Go back 3 years to ensure older installments are not missed.
-    for (let year = currentYear - 3; year <= currentYear + 2; year++) {
-        let currentPage = 1;
-        const PAGE_LIMIT = 100;
-        const MAX_PAGES = 50; // Safety cap per year
-        let hasNext = true;
-        let yearCount = 0;
+    while (hasNext && currentPage <= MAX_PAGES) {
+        try {
+            const txResponse = await withRetry(() => financeApi.getTransactions({
+                page: currentPage,
+                limit: PAGE_LIMIT,
+                costCenterCodes: costCenterCodesParam,
+                allDates: true,
+                sortBy: "dueDate",
+                sortOrder: "asc"
+            }));
 
-        const startDate = `${year}-01-01`;
-        const endDate = `${year}-12-31`;
+            const txs = txResponse.data || [];
+            transactions.push(...txs);
 
-        while (hasNext && currentPage <= MAX_PAGES) {
-            try {
-                const txResponse = await financeApi.getTransactions({
-                    page: currentPage,
-                    limit: PAGE_LIMIT,
-                    startDate,
-                    endDate,
-                    costCenterIds: costCenterIdsParam,
-                    sortBy: "dueDate",
-                    sortOrder: "asc"
-                });
+            hasNext = txResponse.pagination?.hasNext ?? false;
+            currentPage++;
 
-                const txs = txResponse.data || [];
-
-                // Deduplicate: transactions at year boundaries could appear in overlapping queries
-                for (const tx of txs) {
-                    if (!seenIds.has(tx.id)) {
-                        seenIds.add(tx.id);
-                        transactions.push(tx);
-                    }
-                }
-
-                yearCount += txs.length;
-                hasNext = txResponse.pagination?.hasNext ?? false;
-                currentPage++;
-            } catch (err) {
-                console.warn(`[Sync] Error fetching year ${year}, page ${currentPage}`, err);
-                break;
+            // Log progress for large datasets
+            if (currentPage % 10 === 0) {
+                console.log(`[Sync] Progress: ${transactions.length} transactions fetched so far (page ${currentPage - 1})...`);
             }
+        } catch (err) {
+            console.error(`[Sync] Error fetching page ${currentPage}:`, err);
+            break;
         }
-        console.log(`[Sync] Year ${year}: fetched ${yearCount} transactions across ${currentPage - 1} pages`);
     }
 
-    console.log(`[Sync] Total unique transactions fetched: ${transactions.length}`);
+    console.log(`[Sync] Total transactions fetched: ${transactions.length} across ${currentPage - 1} pages`);
 
-    // ── Diagnostic: log transactions matching "Suzilane" to debug missing installment ──
-    const DEBUG_KEYWORD = "Suzilane";
-    const debugMatches = transactions.filter(t =>
-        t.description?.toLowerCase().includes(DEBUG_KEYWORD.toLowerCase())
-    );
-    console.log(`[Sync][DEBUG] Transactions matching "${DEBUG_KEYWORD}": ${debugMatches.length}`);
-    for (const dm of debugMatches) {
-        console.log(`[Sync][DEBUG]   id=${dm.id} | desc="${dm.description}" | type=${dm.type} | cc=${dm.costCenter?.code ?? "NULL"} | due=${dm.dueDate} | amount=${dm.amount}`);
+    // Safety filter: discard any transactions from non-allowed cost centers.
+    // This is a temporary safeguard until the API's costCenterCodes filtering
+    // is fully confirmed. Can be removed once validated.
+    const allowedCodesSet = new Set<string>(SYNC_COST_CENTER_CODES);
+    const filteredTransactions = transactions.filter(t => {
+        const code = t.costCenter?.code;
+        return code && allowedCodesSet.has(code);
+    });
+
+    if (filteredTransactions.length < transactions.length) {
+        console.warn(`[Sync] Client-side filter removed ${transactions.length - filteredTransactions.length} transactions with non-allowed cost centers`);
     }
 
-    // Step 3: Group transactions by description (cost center filter already applied by API)
+    // Group transactions by description
     const groupedData: Record<string, AggregatedTransaction> = {};
     let filteredByType = 0;
 
-    for (const t of transactions) {
+    for (const t of filteredTransactions) {
         if (t.type !== "payable") {
             filteredByType++;
             continue;
@@ -165,42 +139,21 @@ async function fetchAndGroupTransactions() {
         }
     }
 
-    console.log(`[Sync] Filtered out: ${filteredByType} by type`);
+    console.log(`[Sync] Filtered out: ${filteredByType} non-payable transactions`);
     console.log(`[Sync] Grouped into ${Object.keys(groupedData).length} projects`);
 
-    // Log projects with less than 12 installments for debugging
-    for (const [desc, group] of Object.entries(groupedData)) {
-        if (group.transactionCount < 12 && group.transactionCount >= 10) {
-            console.log(`[Sync][WARN] "${desc}" has only ${group.transactionCount} installments. Dates: ${group.dates.sort().join(", ")}`);
-        }
-    }
-
     return Object.values(groupedData);
-}
-
-type CostCenterNode = { id: string; name: string; code: string; children?: CostCenterNode[] };
-
-/** Flatten a hierarchical cost center tree into a flat array */
-function flattenCostCenters(centers: CostCenterNode[]): { id: string; name: string; code: string }[] {
-    const result: { id: string; name: string; code: string }[] = [];
-    for (const cc of centers) {
-        result.push({ id: cc.id, name: cc.name, code: cc.code });
-        if (cc.children && cc.children.length > 0) {
-            result.push(...flattenCostCenters(cc.children));
-        }
-    }
-    return result;
 }
 
 // Cache fetching all payloads heavily, we only refresh cache 
 // occasionally (every 5 mins). The user saves tons of API requests.
 const getCachedAggregatedTransactions = unstable_cache(
     fetchAndGroupTransactions,
-    ['aggregated-sync-transactions-v12'],
+    ['aggregated-sync-transactions-v15'],
     { revalidate: 300 } // Cache lifespan: 5 minutes
 );
 
-export async function fetchAggregatedTransactions(page = 1, limit = 10): Promise<{ data: AggregatedTransaction[], total: number }> {
+export async function fetchAggregatedTransactions(page = 1, limit = 10): Promise<{ data: AggregatedTransaction[], total: number, error?: string }> {
     try {
         const aggregatedArray = await getCachedAggregatedTransactions();
 
@@ -233,6 +186,35 @@ export async function fetchAggregatedTransactions(page = 1, limit = 10): Promise
         };
     } catch (error) {
         console.error("Error fetching aggregated transactions:", error);
-        return { data: [], total: 0 };
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        const isApiError = message.includes("Finance API Error") || message.includes("cost centers endpoint failed");
+        return {
+            data: [],
+            total: 0,
+            error: isApiError
+                ? "O sistema financeiro está temporariamente indisponível. Tente novamente em alguns minutos."
+                : "Erro ao buscar transações financeiras."
+        };
+    }
+}
+
+export async function searchFinanceProjects(query: string): Promise<FinanceTransaction[]> {
+    try {
+        if (!query || query.length < 2) return [];
+
+        const costCenterCodesParam = SYNC_COST_CENTER_CODES.join(",");
+
+        const result = await financeApi.searchTransactions({
+            q: query,
+            limit: 10,
+            costCenterCodes: costCenterCodesParam,
+            allDates: true,
+        });
+
+        // Retornamos apenas os resultados
+        return result.data || [];
+    } catch (error) {
+        console.error("[Sync API] Error searching finance projects:", error);
+        return [];
     }
 }
