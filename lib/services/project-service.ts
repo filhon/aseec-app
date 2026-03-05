@@ -613,7 +613,14 @@ export async function addProjectPost(
   content: string,
   type: string = 'update',
   authorName: string = 'Sistema',
-  authorRole: string = 'Automático'
+  authorRole: string = 'Automático',
+  attachments?: Array<{
+    title: string
+    type: 'image' | 'video' | 'document'
+    url: string
+    originalUrl?: string
+    thumbnailUrl?: string
+  }>
 ) {
   const supabase = createClient()
   const newPostData = {
@@ -630,6 +637,24 @@ export async function addProjectPost(
     console.error("Error adding post:", error)
     throw error
   }
+
+  // Save attachments if any
+  if (data && attachments && attachments.length > 0) {
+    const attachmentRows = attachments.map(att => ({
+      post_id: data.id,
+      title: att.title,
+      type: att.type,
+      url: att.url,
+      original_url: att.originalUrl || null,
+      storage_path: att.thumbnailUrl || null,
+      active: true,
+    }))
+    const { error: attError } = await supabase.from("post_attachments").insert(attachmentRows)
+    if (attError) {
+      console.error("Error saving post attachments:", attError)
+    }
+  }
+
   return data
 }
 

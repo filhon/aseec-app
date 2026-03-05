@@ -8,6 +8,9 @@ export interface ProjectAttachment {
   title: string;
   type: 'image' | 'video' | 'document';
   url: string;
+  // For Google Drive attachments:
+  originalUrl?: string;   // The original sharing link
+  thumbnailUrl?: string;  // Thumbnail URL for previews
 }
 
 export interface ProjectPost {

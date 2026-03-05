@@ -78,6 +78,29 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         .eq("active", true)
         .order("created_at", { ascending: false })
 
+    // Fetch all active comments for these posts
+    const postIds = (postsData || []).map(p => p.id)
+    let commentsData: { id: string; post_id: string; author_name: string; content: string; created_at: string; updated_at: string | null }[] = []
+    let attachmentsData: { id: string; post_id: string; title: string; type: string; url: string; original_url: string | null; storage_path: string | null }[] = []
+    if (postIds.length > 0) {
+        const [commentsRes, attachmentsRes] = await Promise.all([
+            supabase
+                .from("post_comments")
+                .select("id, post_id, author_name, content, created_at, updated_at")
+                .in("post_id", postIds)
+                .eq("active", true)
+                .order("created_at", { ascending: true }),
+            supabase
+                .from("post_attachments")
+                .select("id, post_id, title, type, url, original_url, storage_path")
+                .in("post_id", postIds)
+                .eq("active", true)
+                .order("created_at", { ascending: true }),
+        ])
+        commentsData = commentsRes.data || []
+        attachmentsData = attachmentsRes.data || []
+    }
+
     // Fetch paid amount from Finance API using the financial linked ID
     let paidAmount = 0
     if (project.financial_project_id) {
@@ -122,7 +145,25 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             content: post.content,
             likes: post.likes_count,
             prayers: post.prayers_count,
-            comments: [],
+            comments: commentsData
+                .filter(c => c.post_id === post.id)
+                .map(c => ({
+                    id: c.id,
+                    author: c.author_name,
+                    date: c.created_at,
+                    content: c.content,
+                    updatedAt: c.updated_at ?? undefined,
+                })),
+            attachments: attachmentsData
+                .filter(a => a.post_id === post.id)
+                .map(a => ({
+                    id: a.id,
+                    title: a.title || 'Anexo',
+                    type: a.type as 'image' | 'video' | 'document',
+                    url: a.url,
+                    originalUrl: a.original_url ?? undefined,
+                    thumbnailUrl: a.storage_path ?? undefined,
+                })),
         })),
         attachments: [],
         observations: project.observations,

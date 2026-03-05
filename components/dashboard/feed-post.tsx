@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import {
     Heart, MessageSquare, MoreHorizontal,
     FileText, Video,
-    Eye, Send, X, HandHeart
+    Eye, Send, X, HandHeart, Loader2
 } from "lucide-react"
 import {
     DropdownMenu,
@@ -41,6 +41,10 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
 
     const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
     const [editedCommentContent, setEditedCommentContent] = useState("")
+
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+    const [savingCommentId, setSavingCommentId] = useState<string | null>(null)
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
 
     const [previewFile, setPreviewFile] = useState<{ url: string, type: 'image' | 'video' | 'document', title: string } | null>(null)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -76,54 +80,83 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
     }
 
     const handleComment = async () => {
-        if (!newComment.trim()) return
+        if (!newComment.trim() || isSubmittingComment) return
 
         const commentText = newComment
-        setNewComment("") // Clear input immediately for better UX
+        const tempId = `temp-${Date.now()}`
+
+        // Optimistic: show immediately with a temp id
+        const optimisticComment: ProjectPostComment = {
+            id: tempId,
+            author: "Você",
+            date: new Date().toISOString(),
+            content: commentText,
+        }
+        setComments(prev => [...prev, optimisticComment])
+        setNewComment("")
+        setIsSubmittingComment(true)
 
         try {
             const dbComment = await addPostComment(post.id, commentText)
-            const comment: ProjectPostComment = {
-                id: dbComment?.id || Math.random().toString(),
+            // Replace the optimistic entry with the real one from DB
+            setComments(prev => prev.map(c => c.id === tempId ? {
+                id: dbComment?.id || tempId,
                 author: dbComment?.author_name || "Você",
-                avatar: "",
                 date: dbComment?.created_at || new Date().toISOString(),
-                content: commentText
-            }
-            setComments(prev => [...prev, comment])
-            toast.success("Comentário adicionado!")
+                content: commentText,
+            } : c))
         } catch (error) {
             console.error("Failed to add comment:", error)
-            setNewComment(commentText) // Restore input on failure
+            // Remove optimistic comment on failure
+            setComments(prev => prev.filter(c => c.id !== tempId))
+            setNewComment(commentText)
             toast.error("Erro ao adicionar comentário.")
+        } finally {
+            setIsSubmittingComment(false)
         }
     }
 
     const handleEditCommentSubmit = async (commentId: string) => {
         if (!editedCommentContent.trim()) return
 
+        // Optimistic: update immediately
+        const previousContent = comments.find(c => c.id === commentId)?.content
+        setComments(prev => prev.map(c =>
+            c.id === commentId ? { ...c, content: editedCommentContent, updatedAt: new Date().toISOString() } : c
+        ))
+        setEditingCommentId(null)
+        setSavingCommentId(commentId)
+
         try {
             await updatePostComment(commentId, editedCommentContent)
-            setComments(prev => prev.map(c =>
-                c.id === commentId ? { ...c, content: editedCommentContent, updatedAt: new Date().toISOString() } : c
-            ))
-            setEditingCommentId(null)
-            toast.success("Comentário atualizado!")
         } catch (error) {
             console.error("Failed to edit comment:", error)
+            // Revert on failure
+            setComments(prev => prev.map(c =>
+                c.id === commentId ? { ...c, content: previousContent ?? c.content, updatedAt: undefined } : c
+            ))
             toast.error("Erro ao atualizar comentário.")
+        } finally {
+            setSavingCommentId(null)
         }
     }
 
     const handleDeleteComment = async (commentId: string) => {
         if (!confirm("Tem certeza que deseja excluir este comentário?")) return
 
+        // Optimistic: mark as deleting for fade-out, then remove
+        setDeletingCommentId(commentId)
+
         try {
             await deletePostComment(commentId, post.id)
-            setComments(prev => prev.filter(c => c.id !== commentId))
-            toast.success("Comentário excluído!")
+            // Small delay so transition plays
+            setTimeout(() => {
+                setComments(prev => prev.filter(c => c.id !== commentId))
+                setDeletingCommentId(null)
+            }, 300)
         } catch (error) {
             console.error("Failed to delete comment:", error)
+            setDeletingCommentId(null)
             toast.error("Erro ao excluir comentário.")
         }
     }
@@ -213,7 +246,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                     <div className="relative w-full h-full">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
-                                            src={file.url}
+                                            src={file.thumbnailUrl || file.url}
                                             alt={file.title}
                                             className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                         />
@@ -225,6 +258,7 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                     <div className="flex flex-col items-center gap-2 p-2 text-muted-foreground">
                                         {file.type === 'video' ? <Video className="h-8 w-8" /> : <FileText className="h-8 w-8" />}
                                         <span className="text-xs font-medium truncate max-w-full px-2">{file.title}</span>
+                                        <span className="text-[10px] text-primary underline">Visualizar</span>
                                     </div>
                                 )}
                             </div>
@@ -275,7 +309,12 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                             {comments.length > 0 && (
                                 <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
                                     {comments.map((comment) => (
-                                        <div key={comment.id} className="flex gap-3 text-sm group">
+                                        <div
+                                            key={comment.id}
+                                            className={`flex gap-3 text-sm group transition-all duration-300 ${deletingCommentId === comment.id ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100'
+                                                } ${comment.id.startsWith('temp-') ? 'opacity-60' : ''
+                                                }`}
+                                        >
                                             <Avatar className="h-8 w-8 shrink-0">
                                                 <AvatarImage src="https://github.com/shadcn.png" />
                                                 <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
@@ -324,8 +363,16 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                                         <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingCommentId(null)}>
                                                             <X className="h-3 w-3" />
                                                         </Button>
-                                                        <Button size="sm" className="h-7 px-2 text-[10px]" onClick={() => handleEditCommentSubmit(comment.id)}>
-                                                            Salvar
+                                                        <Button
+                                                            size="sm"
+                                                            className="h-7 px-2 text-[10px] min-w-[52px]"
+                                                            onClick={() => handleEditCommentSubmit(comment.id)}
+                                                            disabled={savingCommentId === comment.id}
+                                                        >
+                                                            {savingCommentId === comment.id
+                                                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                                                : "Salvar"
+                                                            }
                                                         </Button>
                                                     </div>
                                                 ) : (
@@ -355,9 +402,12 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                         variant="ghost"
                                         className="absolute right-1 top-1 h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary"
                                         onClick={handleComment}
-                                        disabled={!newComment.trim()}
+                                        disabled={!newComment.trim() || isSubmittingComment}
                                     >
-                                        <Send className="h-4 w-4" />
+                                        {isSubmittingComment
+                                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                                            : <Send className="h-4 w-4" />
+                                        }
                                     </Button>
                                 </div>
                             </div>
@@ -373,13 +423,33 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                     {previewFile && (
                         <div className="relative flex items-center justify-center min-h-[50vh] max-h-[85vh]">
                             {previewFile.type === 'image' ? (
-                                <>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={previewFile.url} alt={previewFile.title} className="max-w-full max-h-[85vh] object-contain" />
-                                </>
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={previewFile.url} alt={previewFile.title} className="max-w-full max-h-[85vh] object-contain" />
                             ) : previewFile.type === 'video' ? (
-                                <video src={previewFile.url} controls className="max-w-full max-h-[85vh]" />
-                            ) : null}
+                                <iframe
+                                    src={previewFile.url}
+                                    className="w-full min-h-[60vh] border-0"
+                                    allow="autoplay"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                // Document: show embedded + link to open in Drive
+                                <div className="flex flex-col items-center gap-4 w-full h-full p-4">
+                                    <iframe
+                                        src={previewFile.url}
+                                        className="w-full min-h-[60vh] bg-white rounded border-0"
+                                        allowFullScreen
+                                    />
+                                    <a
+                                        href={previewFile.url.replace('/preview', '/view')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-white/70 hover:text-white underline"
+                                    >
+                                        Abrir no Google Drive
+                                    </a>
+                                </div>
+                            )}
                             <div className="absolute top-4 right-4 z-50">
                                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" onClick={() => setIsPreviewOpen(false)}>
                                     <X className="h-6 w-6" />

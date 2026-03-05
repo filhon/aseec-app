@@ -117,7 +117,14 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                 post.content,
                 post.type,
                 post.author,
-                post.role
+                post.role,
+                post.attachments?.map(a => ({
+                    title: a.title,
+                    type: a.type,
+                    url: a.url,
+                    originalUrl: a.originalUrl,
+                    thumbnailUrl: a.thumbnailUrl,
+                }))
             )
             const newPost: ProjectPost = {
                 ...post,
