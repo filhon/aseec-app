@@ -605,15 +605,22 @@ export async function updateProjectInvestments(projectId: string, investments: {
 }
 
 /**
- * Add a post to the feed (for automatic system logs)
+ * Add a post to the feed
  */
-export async function addProjectPost(projectId: string, title: string, content: string) {
+export async function addProjectPost(
+  projectId: string,
+  title: string | undefined,
+  content: string,
+  type: string = 'update',
+  authorName: string = 'Sistema',
+  authorRole: string = 'Automático'
+) {
   const supabase = createClient()
   const newPostData = {
     project_id: projectId,
-    type: 'update',
-    author_name: "Sistema",
-    author_role: "Automático",
+    type,
+    author_name: authorName,
+    author_role: authorRole,
     title,
     content,
     active: true
@@ -624,4 +631,67 @@ export async function addProjectPost(projectId: string, title: string, content: 
     throw error
   }
   return data
+}
+
+/**
+ * Toggle a reaction on a project post
+ */
+export async function togglePostReaction(postId: string, type: 'like' | 'prayer', isAdding: boolean) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  if (isAdding) {
+    // Add reaction
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from("post_reactions").insert({ post_id: postId, user_id: user.id, type: type as any })
+  } else {
+    // Remove reaction
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from("post_reactions").delete().match({ post_id: postId, user_id: user.id, type: type as any })
+  }
+
+  // Determine counter column name
+  const counterCol = type === 'like' ? 'likes_count' : 'prayers_count'
+
+  // Update post counter
+  const { data: currentPost } = await supabase.from("project_posts").select(counterCol).eq("id", postId).single()
+  if (currentPost) {
+    const currentCount = Number(currentPost[counterCol as keyof typeof currentPost]) || 0
+    const newVal = isAdding ? currentCount + 1 : Math.max(0, currentCount - 1)
+    await supabase.from("project_posts").update({ [counterCol]: newVal }).eq("id", postId)
+  }
+}
+
+/**
+ * Add a comment to a project post
+ */
+export async function addPostComment(postId: string, content: string) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("User not authenticated")
+
+  // Get profile to use as author name
+  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single()
+  const authorName = profile?.full_name || "Usuário"
+
+  const { data: comment, error } = await supabase.from("post_comments").insert({
+    post_id: postId,
+    author_id: user.id,
+    author_name: authorName,
+    content
+  }).select().single()
+
+  if (error) {
+    console.error("Error adding comment:", error)
+    throw error
+  }
+
+  // Update comments counter
+  const { data: currentPost } = await supabase.from("project_posts").select("comments_count").eq("id", postId).single()
+  if (currentPost) {
+    await supabase.from("project_posts").update({ comments_count: (currentPost.comments_count || 0) + 1 }).eq("id", postId)
+  }
+
+  return comment
 }

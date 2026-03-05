@@ -41,7 +41,7 @@ import { AddressAutocomplete } from "@/components/ui/address-autocomplete"
 import { Calendar } from "@/components/ui/calendar"
 import { useRouter } from "next/navigation"
 import { createProject, getCategories, getTags } from "@/lib/services/project-service"
-import { ProjectExtension, Category } from "@/lib/types/database.types"
+import { ProjectExtension, Category, ProjectStatus } from "@/lib/types/database.types"
 import { searchFinanceProjects } from "@/lib/actions/finance/sync-actions"
 import { FinanceTransaction } from "@/lib/api/finance/types"
 
@@ -56,9 +56,11 @@ const projectSchema = z.object({
     municipality: z.string().optional(),
     description: z.string().optional(),
     financialProjectId: z.string().optional(), // Link to external ID
+    status: z.string().optional(),
     extension: z.string().optional(),
     tags: z.array(z.string()).optional(),
     indication: z.string().optional(),
+    reachedPeople: z.number().optional(),
     startDate: z.date().optional(),
     endDate: z.date().optional(),
     // New Address Fields
@@ -132,9 +134,11 @@ export function NewProjectForm() {
             municipality: "",
             description: "",
             financialProjectId: "",
+            status: "pendente",
             extension: "parcial",
             tags: [],
             indication: "",
+            reachedPeople: 0,
             // Dates default to undefined for optional fields
             // New Address Fields
             address: "",
@@ -173,10 +177,12 @@ export function NewProjectForm() {
                 state: values.state,
                 municipality: values.municipality,
                 description: values.description,
+                status: (values.status as ProjectStatus) || "pendente",
                 extension: (values.extension as ProjectExtension) || "parcial",
                 start_date: values.startDate?.toISOString(),
                 end_date: values.endDate?.toISOString(),
                 indication: values.indication,
+                reached_people: values.reachedPeople,
                 address: values.address,
                 latitude: values.latitude,
                 longitude: values.longitude,
@@ -503,6 +509,30 @@ export function NewProjectForm() {
                                 </FormItem>
                             )}
                         />
+
+                        <FormField
+                            control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                                <FormItem className="col-span-1 md:col-span-4">
+                                    <FormLabel>Status Inicial</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="pendente">Pendente</SelectItem>
+                                            <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                                            <SelectItem value="concluido">Concluído</SelectItem>
+                                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
 
 
@@ -658,6 +688,26 @@ export function NewProjectForm() {
                                 <FormLabel>Indicação (Opcional)</FormLabel>
                                 <FormControl>
                                     <Input placeholder="Quem indicou este projeto?" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="reachedPeople"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Pessoas Impactadas</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        placeholder="Número de pessoas"
+                                        value={field.value}
+                                        onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

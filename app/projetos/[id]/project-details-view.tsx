@@ -75,7 +75,8 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
 
     const [overviewForm, setOverviewForm] = useState({
         description: project.description || '',
-        observations: project.observations || ''
+        observations: project.observations || '',
+        reachedPeople: project.reachedPeople || 0
     })
 
     const [basicForm, setBasicForm] = useState({
@@ -83,7 +84,8 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         startDate: project.startDate || '',
         endDate: project.endDate || '',
         lastVisit: project.lastVisit || '',
-        indication: project.indication || ''
+        indication: project.indication || '',
+        status: project.status || 'pendente'
     })
 
     // Helper to add auto-post
@@ -106,6 +108,29 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     }
 
     // --- Save Handlers with Auto-Feed Logic ---
+
+    const handleAddManualPost = async (post: ProjectPost) => {
+        try {
+            const dbPost = await addProjectPost(
+                project.id,
+                post.title,
+                post.content,
+                post.type,
+                post.author,
+                post.role
+            )
+            const newPost: ProjectPost = {
+                ...post,
+                id: dbPost?.id || post.id,
+                date: dbPost?.created_at || post.date,
+            }
+            setFeed(prev => [newPost, ...prev])
+            toast.success("Publicação adicionada com sucesso!")
+        } catch (e) {
+            console.error("Erro ao adicionar publicação:", e)
+            toast.error("Erro ao adicionar publicação.")
+        }
+    }
 
     const handleSaveClass = async () => {
         const newTags = classForm.tags || []
@@ -140,17 +165,20 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         const changes = []
         if (overviewForm.description !== project.description) changes.push("Descrição do projeto atualizada")
         if (overviewForm.observations !== project.observations) changes.push("Observações atualizadas")
+        if (overviewForm.reachedPeople !== (project.reachedPeople || 0)) changes.push(`Pessoas impactadas atualizado para ${overviewForm.reachedPeople}`)
 
         if (changes.length > 0) {
             try {
                 await updateProject(project.id, {
                     description: overviewForm.description,
-                    observations: overviewForm.observations
+                    observations: overviewForm.observations,
+                    reached_people: overviewForm.reachedPeople
                 })
                 setProject({
                     ...project,
                     description: overviewForm.description,
-                    observations: overviewForm.observations
+                    observations: overviewForm.observations,
+                    reachedPeople: overviewForm.reachedPeople
                 })
                 await addAutoPost("Atualização de Visão Geral", changes.join('\n'))
                 toast.success("Visão geral salva com sucesso!")
@@ -170,6 +198,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         if (basicForm.endDate !== project.endDate) changes.push(`Previsão de fim alterada para ${basicForm.endDate}`)
         if (basicForm.lastVisit !== project.lastVisit) changes.push(`Nova visita registrada em ${basicForm.lastVisit}`)
         if (basicForm.indication !== project.indication) changes.push(`Indicação atualizada`)
+        if (basicForm.status !== project.status) changes.push(`Status alterado de "${project.status}" para "${basicForm.status}"`)
 
         if (changes.length > 0) {
             try {
@@ -179,7 +208,9 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     start_date: basicForm.startDate === '' ? null : basicForm.startDate,
                     end_date: basicForm.endDate === '' ? null : basicForm.endDate,
                     last_visit: basicForm.lastVisit === '' ? null : basicForm.lastVisit,
-                    indication: basicForm.indication
+                    indication: basicForm.indication,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    status: basicForm.status as any
                 })
                 setProject({
                     ...project,
@@ -187,7 +218,8 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     startDate: basicForm.startDate,
                     endDate: basicForm.endDate,
                     lastVisit: basicForm.lastVisit,
-                    indication: basicForm.indication
+                    indication: basicForm.indication,
+                    status: basicForm.status
                 })
                 await addAutoPost("Atualização de Dados Básicos", changes.join('\n'))
                 toast.success("Dados básicos salvos com sucesso!")
@@ -352,6 +384,15 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                         className="min-h-[60px]"
                                     />
                                 </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-semibold">Pessoas Impactadas</label>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        value={overviewForm.reachedPeople}
+                                        onChange={e => setOverviewForm({ ...overviewForm, reachedPeople: parseInt(e.target.value) || 0 })}
+                                    />
+                                </div>
                             </div>
                         }
                     >
@@ -359,7 +400,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             <div className="text-sm text-muted-foreground leading-relaxed">
                                 {project.description || "Nenhuma descrição disponível para este projeto."}
                             </div>
-                            {project.reachedPeople && (
+                            {project.reachedPeople ? (
                                 <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
                                     <div className="bg-primary/10 p-2 rounded-full shrink-0">
                                         <Users className="h-4 w-4 text-primary" />
@@ -369,7 +410,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                         <p className="text-xs text-muted-foreground">Pessoas impactadas</p>
                                     </div>
                                 </div>
-                            )}
+                            ) : null}
                             {project.observations && (
                                 <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-3 rounded-lg text-xs">
                                     <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-1.5">
@@ -456,6 +497,20 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                             </PopoverContent>
                                         </Popover>
                                     </div>
+                                </div>
+                                <div className="space-y-1 flex flex-col">
+                                    <label className="text-xs font-semibold">Status do Projeto</label>
+                                    <Select value={basicForm.status} onValueChange={v => setBasicForm({ ...basicForm, status: v as import('@/lib/types/database.types').ProjectStatus })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione o status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="pendente">Pendente</SelectItem>
+                                            <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                                            <SelectItem value="concluido">Concluído</SelectItem>
+                                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-1 flex flex-col">
                                     <label className="text-xs font-semibold">Última Visita (Staff)</label>
@@ -815,7 +870,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                     {/* We pass the FULL controlled feed here */}
                     <ProjectMural
                         feed={feed}
-                        onAddPost={(post) => setFeed([post, ...feed])}
+                        onAddPost={handleAddManualPost}
                         canEdit={canEditProjects}
                     />
                 </div>

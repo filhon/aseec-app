@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Toggle } from "@/components/ui/toggle"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { 
-    Heart, MessageSquare, MoreHorizontal, 
-    FileText, Video, 
+import {
+    Heart, MessageSquare, MoreHorizontal,
+    FileText, Video,
     Eye, Send, X, HandHeart
 } from "lucide-react"
+import { togglePostReaction, addPostComment } from "@/lib/services/project-service"
+import { toast } from "sonner"
 
 interface FeedPostProps {
     post: ProjectPost
@@ -23,7 +25,7 @@ interface FeedPostProps {
 export function FeedPost({ post, projectTitle }: FeedPostProps) {
     const [likes, setLikes] = useState(post.likes || 0)
     const [liked, setLiked] = useState(false)
-    
+
     const [prayers, setPrayers] = useState(post.prayers || 0)
     const [prayed, setPrayed] = useState(false)
 
@@ -34,29 +36,58 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
     const [previewFile, setPreviewFile] = useState<{ url: string, type: 'image' | 'video' | 'document', title: string } | null>(null)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
-    const handleLike = (pressed: boolean) => {
+    const handleLike = async (pressed: boolean) => {
+        // Optimistic update
         setLiked(pressed)
         setLikes(prev => pressed ? prev + 1 : prev - 1)
+        try {
+            await togglePostReaction(post.id, 'like', pressed)
+        } catch (error) {
+            console.error("Failed to toggle like:", error)
+            // Revert on failure
+            setLiked(!pressed)
+            setLikes(prev => !pressed ? prev + 1 : prev - 1)
+            toast.error("Erro ao curtir a publicação.")
+        }
     }
 
-    const handlePray = (pressed: boolean) => {
+    const handlePray = async (pressed: boolean) => {
+        // Optimistic update
         setPrayed(pressed)
         setPrayers(prev => pressed ? prev + 1 : prev - 1)
+        try {
+            await togglePostReaction(post.id, 'prayer', pressed)
+        } catch (error) {
+            console.error("Failed to toggle prayer:", error)
+            // Revert on failure
+            setPrayed(!pressed)
+            setPrayers(prev => !pressed ? prev + 1 : prev - 1)
+            toast.error("Erro ao orar pela publicação.")
+        }
     }
 
-    const handleComment = () => {
+    const handleComment = async () => {
         if (!newComment.trim()) return
 
-        const comment: ProjectPostComment = {
-            id: Math.random().toString(),
-            author: "Você",
-            avatar: "",
-            date: new Date().toISOString(),
-            content: newComment
-        }
+        const commentText = newComment
+        setNewComment("") // Clear input immediately for better UX
 
-        setComments([...comments, comment])
-        setNewComment("")
+        try {
+            const dbComment = await addPostComment(post.id, commentText)
+            const comment: ProjectPostComment = {
+                id: dbComment?.id || Math.random().toString(),
+                author: dbComment?.author_name || "Você",
+                avatar: "",
+                date: dbComment?.created_at || new Date().toISOString(),
+                content: commentText
+            }
+            setComments(prev => [...prev, comment])
+            toast.success("Comentário adicionado!")
+        } catch (error) {
+            console.error("Failed to add comment:", error)
+            setNewComment(commentText) // Restore input on failure
+            toast.error("Erro ao adicionar comentário.")
+        }
     }
 
     const handlePreview = (file: { url: string; type: 'image' | 'video' | 'document'; title: string }) => {
@@ -101,22 +132,22 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                     </Avatar>
                     <div className="space-y-1">
                         <div className="flex flex-col">
-                             {projectTitle && (
+                            {projectTitle && (
                                 <span className="text-[10px] uppercase font-bold text-primary mb-0.5 tracking-wide">{projectTitle}</span>
-                             )}
+                            )}
                             <div className="flex items-center gap-2">
                                 <span className="font-semibold text-sm leading-none">{post.author}</span>
                                 {post.role && <span className="text-xs text-muted-foreground">• {post.role}</span>}
                             </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{new Date(post.date).toLocaleDateString()} às {new Date(post.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(post.date).toLocaleDateString()} às {new Date(post.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge variant={getBadgeVariant(post.type)} className="capitalize font-normal text-xs px-2.5 py-0.5">
                         {getBadgeLabel(post.type)}
                     </Badge>
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
                         <MoreHorizontal className="h-4 w-4" />
                     </Button>
                 </div>
@@ -134,21 +165,21 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                 {/* Attachments */}
                 {post.attachments && post.attachments.length > 0 && (
                     <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                         {post.attachments.map((file, index) => (
-                             <div 
-                                key={index} 
+                        {post.attachments.map((file, index) => (
+                            <div
+                                key={index}
                                 className="group relative aspect-video flex items-center justify-center rounded-lg border bg-muted/40 overflow-hidden cursor-pointer hover:bg-muted/60 transition-colors"
                                 onClick={() => handlePreview(file)}
-                             >
+                            >
                                 {file.type === 'image' ? (
                                     <div className="relative w-full h-full">
-                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                         <img 
-                                            src={file.url} 
-                                            alt={file.title} 
-                                            className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={file.url}
+                                            alt={file.title}
+                                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                         />
-                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <Eye className="h-6 w-6 text-white" />
                                         </div>
                                     </div>
@@ -158,8 +189,8 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                         <span className="text-xs font-medium truncate max-w-full px-2">{file.title}</span>
                                     </div>
                                 )}
-                             </div>
-                         ))}
+                            </div>
+                        ))}
                     </div>
                 )}
             </CardContent>
@@ -167,8 +198,8 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
             {/* Footer / Actions */}
             <CardFooter className="p-0 flex flex-col bg-muted/5">
                 <div className="flex items-center w-full px-6 py-2 gap-1">
-                     <Toggle 
-                        pressed={liked} 
+                    <Toggle
+                        pressed={liked}
                         onPressedChange={handleLike}
                         variant="outline"
                         className="h-8 gap-2 px-3 border-transparent bg-transparent hover:bg-muted hover:text-foreground data-[state=on]:bg-red-50 data-[state=on]:text-red-600 dark:data-[state=on]:bg-red-950/20"
@@ -177,8 +208,8 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                         <span className="text-xs font-medium">{likes > 0 ? likes : 'Curtir'}</span>
                     </Toggle>
 
-                    <Toggle 
-                        pressed={prayed} 
+                    <Toggle
+                        pressed={prayed}
                         onPressedChange={handlePray}
                         variant="outline"
                         title="Orar por este projeto"
@@ -188,8 +219,8 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                         <span className="text-xs font-medium">{prayers > 0 ? prayers : 'Orar'}</span>
                     </Toggle>
 
-                    <Toggle 
-                        pressed={showComments} 
+                    <Toggle
+                        pressed={showComments}
                         onPressedChange={setShowComments}
                         variant="outline"
                         className="h-8 gap-2 px-3 border-transparent bg-transparent hover:bg-muted hover:text-foreground data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
@@ -203,55 +234,55 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                 {showComments && (
                     <div className="w-full border-t bg-background px-4 pt-6 pb-2 space-y-4 animate-in slide-in-from-top-1">
                         <div className="w-full space-y-4">
-                        {comments.length > 0 && (
-                            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-                                {comments.map((comment) => (
-                                    <div key={comment.id} className="flex gap-3 text-sm group">
-                                        <Avatar className="h-8 w-8 shrink-0">
-                                            <AvatarImage src="https://github.com/shadcn.png" />
-                                            <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 bg-muted/30 p-3 rounded-md rounded-tl-none">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="font-semibold text-xs text-primary">{comment.author}</span>
-                                                <span className="text-[10px] text-muted-foreground">{new Date(comment.date).toLocaleDateString()}</span>
+                            {comments.length > 0 && (
+                                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                                    {comments.map((comment) => (
+                                        <div key={comment.id} className="flex gap-3 text-sm group">
+                                            <Avatar className="h-8 w-8 shrink-0">
+                                                <AvatarImage src="https://github.com/shadcn.png" />
+                                                <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 bg-muted/30 p-3 rounded-md rounded-tl-none">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-semibold text-xs text-primary">{comment.author}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{new Date(comment.date).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-muted-foreground text-xs leading-relaxed">{comment.content}</p>
                                             </div>
-                                            <p className="text-muted-foreground text-xs leading-relaxed">{comment.content}</p>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        
-                        <div className="flex gap-3 items-end">
-                            <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarImage src="https://github.com/shadcn.png" />
-                                <AvatarFallback className="bg-primary/10 text-primary text-xs">EU</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 relative">
-                                <Input 
-                                    placeholder="Escreva um comentário..." 
-                                    className="pr-10 min-h-[40px] py-2 text-sm bg-muted/20 border-transparent focus:bg-background focus:border-input transition-all" 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleComment()}
-                                />
-                                <Button 
-                                    size="icon" 
-                                    variant="ghost"
-                                    className="absolute right-1 top-1 h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary" 
-                                    onClick={handleComment} 
-                                    disabled={!newComment.trim()}
-                                >
-                                    <Send className="h-4 w-4" />
-                                </Button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 items-end">
+                                <Avatar className="h-8 w-8 shrink-0">
+                                    <AvatarImage src="https://github.com/shadcn.png" />
+                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">EU</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 relative">
+                                    <Input
+                                        placeholder="Escreva um comentário..."
+                                        className="pr-10 min-h-[40px] py-2 text-sm bg-muted/20 border-transparent focus:bg-background focus:border-input transition-all"
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                                    />
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="absolute right-1 top-1 h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary"
+                                        onClick={handleComment}
+                                        disabled={!newComment.trim()}
+                                    >
+                                        <Send className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    </div>
                 )}
             </CardFooter>
-            
+
             {/* Preview Dialog */}
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
                 <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black/95 border-none text-white ring-0 outline-none">
