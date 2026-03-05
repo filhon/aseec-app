@@ -695,3 +695,48 @@ export async function addPostComment(postId: string, content: string) {
 
   return comment
 }
+
+export async function updatePostComment(commentId: string, content: string) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("User not authenticated")
+
+  const { data: comment, error } = await supabase.from("post_comments").update({
+    content,
+    updated_at: new Date().toISOString()
+  }).eq("id", commentId).select().single()
+
+  if (error) {
+    console.error("Error updating comment:", error)
+    throw error
+  }
+
+  return comment
+}
+
+export async function deletePostComment(commentId: string, postId: string) {
+  const supabase = createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("User not authenticated")
+
+  // Soft delete
+  const { error } = await supabase.from("post_comments").update({
+    active: false,
+    updated_at: new Date().toISOString()
+  }).eq("id", commentId)
+
+  if (error) {
+    console.error("Error deleting comment:", error)
+    throw error
+  }
+
+  // Update comments counter
+  const { data: currentPost } = await supabase.from("project_posts").select("comments_count").eq("id", postId).single()
+  if (currentPost) {
+    await supabase.from("project_posts").update({ comments_count: Math.max(0, (currentPost.comments_count || 0) - 1) }).eq("id", postId)
+  }
+
+  return true
+}

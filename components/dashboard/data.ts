@@ -31,6 +31,7 @@ export interface ProjectPostComment {
   avatar?: string;
   date: string;
   content: string;
+  updatedAt?: string;
 }
 
 export interface DashboardProject {

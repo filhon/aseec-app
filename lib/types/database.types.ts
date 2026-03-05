@@ -84,10 +84,10 @@ export interface Project extends TimestampedEntity {
   title: string;
   description: string | null;
   responsible: string;
-  
+
   // Relationships
   entity_id: string | null;
-  
+
   // Location
   country: string | null;
   state: string | null;
@@ -99,32 +99,32 @@ export interface Project extends TimestampedEntity {
   zip_code: string | null;
   latitude: number | null;
   longitude: number | null;
-  
+
   // Status
   status: ProjectStatus;
   extension: ProjectExtension;
-  
+
   // Financial
   requested_value: number | null;
   approved_value: number | null;
   investment: number | null;
-  
+
   // Dates
   start_date: string | null;
   end_date: string | null;
   last_visit: string | null;
-  
+
   // Metadata
   indication: string | null;
   observations: string | null;
   thanked: boolean;
   reached_people: number;
   featured_image_url: string | null;
-  
+
   // External API
   financial_project_id: string | null;
   financial_last_sync: string | null;
-  
+
   created_by: string | null;
 }
 
@@ -219,15 +219,15 @@ export interface ProjectPost extends TimestampedEntity {
   type: PostType;
   title: string | null;
   content: string;
-  
+
   // Author
   author_id: string | null;
   author_name: string;
   author_role: string | null;
-  
+
   // Audit log
   metadata: AuditMetadata | null;
-  
+
   // Counters
   likes_count: number;
   prayers_count: number;
@@ -274,6 +274,7 @@ export interface PostComment extends BaseEntity {
   author_id: string | null;
   author_name: string;
   content: string;
+  updated_at?: string;
 }
 
 // =============================================================================

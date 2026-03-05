@@ -14,7 +14,13 @@ import {
     FileText, Video,
     Eye, Send, X, HandHeart
 } from "lucide-react"
-import { togglePostReaction, addPostComment } from "@/lib/services/project-service"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { togglePostReaction, addPostComment, deletePostComment, updatePostComment } from "@/lib/services/project-service"
 import { toast } from "sonner"
 
 interface FeedPostProps {
@@ -32,6 +38,9 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
     const [comments, setComments] = useState<ProjectPostComment[]>(post.comments || [])
     const [showComments, setShowComments] = useState(false)
     const [newComment, setNewComment] = useState("")
+
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+    const [editedCommentContent, setEditedCommentContent] = useState("")
 
     const [previewFile, setPreviewFile] = useState<{ url: string, type: 'image' | 'video' | 'document', title: string } | null>(null)
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -87,6 +96,35 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
             console.error("Failed to add comment:", error)
             setNewComment(commentText) // Restore input on failure
             toast.error("Erro ao adicionar comentário.")
+        }
+    }
+
+    const handleEditCommentSubmit = async (commentId: string) => {
+        if (!editedCommentContent.trim()) return
+
+        try {
+            await updatePostComment(commentId, editedCommentContent)
+            setComments(prev => prev.map(c =>
+                c.id === commentId ? { ...c, content: editedCommentContent, updatedAt: new Date().toISOString() } : c
+            ))
+            setEditingCommentId(null)
+            toast.success("Comentário atualizado!")
+        } catch (error) {
+            console.error("Failed to edit comment:", error)
+            toast.error("Erro ao atualizar comentário.")
+        }
+    }
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!confirm("Tem certeza que deseja excluir este comentário?")) return
+
+        try {
+            await deletePostComment(commentId, post.id)
+            setComments(prev => prev.filter(c => c.id !== commentId))
+            toast.success("Comentário excluído!")
+        } catch (error) {
+            console.error("Failed to delete comment:", error)
+            toast.error("Erro ao excluir comentário.")
         }
     }
 
@@ -243,11 +281,56 @@ export function FeedPost({ post, projectTitle }: FeedPostProps) {
                                                 <AvatarFallback className="text-xs">{comment.author[0]}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 bg-muted/30 p-3 rounded-md rounded-tl-none">
-                                                <div className="flex items-center justify-between mb-1">
+                                                <div className="flex items-start justify-between mb-1 gap-2">
                                                     <span className="font-semibold text-xs text-primary">{comment.author}</span>
-                                                    <span className="text-[10px] text-muted-foreground">{new Date(comment.date).toLocaleDateString()}</span>
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        {comment.updatedAt && (
+                                                            <span className="text-[9px] text-muted-foreground italic">(editado)</span>
+                                                        )}
+                                                        <span className="text-[10px] text-muted-foreground">{new Date(comment.date).toLocaleDateString()}</span>
+
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-4 w-4 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <MoreHorizontal className="h-3 w-3 text-muted-foreground" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => {
+                                                                    setEditingCommentId(comment.id)
+                                                                    setEditedCommentContent(comment.content)
+                                                                }}>
+                                                                    Editar
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
+                                                                    Excluir
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
                                                 </div>
-                                                <p className="text-muted-foreground text-xs leading-relaxed">{comment.content}</p>
+                                                {editingCommentId === comment.id ? (
+                                                    <div className="mt-2 flex gap-2">
+                                                        <Input
+                                                            className="h-7 text-xs flex-1"
+                                                            value={editedCommentContent}
+                                                            onChange={(e) => setEditedCommentContent(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') handleEditCommentSubmit(comment.id)
+                                                                if (e.key === 'Escape') setEditingCommentId(null)
+                                                            }}
+                                                            autoFocus
+                                                        />
+                                                        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingCommentId(null)}>
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                        <Button size="sm" className="h-7 px-2 text-[10px]" onClick={() => handleEditCommentSubmit(comment.id)}>
+                                                            Salvar
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-muted-foreground text-xs leading-relaxed">{comment.content}</p>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
