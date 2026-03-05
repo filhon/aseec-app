@@ -399,11 +399,16 @@ export async function createProject(
   if (categoryName) {
     const { data: cat } = await supabase.from('categories').select('id').eq('name', categoryName).single()
     if (cat) {
-      await supabase.from('project_categories').insert({
+      const { error: catError } = await supabase.from('project_categories').insert({
         project_id: project.id,
         category_id: cat.id,
         active: true
       })
+      if (catError) {
+        console.error("Error inserting project_categories:", catError)
+      }
+    } else {
+      console.warn("Category not found for name:", categoryName)
     }
   }
 
@@ -529,4 +534,94 @@ export async function getGlobalProjectPosts() {
     projectTitle: post.projects?.title || 'Projeto Desconhecido',
     projectId: post.project_id
   }))
+}
+
+/**
+ * Update project field
+ */
+export async function updateProject(projectId: string, data: Partial<Project>) {
+  const supabase = createClient()
+  const { error } = await supabase.from("projects").update(data).eq("id", projectId)
+  if (error) {
+    console.error("Error updating project:", error)
+    throw error
+  }
+}
+
+/**
+ * Update project classification (Category, Extension, Tags)
+ */
+export async function updateProjectClassification(projectId: string, extension: string, categoryName: string, tags: string[]) {
+  const supabase = createClient()
+
+  // Update extension
+  const { error: extError } = await supabase.from("projects").update({ extension }).eq("id", projectId)
+  if (extError) throw extError
+
+  // Update Category
+  await supabase.from("project_categories").delete().eq("project_id", projectId)
+  if (categoryName && categoryName !== "Sem categoria") {
+    const { data: cat } = await supabase.from("categories").select("id").eq("name", categoryName).single()
+    if (cat) {
+      await supabase.from("project_categories").insert({ project_id: projectId, category_id: cat.id, active: true })
+    }
+  }
+
+  // Update Tags
+  await supabase.from("project_tags").delete().eq("project_id", projectId)
+  if (tags && tags.length > 0) {
+    const { data: dbTags } = await supabase.from("tags").select("id").in("name", tags)
+    if (dbTags && dbTags.length > 0) {
+      const tagsToInsert = dbTags.map(dbTag => ({ project_id: projectId, tag_id: dbTag.id, active: true }))
+      await supabase.from("project_tags").insert(tagsToInsert)
+    }
+  }
+}
+
+/**
+ * Update project investments explicitly
+ */
+export async function updateProjectInvestments(projectId: string, investments: { year: number, value: number }[], approvedValue: number, requestedValue: number) {
+  const supabase = createClient()
+
+  // Update values
+  await supabase.from("projects").update({
+    approved_value: approvedValue,
+    requested_value: requestedValue,
+    investment: approvedValue
+  }).eq("id", projectId)
+
+  // Update history - delete existing then insert new
+  await supabase.from("project_investments").delete().eq("project_id", projectId)
+  if (investments.length > 0) {
+    const invsToInsert = investments.map(inv => ({
+      project_id: projectId,
+      year: inv.year,
+      value: inv.value,
+      active: true
+    }))
+    await supabase.from("project_investments").insert(invsToInsert)
+  }
+}
+
+/**
+ * Add a post to the feed (for automatic system logs)
+ */
+export async function addProjectPost(projectId: string, title: string, content: string) {
+  const supabase = createClient()
+  const newPostData = {
+    project_id: projectId,
+    type: 'update',
+    author_name: "Sistema",
+    author_role: "Automático",
+    title,
+    content,
+    active: true
+  }
+  const { data, error } = await supabase.from("project_posts").insert(newPostData).select().single()
+  if (error) {
+    console.error("Error adding post:", error)
+    throw error
+  }
+  return data
 }

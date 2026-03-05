@@ -5,7 +5,7 @@ import { Loader2, MapPin, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
 import { cn } from "@/lib/utils"
- 
+
 
 export interface AddressData {
     display_name: string
@@ -34,36 +34,44 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
     const [open, setOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement>(null)
 
-    // Debounce search to respect API policy (1s delay)
-    // Implementing simple debounce effect since we don't have the hook yet
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            if (query.length >= 3) {
-                searchAddress(query)
-            } else {
-                setResults([])
-                setOpen(false)
-            }
-        }, 1000)
-
-        return () => clearTimeout(timer)
-    }, [query])
-
-    const searchAddress = async (searchQuery: string) => {
+    const searchAddress = React.useCallback(async (searchQuery: string) => {
         setLoading(true)
         try {
             // Check if it's a CEP (numbers, optionally dash, 8 digits total)
             const cleanQuery = searchQuery.replace(/\D/g, "")
             const isCEP = /^\d{8}$/.test(cleanQuery)
 
-            let url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5`
-            
+            // Otimização: Consulta Direta ViaCEP
             if (isCEP) {
-                // For CEP, we use the postalcode parameter for better accuracy
-                url += `&postalcode=${cleanQuery}`
-            } else {
-                url += `&q=${encodeURIComponent(searchQuery)}`
+                const response = await fetch(`https://viacep.com.br/ws/${cleanQuery}/json/`)
+                const data = await response.json()
+
+                if (data.erro) {
+                    setResults([])
+                    setOpen(false)
+                } else {
+                    const parsedAddress: AddressData = {
+                        display_name: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`,
+                        street: data.logradouro || "",
+                        number: "",
+                        neighborhood: data.bairro || "",
+                        city: data.localidade || "",
+                        state: data.uf || "",
+                        country: "Brasil",
+                        zipCode: data.cep || cleanQuery,
+                        latitude: 0,
+                        longitude: 0
+                    }
+                    // Preenchimento de curto-circuito (Pula a lista de seleções)
+                    setQuery(parsedAddress.display_name.split(",")[0])
+                    setOpen(false)
+                    onAddressSelect(parsedAddress)
+                }
+                return;
             }
+
+            // Otimização: Restrição restrita do Nominatim ao Brasil
+            const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=br&q=${encodeURIComponent(searchQuery)}`
 
             const response = await fetch(
                 url,
@@ -82,7 +90,22 @@ export function AddressAutocomplete({ onAddressSelect, defaultValue = "", classN
         } finally {
             setLoading(false)
         }
-    }
+    }, [onAddressSelect])
+
+    // Debounce search to respect API policy (1s delay)
+    // Implementing simple debounce effect since we don't have the hook yet
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            if (query.length >= 3) {
+                searchAddress(query)
+            } else {
+                setResults([])
+                setOpen(false)
+            }
+        }, 1000)
+
+        return () => clearTimeout(timer)
+    }, [query, searchAddress])
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSelect = (item: any) => {

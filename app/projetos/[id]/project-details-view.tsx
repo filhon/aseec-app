@@ -26,6 +26,11 @@ import { ptBR } from "date-fns/locale"
 
 import { FavoriteButton } from "@/components/ui/favorite-button"
 import { usePermissions } from "@/hooks/use-permissions"
+import { getCategories, getTags, updateProject, updateProjectClassification, updateProjectInvestments, addProjectPost } from "@/lib/services/project-service"
+import { Category } from "@/lib/types/database.types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 
 interface ProjectDetailsViewProps {
     initialProject: DashboardProject
@@ -33,6 +38,13 @@ interface ProjectDetailsViewProps {
 
 export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) {
     const [project, setProject] = useState(initialProject)
+    const [dbCategories, setDbCategories] = useState<Category[]>([])
+    const [dbTags, setDbTags] = useState<{ id: string; name: string; color: string }[]>([])
+
+    useEffect(() => {
+        getCategories().then(setDbCategories).catch(console.error)
+        getTags().then(setDbTags).catch(console.error)
+    }, [])
     const [feed, setFeed] = useState<ProjectPost[]>(initialProject.feed || [])
     const { setLabel } = useBreadcrumbStore()
 
@@ -54,11 +66,11 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     const [classForm, setClassForm] = useState<{
         category: string
         extension: string
-        tags: string
+        tags: string[]
     }>({
         category: project.category,
         extension: project.extension,
-        tags: project.tags.join(', ')
+        tags: project.tags || []
     })
 
     const [overviewForm, setOverviewForm] = useState({
@@ -75,23 +87,28 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     })
 
     // Helper to add auto-post
-    const addAutoPost = (title: string, content: string) => {
-        const newPost: ProjectPost = {
-            id: Math.random().toString(36).substr(2, 9),
-            type: 'update',
-            author: "Sistema",
-            role: "Automático",
-            date: new Date().toISOString(),
-            title: title,
-            content: content
+    const addAutoPost = async (title: string, content: string) => {
+        try {
+            const dbPost = await addProjectPost(project.id, title, content)
+            const newPost: ProjectPost = {
+                id: dbPost?.id || Math.random().toString(36).substr(2, 9),
+                type: 'update',
+                author: "Sistema",
+                role: "Automático",
+                date: dbPost?.created_at || new Date().toISOString(),
+                title: title,
+                content: content
+            }
+            setFeed(prev => [newPost, ...prev])
+        } catch (e) {
+            console.error("Erro ao salvar post do mural:", e)
         }
-        setFeed([newPost, ...feed])
     }
 
     // --- Save Handlers with Auto-Feed Logic ---
 
-    const handleSaveClass = () => {
-        const newTags = classForm.tags.split(',').map(t => t.trim()).filter(Boolean)
+    const handleSaveClass = async () => {
+        const newTags = classForm.tags || []
         const changes = []
 
         if (classForm.category !== project.category) changes.push(`Categoria alterada de "${project.category}" para "${classForm.category}"`)
@@ -99,35 +116,54 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         if (JSON.stringify(newTags) !== JSON.stringify(project.tags)) changes.push(`Tags atualizadas`)
 
         if (changes.length > 0) {
-            setProject({
-                ...project,
-                category: classForm.category,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                extension: classForm.extension as any,
-                tags: newTags
-            })
-            addAutoPost("Atualização de Classificação", changes.join('\n'))
+            try {
+                await updateProjectClassification(project.id, classForm.extension, classForm.category, newTags)
+                setProject({
+                    ...project,
+                    category: classForm.category,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    extension: classForm.extension as any,
+                    tags: newTags
+                })
+                await addAutoPost("Atualização de Classificação", changes.join('\n'))
+                toast.success("Classificação salva com sucesso!")
+            } catch (err) {
+                toast.error("Erro ao salvar classificação.")
+                console.error(err)
+                return
+            }
         }
         setIsEditingClass(false)
     }
 
-    const handleSaveOverview = () => {
+    const handleSaveOverview = async () => {
         const changes = []
         if (overviewForm.description !== project.description) changes.push("Descrição do projeto atualizada")
         if (overviewForm.observations !== project.observations) changes.push("Observações atualizadas")
 
         if (changes.length > 0) {
-            setProject({
-                ...project,
-                description: overviewForm.description,
-                observations: overviewForm.observations
-            })
-            addAutoPost("Atualização de Visão Geral", changes.join('\n'))
+            try {
+                await updateProject(project.id, {
+                    description: overviewForm.description,
+                    observations: overviewForm.observations
+                })
+                setProject({
+                    ...project,
+                    description: overviewForm.description,
+                    observations: overviewForm.observations
+                })
+                await addAutoPost("Atualização de Visão Geral", changes.join('\n'))
+                toast.success("Visão geral salva com sucesso!")
+            } catch (err) {
+                toast.error("Erro ao salvar visão geral.")
+                console.error(err)
+                return
+            }
         }
         setIsEditingOverview(false)
     }
 
-    const handleSaveBasic = () => {
+    const handleSaveBasic = async () => {
         const changes = []
         if (basicForm.responsible !== project.responsible) changes.push(`Responsável alterado para "${basicForm.responsible}"`)
         if (basicForm.startDate !== project.startDate) changes.push(`Data de início alterada para ${basicForm.startDate}`)
@@ -136,15 +172,30 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         if (basicForm.indication !== project.indication) changes.push(`Indicação atualizada`)
 
         if (changes.length > 0) {
-            setProject({
-                ...project,
-                responsible: basicForm.responsible,
-                startDate: basicForm.startDate,
-                endDate: basicForm.endDate,
-                lastVisit: basicForm.lastVisit,
-                indication: basicForm.indication
-            })
-            addAutoPost("Atualização de Dados Básicos", changes.join('\n'))
+            try {
+                await updateProject(project.id, {
+                    responsible: basicForm.responsible,
+                    // Handle empty dates properly
+                    start_date: basicForm.startDate === '' ? null : basicForm.startDate,
+                    end_date: basicForm.endDate === '' ? null : basicForm.endDate,
+                    last_visit: basicForm.lastVisit === '' ? null : basicForm.lastVisit,
+                    indication: basicForm.indication
+                })
+                setProject({
+                    ...project,
+                    responsible: basicForm.responsible,
+                    startDate: basicForm.startDate,
+                    endDate: basicForm.endDate,
+                    lastVisit: basicForm.lastVisit,
+                    indication: basicForm.indication
+                })
+                await addAutoPost("Atualização de Dados Básicos", changes.join('\n'))
+                toast.success("Dados básicos salvos com sucesso!")
+            } catch (err) {
+                toast.error("Erro ao salvar dados básicos.")
+                console.error(err)
+                return
+            }
         }
         setIsEditingBasic(false)
     }
@@ -156,7 +207,7 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         investmentByYear: [...project.investmentByYear]
     })
 
-    const handleSaveFinancial = () => {
+    const handleSaveFinancial = async () => {
         const changes = []
         if (financialForm.requestedValue !== (project.requestedValue || project.investment)) changes.push(`Valor solicitado atualizado para ${formatCurrency(financialForm.requestedValue)}`)
         if (financialForm.approvedValue !== (project.approvedValue || project.investment)) changes.push(`Valor aprovado atualizado para ${formatCurrency(financialForm.approvedValue)}`)
@@ -179,14 +230,22 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
         if (historyChanged) changes.push("Histórico de investimentos atualizado")
 
         if (changes.length > 0) {
-            setProject({
-                ...project,
-                requestedValue: financialForm.requestedValue,
-                approvedValue: financialForm.approvedValue,
-                investmentByYear: financialForm.investmentByYear,
-                investment: financialForm.approvedValue // Sync main investment with approved
-            })
-            addAutoPost("Atualização Financeira", changes.join('\n'))
+            try {
+                await updateProjectInvestments(project.id, financialForm.investmentByYear, financialForm.approvedValue, financialForm.requestedValue)
+                setProject({
+                    ...project,
+                    requestedValue: financialForm.requestedValue,
+                    approvedValue: financialForm.approvedValue,
+                    investmentByYear: financialForm.investmentByYear,
+                    investment: financialForm.approvedValue // Sync main investment with approved
+                })
+                await addAutoPost("Atualização Financeira", changes.join('\n'))
+                toast.success("Dados financeiros salvos com sucesso!")
+            } catch (err) {
+                toast.error("Erro ao salvar dados financeiros.")
+                console.error(err)
+                return
+            }
         }
         setIsEditingFinancial(false)
     }
@@ -214,8 +273,13 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
     // Mobile Details Toggle
     const [showMobileDetails, setShowMobileDetails] = useState(false)
 
+    // Progress Calculation
+    const investedAmount = project.paidAmount ?? project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0)
+    const targetAmount = project.approvedValue || project.requestedValue || project.investment || 1
+    const progressValue = Math.min(100, Math.max(0, (investedAmount / targetAmount) * 100))
+
     return (
-        <div className="min-h-screen bg-transparent space-y-6">
+        <div className="min-h-screen bg-transparent space-y-6 pb-16">
 
             {/* Header / Hero */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -622,10 +686,10 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                                     <div className="flex justify-between text-sm">
                                         <span className="text-muted-foreground">Investido até o momento</span>
                                         <span className="font-medium">
-                                            {formatCurrency(project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0))}
+                                            {formatCurrency(investedAmount)}
                                         </span>
                                     </div>
-                                    <Progress value={75} className="h-2" />
+                                    <Progress value={progressValue} className="h-2" />
                                 </div>
 
                                 {project.investmentByYear.length > 0 && (
@@ -658,15 +722,57 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             <div className="space-y-3">
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Categoria</label>
-                                    <Input value={classForm.category} onChange={e => setClassForm({ ...classForm, category: e.target.value })} />
+                                    <Select value={classForm.category} onValueChange={val => setClassForm({ ...classForm, category: val })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione Categoria" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Sem categoria">Sem categoria</SelectItem>
+                                            {dbCategories.map(c => (
+                                                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold">Extensão</label>
-                                    <Input value={classForm.extension} onChange={e => setClassForm({ ...classForm, extension: e.target.value })} />
+                                    <Select value={classForm.extension} onValueChange={val => setClassForm({ ...classForm, extension: val })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione Extensão" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="parcial">Parcial</SelectItem>
+                                            <SelectItem value="completo">Completo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Tags (separadas por vírgula)</label>
-                                    <Input value={classForm.tags} onChange={e => setClassForm({ ...classForm, tags: e.target.value })} />
+                                    <label className="text-xs font-semibold mb-2 block">Tags</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {dbTags.map(tag => {
+                                            const checked = classForm.tags.includes(tag.name)
+                                            return (
+                                                <label key={tag.id} className="flex items-center gap-2 text-xs cursor-pointer bg-muted/30 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                                                    <Checkbox
+                                                        checked={checked}
+                                                        onCheckedChange={c => {
+                                                            const newTags = c
+                                                                ? [...classForm.tags, tag.name]
+                                                                : classForm.tags.filter(t => t !== tag.name);
+                                                            setClassForm({ ...classForm, tags: newTags });
+                                                        }}
+                                                    />
+                                                    <span className="flex items-center gap-1.5 line-clamp-1 break-all flex-1">
+                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color || '#ccc' }} />
+                                                        <span className="truncate">{tag.name}</span>
+                                                    </span>
+                                                </label>
+                                            )
+                                        })}
+                                        {dbTags.length === 0 && (
+                                            <span className="text-xs text-muted-foreground col-span-2">Nenhuma tag cadastrada.</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         }
@@ -686,11 +792,15 @@ export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) 
                             <div>
                                 <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Tags</span>
                                 <div className="flex flex-wrap gap-2">
-                                    {project.tags.map(tag => (
-                                        <Badge key={tag} variant="outline" className="text-xs font-normal">
-                                            #{tag}
-                                        </Badge>
-                                    ))}
+                                    {project.tags && project.tags.length > 0 ? (
+                                        project.tags.map(tag => (
+                                            <Badge key={tag} variant="outline" className="text-xs font-normal">
+                                                #{tag}
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                        <Badge variant="secondary" className="font-normal text-muted-foreground">Sem tags</Badge>
+                                    )}
                                 </div>
                             </div>
                         </div>

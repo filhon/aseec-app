@@ -198,23 +198,107 @@ export async function fetchAggregatedTransactions(page = 1, limit = 10): Promise
     }
 }
 
-export async function searchFinanceProjects(query: string): Promise<FinanceTransaction[]> {
+export async function searchFinanceProjects(query: string): Promise<{ results: FinanceTransaction[], alreadyLinkedCount: number }> {
     try {
-        if (!query || query.length < 2) return [];
+        if (!query || query.length < 2) return { results: [], alreadyLinkedCount: 0 };
 
         const costCenterCodesParam = SYNC_COST_CENTER_CODES.join(",");
 
-        const result = await financeApi.searchTransactions({
-            q: query,
-            limit: 10,
+        const result = await financeApi.getTransactions({
+            search: query,
+            limit: 100, // Busca ampla para garantir as parcelas a agrupar
             costCenterCodes: costCenterCodesParam,
             allDates: true,
         });
 
-        // Retornamos apenas os resultados
-        return result.data || [];
+        const cookieStore = await cookies();
+        const supabase = createClient(cookieStore);
+
+        const { data: existingProjects } = await supabase
+            .from('projects')
+            .select('financial_project_id')
+            .not('financial_project_id', 'is', null);
+
+        const importedIds = new Set((existingProjects || []).map(p => p.financial_project_id));
+
+        const groupedData: Record<string, FinanceTransaction & { _allIds: string[] }> = {};
+
+        for (const t of result.data || []) {
+            if (t.type !== "payable") continue;
+
+            let desc = t.description?.trim() || "Sem descrição";
+            // Remove the installment occurrences: (1/12), (2/10), etc
+            desc = desc.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+
+            if (!groupedData[desc]) {
+                groupedData[desc] = {
+                    ...t,
+                    description: desc,
+                    amount: 0, // Resetting the amount to sum later
+                    _allIds: []
+                };
+            }
+            groupedData[desc].amount += (t.amount || 0);
+            groupedData[desc]._allIds.push(t.id);
+        }
+
+        const finalResults: FinanceTransaction[] = [];
+        let alreadyLinkedCount = 0;
+
+        for (const group of Object.values(groupedData)) {
+            const isImported = group._allIds.some(id => importedIds.has(id));
+            if (isImported) {
+                alreadyLinkedCount++;
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { _allIds, ...rest } = group;
+                finalResults.push(rest);
+            }
+        }
+
+        return {
+            results: finalResults.slice(0, 50),
+            alreadyLinkedCount
+        };
     } catch (error) {
         console.error("[Sync API] Error searching finance projects:", error);
-        return [];
+        return { results: [], alreadyLinkedCount: 0 };
+    }
+}
+
+export async function getProjectPaidAmount(financialProjectId?: string | null): Promise<number> {
+    if (!financialProjectId) return 0;
+    try {
+        const txResponse = await financeApi.getTransaction(financialProjectId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tx = (txResponse as any).data || txResponse;
+        if (!tx) return 0;
+
+        let desc = tx.description?.trim() || "";
+        desc = desc.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+
+        if (!desc) return 0;
+
+        const result = await financeApi.getTransactions({
+            search: desc,
+            costCenterCodes: SYNC_COST_CENTER_CODES.join(","),
+            allDates: true,
+            limit: 100
+        });
+
+        let paidTotal = 0;
+        for (const t of result.data || []) {
+            if (t.type !== 'payable') continue;
+            let tDesc = t.description?.trim() || "";
+            tDesc = tDesc.replace(/\s*\(\d+\/\d+\)\s*$/, "").trim();
+
+            if (tDesc.toLowerCase() === desc.toLowerCase() && t.status?.toLowerCase() === 'paid') {
+                paidTotal += (t.amount || 0);
+            }
+        }
+        return paidTotal;
+    } catch (e) {
+        console.error("Failed to fetch paid investment", e);
+        return 0;
     }
 }

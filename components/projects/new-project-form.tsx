@@ -76,7 +76,7 @@ type ProjectFormValues = z.infer<typeof projectSchema>
 export function NewProjectForm() {
     const [searching, setSearching] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState<FinanceTransaction[]>([])
+    const [searchResults, setSearchResults] = useState<{ results: FinanceTransaction[], alreadyLinkedCount: number }>({ results: [], alreadyLinkedCount: 0 })
     const [selectedFinancialProject, setSelectedFinancialProject] = useState<FinanceTransaction | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
@@ -101,7 +101,7 @@ export function NewProjectForm() {
     useEffect(() => {
         const timeoutId = setTimeout(async () => {
             if (searchQuery.length < 2) {
-                setSearchResults([])
+                setSearchResults({ results: [], alreadyLinkedCount: 0 })
                 return
             }
             setSearching(true)
@@ -109,7 +109,7 @@ export function NewProjectForm() {
                 const res = await searchFinanceProjects(searchQuery)
                 setSearchResults(res)
             } catch {
-                setSearchResults([])
+                setSearchResults({ results: [], alreadyLinkedCount: 0 })
             } finally {
                 setSearching(false)
             }
@@ -155,7 +155,7 @@ export function NewProjectForm() {
         if (!form.getValues("title")) form.setValue("title", project.description)
         if (!form.getValues("institution")) form.setValue("institution", project.supplier || "")
 
-        setSearchResults([])
+        setSearchResults({ results: [], alreadyLinkedCount: 0 })
         setSearchQuery("")
         toast.info("Vínculo financeiro selecionado", {
             description: `Valores de aprovado e investido serão sincronizados de: ${project.description}`
@@ -236,24 +236,37 @@ export function NewProjectForm() {
                                             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                         </div>
                                     )}
-                                    {searchResults.length > 0 && (
-                                        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10 max-h-[200px] overflow-auto py-1">
-                                            {searchResults.map(p => (
+                                    {(searchResults.results.length > 0 || searchResults.alreadyLinkedCount > 0) && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10 max-h-[250px] overflow-auto flex flex-col">
+                                            {searchResults.results.map(p => (
                                                 <button
                                                     key={p.id}
                                                     type="button"
-                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex flex-col"
+                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted focus:bg-muted flex flex-col shrink-0"
                                                     onClick={() => selectFinancialProject(p)}
                                                 >
                                                     <span className="font-medium">{p.description}</span>
-                                                    <span className="text-xs text-muted-foreground flex items-center justify-between mt-1">
+                                                    <span className="text-xs text-muted-foreground flex items-center justify-between mt-1 w-full">
                                                         <span>{p.supplier || "Sem Instituição"} {p.costCenter?.code ? `• CC: ${p.costCenter.code}` : ''}</span>
-                                                        <span className="font-medium text-foreground">
+                                                        <span className="font-medium text-foreground ml-2">
                                                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.amount)}
                                                         </span>
                                                     </span>
                                                 </button>
                                             ))}
+                                            {searchResults.alreadyLinkedCount > 0 && (
+                                                <div className="px-3 py-2.5 text-xs text-muted-foreground bg-amber-50/50 dark:bg-amber-900/10 border-t flex flex-col shrink-0 mt-auto sticky bottom-0">
+                                                    <span className="font-medium text-amber-700 dark:text-amber-400">
+                                                        {searchResults.alreadyLinkedCount} projeto(s) financeiro(s) não estão na lista
+                                                    </span>
+                                                    <span>Eles já se encontram vinculados a outros projetos da base de dados.</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {searchQuery.length >= 2 && !searching && searchResults.results.length === 0 && searchResults.alreadyLinkedCount === 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10 p-4 text-center text-sm text-muted-foreground">
+                                            Nenhum projeto financeiro encontrado para &quot;{searchQuery}&quot;.
                                         </div>
                                     )}
                                 </div>
@@ -276,6 +289,8 @@ export function NewProjectForm() {
                                         onClick={() => {
                                             setSelectedFinancialProject(null)
                                             form.setValue("financialProjectId", undefined)
+                                            form.setValue("title", "")
+                                            form.setValue("institution", "")
                                         }}
                                     >
                                         Remover

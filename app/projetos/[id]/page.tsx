@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation"
 import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import { getProjectPaidAmount } from "@/lib/actions/finance/sync-actions"
 import { ProjectDetailsView } from "./project-details-view"
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    
+
     const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
@@ -56,10 +57,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     // Fetch tags
     const { data: tagsData } = await supabase
         .from("project_tags")
-        .select("tag")
+        .select("tags(name)")
         .eq("project_id", id)
         .eq("active", true)
-    const tags = tagsData?.map(t => t.tag) || []
+    const tags = ((tagsData as unknown as Array<{ tags?: { name: string } | null }>)?.map((t) => t.tags?.name).filter(Boolean) as string[]) || []
 
     // Fetch investments
     const { data: investmentsData } = await supabase
@@ -76,6 +77,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         .eq("project_id", id)
         .eq("active", true)
         .order("created_at", { ascending: false })
+
+    // Fetch paid amount from Finance API using the financial linked ID
+    let paidAmount = 0
+    if (project.financial_project_id) {
+        paidAmount = await getProjectPaidAmount(project.financial_project_id)
+    }
 
     // Transform to view format (compatible with DashboardProject)
     const projectData = {
@@ -101,6 +108,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         endDate: project.end_date,
         requestedValue: Number(project.requested_value) || 0,
         approvedValue: Number(project.approved_value) || 0,
+        paidAmount: paidAmount,
         thanked: project.thanked,
         reachedPeople: project.reached_people || 0,
         lastVisit: project.last_visit,
