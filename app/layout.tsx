@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Parkinsans, Titillium_Web } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider"
-import { FloatingChatTrigger } from "@/components/aseec-ia/floating-chat-trigger"
-import { GlobalSearch } from "@/components/global-search"
-import { AuthProvider } from "@/components/providers/auth-provider"
-import { Toaster } from "sonner"
+import { ThemeProvider } from "@/components/theme-provider";
+import { FloatingChatTrigger } from "@/components/aseec-ia/floating-chat-trigger";
+import { GlobalSearch } from "@/components/global-search";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { Toaster } from "sonner";
 
 const parkinsans = Parkinsans({
   variable: "--font-parkinsans",
@@ -38,18 +38,18 @@ export default function RootLayout({
         className={`${titillium.variable} ${parkinsans.variable} antialiased font-sans`}
       >
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthProvider>
-              {children}
-              <FloatingChatTrigger />
-              <GlobalSearch />
-            </AuthProvider>
-            <Toaster richColors position="top-right" />
-          </ThemeProvider>
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            {children}
+            <FloatingChatTrigger />
+            <GlobalSearch />
+          </AuthProvider>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

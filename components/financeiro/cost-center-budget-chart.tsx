@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { useState, useMemo } from "react";
+import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
 import {
   Card,
@@ -11,16 +11,16 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
 
-export const description = "A multiple bar chart"
+export const description = "A multiple bar chart";
 
 const chartConfig = {
   budget: {
@@ -31,30 +31,33 @@ const chartConfig = {
     label: "Valor Aplicado",
     color: "var(--chart-2)",
   },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 interface CostCenterBudgetChartProps {
   data: {
-    name: string
-    budget: number
-    used: number
-  }[]
+    name: string;
+    budget: number;
+    used: number;
+  }[];
 }
 
-const ITEMS_PER_PAGE = 5
+const ITEMS_PER_PAGE = 5;
 
 export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(0);
 
   // Sort descending by budget (defensive — parent should already sort)
-  const sortedData = useMemo(() =>
-    [...data].sort((a, b) => b.budget - a.budget),
-    [data]
-  )
+  const sortedData = useMemo(
+    () => [...data].sort((a, b) => b.budget - a.budget),
+    [data],
+  );
 
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE)
-  const visibleData = sortedData.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE)
-  const showPagination = sortedData.length > ITEMS_PER_PAGE
+  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const visibleData = sortedData.slice(
+    page * ITEMS_PER_PAGE,
+    (page + 1) * ITEMS_PER_PAGE,
+  );
+  const showPagination = sortedData.length > ITEMS_PER_PAGE;
 
   return (
     <Card className="flex flex-col h-full shadow-sm border-0 bg-gradient-to-br from-card to-muted/20">
@@ -71,7 +74,7 @@ export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
                 size="icon"
                 className="h-7 w-7"
                 disabled={page === 0}
-                onClick={() => setPage(p => p - 1)}
+                onClick={() => setPage((p) => p - 1)}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -83,7 +86,7 @@ export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
                 size="icon"
                 className="h-7 w-7"
                 disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p) => p + 1)}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -92,7 +95,10 @@ export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 pb-0 min-h-0">
-        <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
+        <ChartContainer
+          config={chartConfig}
+          className="h-full w-full aspect-auto"
+        >
           <BarChart accessibilityLayer data={visibleData}>
             <CartesianGrid vertical={false} />
             <XAxis
@@ -100,7 +106,9 @@ export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.length > 10 ? value.slice(0, 10) + "…" : value}
+              tickFormatter={(value) =>
+                value.length > 10 ? value.slice(0, 10) + "…" : value
+              }
             />
             <ChartTooltip
               cursor={false}
@@ -120,5 +128,5 @@ export function CostCenterBudgetChart({ data }: CostCenterBudgetChartProps) {
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }

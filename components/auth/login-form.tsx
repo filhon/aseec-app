@@ -1,53 +1,53 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Icons } from "@/components/icons" 
-import { Eye, EyeOff } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Icons } from "@/components/icons";
+import { Eye, EyeOff } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface LoginFormProps {
-  onForgotPassword: () => void
-  onInviteClick: () => void
+  onForgotPassword: () => void;
+  onInviteClick: () => void;
 }
 
 export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter();
 
   async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    setIsLoading(true)
+    event.preventDefault();
+    setIsLoading(true);
 
-    const supabase = createClient()
-    
+    const supabase = createClient();
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
 
     if (error) {
-      setIsLoading(false)
+      setIsLoading(false);
       if (error.message.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos")
+        toast.error("Email ou senha incorretos");
       } else if (error.message.includes("Email not confirmed")) {
-        toast.error("Email não confirmado. Verifique sua caixa de entrada.")
+        toast.error("Email não confirmado. Verifique sua caixa de entrada.");
       } else {
-        toast.error(error.message)
+        toast.error(error.message);
       }
-      return
+      return;
     }
 
-    toast.success("Login realizado com sucesso!")
-    router.push("/dashboard")
-    router.refresh()
+    toast.success("Login realizado com sucesso!");
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -100,15 +100,15 @@ export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
             </div>
           </div>
           <div className="flex items-center justify-end">
-             <Button 
-                variant="link" 
-                size="sm" 
-                className="p-0 h-auto font-normal" 
-                onClick={onForgotPassword}
-                type="button"
-             >
-                Esqueci minha senha
-             </Button>
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 h-auto font-normal"
+              onClick={onForgotPassword}
+              type="button"
+            >
+              Esqueci minha senha
+            </Button>
           </div>
           <Button disabled={isLoading}>
             {isLoading && (
@@ -123,14 +123,17 @@ export function LoginForm({ onForgotPassword, onInviteClick }: LoginFormProps) {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Ou
-          </span>
+          <span className="bg-background px-2 text-muted-foreground">Ou</span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isLoading} onClick={onInviteClick}>
+      <Button
+        variant="outline"
+        type="button"
+        disabled={isLoading}
+        onClick={onInviteClick}
+      >
         Entrar com código de convite
       </Button>
     </div>
-  )
+  );
 }

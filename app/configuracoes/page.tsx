@@ -37,7 +37,16 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trash2, Edit2, Plus, Copy, RefreshCw, X, Check, Loader2 } from "lucide-react";
+import {
+  Trash2,
+  Edit2,
+  Plus,
+  Copy,
+  RefreshCw,
+  X,
+  Check,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import {
@@ -65,7 +74,10 @@ import {
   updateTag,
   deleteTag,
 } from "@/lib/actions/content";
-import type { Profile, InviteCode as InviteCodeType } from "@/lib/types/database.types";
+import type {
+  Profile,
+  InviteCode as InviteCodeType,
+} from "@/lib/types/database.types";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { getAvailableRoles } from "@/lib/permissions";
 
@@ -93,7 +105,10 @@ const getContrastColor = (hexcolor: string) => {
   }
 
   if (hexcolor.length === 3) {
-    hexcolor = hexcolor.split('').map(x => x + x).join('');
+    hexcolor = hexcolor
+      .split("")
+      .map((x) => x + x)
+      .join("");
   }
 
   // Convert to RGB value
@@ -102,10 +117,10 @@ const getContrastColor = (hexcolor: string) => {
   const b = parseInt(hexcolor.substr(4, 2), 16);
 
   // Get YIQ ratio
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
 
   // Check contrast
-  return (yiq >= 128) ? "black" : "white";
+  return yiq >= 128 ? "black" : "white";
 };
 
 export default function SettingsPage() {
@@ -137,17 +152,20 @@ export default function SettingsPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [usersResult, codesResult, user, categoriesResult, tagsResult] = await Promise.all([
-        getUsers(),
-        getInviteCodes(),
-        getCurrentUser(),
-        getCategories(),
-        getTags(),
-      ]);
+      const [usersResult, codesResult, user, categoriesResult, tagsResult] =
+        await Promise.all([
+          getUsers(),
+          getInviteCodes(),
+          getCurrentUser(),
+          getCategories(),
+          getTags(),
+        ]);
 
       if (usersResult.success) setUsers(usersResult.data as Profile[]);
-      if (codesResult.success) setInviteCodes(codesResult.data as InviteCodeType[]);
-      if (categoriesResult.success) setCategories(categoriesResult.data as Category[]);
+      if (codesResult.success)
+        setInviteCodes(codesResult.data as InviteCodeType[]);
+      if (categoriesResult.success)
+        setCategories(categoriesResult.data as Category[]);
       if (tagsResult.success) setTags(tagsResult.data as Tag[]);
       setCurrentUser(user);
     } catch (error) {
@@ -162,18 +180,21 @@ export default function SettingsPage() {
 
     const loadData = async () => {
       try {
-        const [usersResult, codesResult, user, categoriesResult, tagsResult] = await Promise.all([
-          getUsers(),
-          getInviteCodes(),
-          getCurrentUser(),
-          getCategories(),
-          getTags(),
-        ]);
+        const [usersResult, codesResult, user, categoriesResult, tagsResult] =
+          await Promise.all([
+            getUsers(),
+            getInviteCodes(),
+            getCurrentUser(),
+            getCategories(),
+            getTags(),
+          ]);
 
         if (isMounted) {
           if (usersResult.success) setUsers(usersResult.data as Profile[]);
-          if (codesResult.success) setInviteCodes(codesResult.data as InviteCodeType[]);
-          if (categoriesResult.success) setCategories(categoriesResult.data as Category[]);
+          if (codesResult.success)
+            setInviteCodes(codesResult.data as InviteCodeType[]);
+          if (categoriesResult.success)
+            setCategories(categoriesResult.data as Category[]);
           if (tagsResult.success) setTags(tagsResult.data as Tag[]);
           setCurrentUser(user);
           setIsLoading(false);
@@ -206,7 +227,7 @@ export default function SettingsPage() {
     const result = await generateInviteCodeAction(
       currentUser.id,
       newUserName,
-      newUserEmail
+      newUserEmail,
     );
 
     if (result.success) {
@@ -261,7 +282,11 @@ export default function SettingsPage() {
 
   const handleRoleChange = async (id: string, newRole: Role) => {
     // Prevent self-demotion from admin
-    if (id === currentUser?.id && currentUser?.role === "admin" && newRole !== "admin") {
+    if (
+      id === currentUser?.id &&
+      currentUser?.role === "admin" &&
+      newRole !== "admin"
+    ) {
       toast.error("Você não pode remover sua própria permissão de admin");
       return;
     }
@@ -300,10 +325,16 @@ export default function SettingsPage() {
 
   const handleUpdateCategory = async () => {
     if (!editingCategory || !editingCategory.name.trim()) return;
-    const result = await updateCategory(editingCategory.id, editingCategory.name, editingCategory.color || undefined);
+    const result = await updateCategory(
+      editingCategory.id,
+      editingCategory.name,
+      editingCategory.color || undefined,
+    );
     if (result.success) {
       setCategories(
-        categories.map((c) => (c.id === editingCategory.id ? (result.data as Category) : c))
+        categories.map((c) =>
+          c.id === editingCategory.id ? (result.data as Category) : c,
+        ),
       );
       setEditingCategory(null);
       toast.success("Categoria atualizada");
@@ -337,9 +368,15 @@ export default function SettingsPage() {
 
   const handleUpdateTag = async () => {
     if (!editingTag || !editingTag.name.trim()) return;
-    const result = await updateTag(editingTag.id, editingTag.name, editingTag.color);
+    const result = await updateTag(
+      editingTag.id,
+      editingTag.name,
+      editingTag.color,
+    );
     if (result.success) {
-      setTags(tags.map((t) => (t.id === editingTag.id ? (result.data as Tag) : t)));
+      setTags(
+        tags.map((t) => (t.id === editingTag.id ? (result.data as Tag) : t)),
+      );
       setEditingTag(null);
       toast.success("Tag atualizada");
     } else {
@@ -367,7 +404,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2 pt-4">
               <Skeleton className="h-10 w-full" /> {/* Table Header */}
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center space-x-4">
                   <Skeleton className="h-14 w-full" />
                 </div>
@@ -380,7 +417,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <ProtectedRoute requiredPermission="view:settings" accessDeniedMessage="Apenas administradores podem acessar as configurações.">
+    <ProtectedRoute
+      requiredPermission="view:settings"
+      accessDeniedMessage="Apenas administradores podem acessar as configurações."
+    >
       <div className="container mx-auto py-6 lg:py-10 space-y-6 lg:space-y-8">
         <div className="flex justify-between items-center">
           <div>
@@ -445,7 +485,9 @@ export default function SettingsPage() {
                       {!generatedCode ? (
                         <>
                           <div className="grid gap-2">
-                            <Label htmlFor="new-user-name">Nome do Usuário</Label>
+                            <Label htmlFor="new-user-name">
+                              Nome do Usuário
+                            </Label>
                             <Input
                               id="new-user-name"
                               value={newUserName}
@@ -454,7 +496,9 @@ export default function SettingsPage() {
                             />
                           </div>
                           <div className="grid gap-2">
-                            <Label htmlFor="new-user-email">E-mail do Usuário</Label>
+                            <Label htmlFor="new-user-email">
+                              E-mail do Usuário
+                            </Label>
                             <Input
                               id="new-user-email"
                               type="email"
@@ -466,7 +510,9 @@ export default function SettingsPage() {
                           <Button
                             onClick={handleGenerateInviteCode}
                             className="w-full"
-                            disabled={isGenerating || !newUserName || !newUserEmail}
+                            disabled={
+                              isGenerating || !newUserName || !newUserEmail
+                            }
                           >
                             {isGenerating ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -488,10 +534,11 @@ export default function SettingsPage() {
                           <Button
                             type="submit"
                             size="sm"
-                            className={`px-3 transition-all ${isCopied
-                              ? "bg-green-600 hover:bg-green-700 text-white"
-                              : ""
-                              }`}
+                            className={`px-3 transition-all ${
+                              isCopied
+                                ? "bg-green-600 hover:bg-green-700 text-white"
+                                : ""
+                            }`}
                             onClick={handleCopyCode}
                           >
                             <span className="sr-only">Copiar</span>
@@ -568,7 +615,10 @@ export default function SettingsPage() {
                               size="icon"
                               className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
                               onClick={() => handleDeleteUser(user.id)}
-                              disabled={user.id === currentUser?.id || currentUser?.role !== "admin"}
+                              disabled={
+                                user.id === currentUser?.id ||
+                                currentUser?.role !== "admin"
+                              }
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -577,7 +627,10 @@ export default function SettingsPage() {
                       ))}
                       {users.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                          <TableCell
+                            colSpan={4}
+                            className="text-center py-4 text-muted-foreground"
+                          >
                             Nenhum usuário encontrado.
                           </TableCell>
                         </TableRow>
@@ -595,7 +648,9 @@ export default function SettingsPage() {
                     >
                       <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0">
-                          <p className="font-medium truncate">{user.full_name}</p>
+                          <p className="font-medium truncate">
+                            {user.full_name}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {user.id === currentUser?.id && "(você)"}
                           </p>
@@ -633,7 +688,10 @@ export default function SettingsPage() {
                           size="icon"
                           className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 shrink-0"
                           onClick={() => handleDeleteUser(user.id)}
-                          disabled={user.id === currentUser?.id || currentUser?.role !== "admin"}
+                          disabled={
+                            user.id === currentUser?.id ||
+                            currentUser?.role !== "admin"
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -666,8 +724,11 @@ export default function SettingsPage() {
                     </TableHeader>
                     <TableBody>
                       {inviteCodes.map((code) => {
-                        const daysRemaining = calculateDaysRemaining(code.expires_at);
-                        const isExpired = daysRemaining <= 0 && code.status !== "used";
+                        const daysRemaining = calculateDaysRemaining(
+                          code.expires_at,
+                        );
+                        const isExpired =
+                          daysRemaining <= 0 && code.status !== "used";
 
                         return (
                           <TableRow key={code.id}>
@@ -702,8 +763,9 @@ export default function SettingsPage() {
                                 </span>
                               ) : (
                                 <span
-                                  className={`text-sm font-medium ${daysRemaining <= 5 ? "text-red-500" : ""
-                                    }`}
+                                  className={`text-sm font-medium ${
+                                    daysRemaining <= 5 ? "text-red-500" : ""
+                                  }`}
                                 >
                                   {daysRemaining}{" "}
                                   {daysRemaining === 1 ? "dia" : "dias"}
@@ -746,8 +808,11 @@ export default function SettingsPage() {
                 {/* Mobile View */}
                 <div className="md:hidden space-y-4">
                   {inviteCodes.map((code) => {
-                    const daysRemaining = calculateDaysRemaining(code.expires_at);
-                    const isExpired = daysRemaining <= 0 && code.status !== "used";
+                    const daysRemaining = calculateDaysRemaining(
+                      code.expires_at,
+                    );
+                    const isExpired =
+                      daysRemaining <= 0 && code.status !== "used";
 
                     return (
                       <div
@@ -797,8 +862,9 @@ export default function SettingsPage() {
                               </span>
                             ) : (
                               <span
-                                className={`text-sm font-medium ${daysRemaining <= 5 ? "text-red-500" : ""
-                                  }`}
+                                className={`text-sm font-medium ${
+                                  daysRemaining <= 5 ? "text-red-500" : ""
+                                }`}
                               >
                                 {daysRemaining}{" "}
                                 {daysRemaining === 1 ? "dia" : "dias"}
@@ -853,14 +919,19 @@ export default function SettingsPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-3">
-                        <HexColorPicker color={newCategoryColor} onChange={setNewCategoryColor} />
+                        <HexColorPicker
+                          color={newCategoryColor}
+                          onChange={setNewCategoryColor}
+                        />
                       </PopoverContent>
                     </Popover>
                     <Input
                       placeholder="Nova categoria..."
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleAddCategory()
+                      }
                     />
                     <Button onClick={handleAddCategory}>
                       <Plus className="h-4 w-4" />
@@ -879,15 +950,27 @@ export default function SettingsPage() {
                                       <Button
                                         variant="outline"
                                         className="w-8 h-8 p-0 shrink-0 rounded-full"
-                                        style={{ backgroundColor: editingCategory.color || "#6B7280" }}
+                                        style={{
+                                          backgroundColor:
+                                            editingCategory.color || "#6B7280",
+                                        }}
                                       >
-                                        <span className="sr-only">Escolher cor</span>
+                                        <span className="sr-only">
+                                          Escolher cor
+                                        </span>
                                       </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-3">
                                       <HexColorPicker
-                                        color={editingCategory.color || "#6B7280"}
-                                        onChange={(color) => setEditingCategory({ ...editingCategory, color })}
+                                        color={
+                                          editingCategory.color || "#6B7280"
+                                        }
+                                        onChange={(color) =>
+                                          setEditingCategory({
+                                            ...editingCategory,
+                                            color,
+                                          })
+                                        }
                                       />
                                     </PopoverContent>
                                   </Popover>
@@ -922,7 +1005,9 @@ export default function SettingsPage() {
                                 <div className="flex items-center gap-2">
                                   <div
                                     className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: cat.color || "#6B7280" }}
+                                    style={{
+                                      backgroundColor: cat.color || "#6B7280",
+                                    }}
                                   />
                                   {cat.name}
                                 </div>
@@ -954,8 +1039,12 @@ export default function SettingsPage() {
                         ))}
                         {categories.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={2} className="text-center py-4 text-muted-foreground">
-                              Nenhuma categoria preenchida. Caso a tabela esteja vazia, ela não será carregada no sistema.
+                            <TableCell
+                              colSpan={2}
+                              className="text-center py-4 text-muted-foreground"
+                            >
+                              Nenhuma categoria preenchida. Caso a tabela esteja
+                              vazia, ela não será carregada no sistema.
                             </TableCell>
                           </TableRow>
                         )}
@@ -986,7 +1075,10 @@ export default function SettingsPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-3">
-                        <HexColorPicker color={newTagColor} onChange={setNewTagColor} />
+                        <HexColorPicker
+                          color={newTagColor}
+                          onChange={setNewTagColor}
+                        />
                       </PopoverContent>
                     </Popover>
                     <Input
@@ -1012,15 +1104,25 @@ export default function SettingsPage() {
                                       <Button
                                         variant="outline"
                                         className="w-8 h-8 p-0 shrink-0 rounded-full"
-                                        style={{ backgroundColor: editingTag.color || "#6B7280" }}
+                                        style={{
+                                          backgroundColor:
+                                            editingTag.color || "#6B7280",
+                                        }}
                                       >
-                                        <span className="sr-only">Escolher cor</span>
+                                        <span className="sr-only">
+                                          Escolher cor
+                                        </span>
                                       </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-3">
                                       <HexColorPicker
                                         color={editingTag.color || "#6B7280"}
-                                        onChange={(color) => setEditingTag({ ...editingTag, color })}
+                                        onChange={(color) =>
+                                          setEditingTag({
+                                            ...editingTag,
+                                            color,
+                                          })
+                                        }
                                       />
                                     </PopoverContent>
                                   </Popover>
@@ -1056,7 +1158,9 @@ export default function SettingsPage() {
                                   <Badge
                                     style={{
                                       backgroundColor: tag.color || "#6B7280",
-                                      color: getContrastColor(tag.color || "#6B7280")
+                                      color: getContrastColor(
+                                        tag.color || "#6B7280",
+                                      ),
                                     }}
                                   >
                                     {tag.name}
@@ -1090,8 +1194,12 @@ export default function SettingsPage() {
                         ))}
                         {tags.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={2} className="text-center py-4 text-muted-foreground">
-                              Nenhuma tag preenchida. Caso a tabela esteja vazia, ela não será carregada no sistema.
+                            <TableCell
+                              colSpan={2}
+                              className="text-center py-4 text-muted-foreground"
+                            >
+                              Nenhuma tag preenchida. Caso a tabela esteja
+                              vazia, ela não será carregada no sistema.
                             </TableCell>
                           </TableRow>
                         )}

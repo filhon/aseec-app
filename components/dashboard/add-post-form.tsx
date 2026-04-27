@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -12,16 +12,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,14 +30,30 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ProjectPost, PostType, ProjectAttachment } from "./data"
-import { DriveAttachmentDialog } from "./drive-attachment-dialog"
-import { Send, Paperclip, Plus, X, FileVideo, FileText, Sparkles, Wand2, ImageIcon } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectPost, PostType, ProjectAttachment } from "./data";
+import { DriveAttachmentDialog } from "./drive-attachment-dialog";
+import {
+  Send,
+  Paperclip,
+  Plus,
+  X,
+  FileVideo,
+  FileText,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 
 const formSchema = z.object({
-  type: z.enum(["history", "testimonial", "acknowledgment", "report", "update", "general"]),
+  type: z.enum([
+    "history",
+    "testimonial",
+    "acknowledgment",
+    "report",
+    "update",
+    "general",
+  ]),
   author: z.string().min(2, {
     message: "Nome do autor deve ter pelo menos 2 caracteres.",
   }),
@@ -46,17 +62,17 @@ const formSchema = z.object({
   content: z.string().min(5, {
     message: "O conteúdo deve ter pelo menos 5 caracteres.",
   }),
-})
+});
 
 interface AddPostFormProps {
-  onPost: (post: ProjectPost) => void
+  onPost: (post: ProjectPost) => void;
 }
 
 export function AddPostForm({ onPost }: AddPostFormProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [attachments, setAttachments] = useState<ProjectAttachment[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isDriveDialogOpen, setIsDriveDialogOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDriveDialogOpen, setIsDriveDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,7 +83,7 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
       title: "",
       content: "",
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newPost: ProjectPost = {
@@ -78,61 +94,68 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
       role: values.role || undefined,
       title: values.title || undefined,
       content: values.content,
-      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-      attachments: attachments
-    }
+      date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+      attachments: attachments,
+    };
 
-    onPost(newPost)
-    form.reset()
-    setAttachments([])
-    setIsExpanded(false)
+    onPost(newPost);
+    form.reset();
+    setAttachments([]);
+    setIsExpanded(false);
   }
-
 
   const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleDriveAttachment = (attachment: ProjectAttachment) => {
-    setAttachments(prev => [...prev, attachment])
-  }
+    setAttachments((prev) => [...prev, attachment]);
+  };
 
   const simulateAIAction = (action: string) => {
-    setIsGenerating(true)
-    const currentContent = form.getValues("content")
+    setIsGenerating(true);
+    const currentContent = form.getValues("content");
 
     // Simulate API Delay
     setTimeout(() => {
-      let newContent = currentContent
+      let newContent = currentContent;
       if (action === "improve_grammar") {
-        newContent = "Este é um exemplo de texto com correção gramatical aplicada pela IA."
+        newContent =
+          "Este é um exemplo de texto com correção gramatical aplicada pela IA.";
       } else if (action === "make_formal") {
-        newContent = "Prezados senhores, venho por meio desta comunicar que o projeto atingiu um marco significativo..."
+        newContent =
+          "Prezados senhores, venho por meio desta comunicar que o projeto atingiu um marco significativo...";
       } else if (action === "summarize") {
-        newContent = "Resumo: O projeto avançou bem."
+        newContent = "Resumo: O projeto avançou bem.";
       } else if (action === "generate_from_doc") {
-        newContent = "Baseado no documento 'Relatório Anual.pdf', destacam-se os seguintes pontos:\n\n1. Aumento de 20% no alcance.\n2. Conclusão da fase 1.\n3. Próximos passos definidos para o Q3."
+        newContent =
+          "Baseado no documento 'Relatório Anual.pdf', destacam-se os seguintes pontos:\n\n1. Aumento de 20% no alcance.\n2. Conclusão da fase 1.\n3. Próximos passos definidos para o Q3.";
       }
 
-      form.setValue("content", newContent)
-      setIsGenerating(false)
-    }, 1500)
-  }
+      form.setValue("content", newContent);
+      setIsGenerating(false);
+    }, 1500);
+  };
 
   if (!isExpanded) {
     return (
-      <Card className="border-dashed shadow-sm hover:shadow-md transition-all cursor-pointer bg-muted/20 hover:bg-muted/40" onClick={() => setIsExpanded(true)}>
+      <Card
+        className="border-dashed shadow-sm hover:shadow-md transition-all cursor-pointer bg-muted/20 hover:bg-muted/40"
+        onClick={() => setIsExpanded(true)}
+      >
         <CardContent className="flex items-center gap-3 px-4 py-2 text-muted-foreground">
           <div className="h-8 w-8 rounded-full bg-background border flex items-center justify-center">
             <Plus className="h-4 w-4" />
           </div>
-          <p className="font-medium text-sm">Adicionar nova publicação no mural...</p>
+          <p className="font-medium text-sm">
+            Adicionar nova publicação no mural...
+          </p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const hasDocuments = attachments.some(a => a.type === 'document')
+  const hasDocuments = attachments.some((a) => a.type === "document");
 
   return (
     <>
@@ -148,7 +171,11 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             Nova Publicação
-            {isGenerating && <span className="text-xs font-normal text-muted-foreground animate-pulse ml-2 flex items-center gap-1"><Sparkles className="h-3 w-3" /> Gerando texto com IA...</span>}
+            {isGenerating && (
+              <span className="text-xs font-normal text-muted-foreground animate-pulse ml-2 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Gerando texto com IA...
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -161,7 +188,10 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o tipo" />
@@ -169,8 +199,12 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="history">Histórico</SelectItem>
-                          <SelectItem value="testimonial">Depoimento</SelectItem>
-                          <SelectItem value="acknowledgment">Agradecimento</SelectItem>
+                          <SelectItem value="testimonial">
+                            Depoimento
+                          </SelectItem>
+                          <SelectItem value="acknowledgment">
+                            Agradecimento
+                          </SelectItem>
                           <SelectItem value="report">Relatório</SelectItem>
                           <SelectItem value="update">Atualização</SelectItem>
                           <SelectItem value="general">Geral</SelectItem>
@@ -234,36 +268,56 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
                       <FormLabel>Conteúdo</FormLabel>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" type="button" className="h-6 gap-1.5 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            className="h-6 gap-1.5 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                          >
                             <Sparkles className="h-3 w-3" />
                             aseecIA
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-
-
                           <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
                               <Wand2 className="h-4 w-4 mr-2" />
                               Melhorar Texto
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
-                              <DropdownMenuItem onClick={() => simulateAIAction("improve_grammar")}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  simulateAIAction("improve_grammar")
+                                }
+                              >
                                 Corrigir Gramática
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => simulateAIAction("make_formal")}>
+                              <DropdownMenuItem
+                                onClick={() => simulateAIAction("make_formal")}
+                              >
                                 Tornar mais Formal
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => simulateAIAction("summarize")}>
+                              <DropdownMenuItem
+                                onClick={() => simulateAIAction("summarize")}
+                              >
                                 Resumir
                               </DropdownMenuItem>
                             </DropdownMenuSubContent>
                           </DropdownMenuSub>
 
-                          <DropdownMenuItem disabled={!hasDocuments} onClick={() => simulateAIAction("generate_from_doc")}>
+                          <DropdownMenuItem
+                            disabled={!hasDocuments}
+                            onClick={() =>
+                              simulateAIAction("generate_from_doc")
+                            }
+                          >
                             <FileText className="h-4 w-4 mr-2" />
                             Gerar do Anexo
-                            {!hasDocuments && <span className="ml-auto text-xs text-muted-foreground">(Sem anexo)</span>}
+                            {!hasDocuments && (
+                              <span className="ml-auto text-xs text-muted-foreground">
+                                (Sem anexo)
+                              </span>
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -284,14 +338,24 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
               {attachments.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {attachments.map((file, index) => (
-                    <div key={index} className="relative group aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center">
-                      {file.type === 'image' ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={file.thumbnailUrl || file.url} alt={file.title} className="w-full h-full object-cover" />
-                      ) : file.type === 'video' ? (
+                    <div
+                      key={index}
+                      className="relative group aspect-square rounded-md overflow-hidden border bg-muted flex items-center justify-center"
+                    >
+                      {file.type === "image" ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={file.thumbnailUrl || file.url}
+                          alt={file.title}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : file.type === "video" ? (
                         <div className="flex flex-col items-center gap-1 p-2 text-center">
                           <FileVideo className="h-8 w-8 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Vídeo Drive</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Vídeo Drive
+                          </span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1 p-2 text-center">
@@ -323,7 +387,8 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
                   onClick={() => setIsDriveDialogOpen(true)}
                 >
                   <Paperclip className="h-4 w-4" />
-                  Adicionar Anexo {attachments.length > 0 && `(${attachments.length})`}
+                  Adicionar Anexo{" "}
+                  {attachments.length > 0 && `(${attachments.length})`}
                 </Button>
                 <Button type="submit" className="gap-2" disabled={isGenerating}>
                   <Send className="h-4 w-4" />
@@ -341,5 +406,5 @@ export function AddPostForm({ onPost }: AddPostFormProps) {
         onAdd={handleDriveAttachment}
       />
     </>
-  )
+  );
 }

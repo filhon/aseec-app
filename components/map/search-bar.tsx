@@ -1,38 +1,43 @@
-"use client"
+"use client";
 
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Search, Menu, Locate } from "lucide-react"
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Menu, Locate } from "lucide-react";
 
 interface SearchBarProps {
-  onMenuClick: () => void
-  onSearch: (query: string) => void
-  onNearMeClick?: () => void
-  isHidden?: boolean
+  onMenuClick: () => void;
+  onSearch: (query: string) => void;
+  onNearMeClick?: () => void;
+  isHidden?: boolean;
 }
 
-export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: SearchBarProps) {
+export function SearchBar({
+  onMenuClick,
+  onSearch,
+  onNearMeClick,
+  isHidden,
+}: SearchBarProps) {
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const query = formData.get("q") as string
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const query = formData.get("q") as string;
     if (query) {
-      onSearch(query)
+      onSearch(query);
     }
-  }
+  };
 
-  if (isHidden) return null
+  if (isHidden) return null;
 
   return (
-    <form 
+    <form
       onSubmit={handleSearch}
       className="absolute top-4 left-4 z-[400] flex w-full max-w-sm items-center gap-2"
     >
-      <Button 
+      <Button
         type="button"
-        variant="secondary" 
-        size="icon" 
-        className="shadow-md hidden sm:inline-flex" 
+        variant="secondary"
+        size="icon"
+        className="shadow-md hidden sm:inline-flex"
         onClick={onMenuClick}
       >
         <Menu className="h-4 w-4" />
@@ -46,16 +51,16 @@ export function SearchBar({ onMenuClick, onSearch, onNearMeClick, isHidden }: Se
           className="w-full bg-background dark:bg-background pl-8 shadow-md pr-10"
         />
         <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary"
-            onClick={onNearMeClick}
-            title="Próximo a mim"
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary"
+          onClick={onNearMeClick}
+          title="Próximo a mim"
         >
-            <Locate className="h-4 w-4" />
+          <Locate className="h-4 w-4" />
         </Button>
       </div>
     </form>
-  )
+  );
 }

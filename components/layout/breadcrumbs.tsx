@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { usePathname } from "next/navigation"
+import * as React from "react";
+import { usePathname } from "next/navigation";
 
 import {
   Breadcrumb,
@@ -10,9 +10,9 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/components/ui/breadcrumb";
 
-import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store";
 
 const routeMap: Record<string, string> = {
   dashboard: "Dashboard",
@@ -27,37 +27,37 @@ const routeMap: Record<string, string> = {
   usuarios: "Usuários",
   mapa: "Mapa",
   "aseec-ia": "ASEEC IA",
-}
+};
 
 export function Breadcrumbs() {
-  const pathname = usePathname()
-  const segments = pathname.split("/").filter((item) => item !== "")
-  const { labels } = useBreadcrumbStore()
+  const pathname = usePathname();
+  const segments = pathname.split("/").filter((item) => item !== "");
+  const { labels } = useBreadcrumbStore();
 
   // Function to format label
   const getLabel = (segment: string) => {
     // 1. Check dynamic store
     if (labels[segment]) {
-        return labels[segment]
+      return labels[segment];
     }
     // 2. Check static map
     if (routeMap[segment]) {
-      return routeMap[segment]
+      return routeMap[segment];
     }
     // Simple fallback: capitalize first letter
-    return segment.charAt(0).toUpperCase() + segment.slice(1)
-  }
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
+  };
 
   // If we are on home page or empty path, or just a root section (e.g. /dashboard), hide breadcrumb to avoid "lost text" look
-  if (segments.length <= 1) return null
+  if (segments.length <= 1) return null;
 
   return (
     <Breadcrumb className="mb-4 hidden md:flex">
       <BreadcrumbList>
         {segments.map((segment, index) => {
-          const href = `/${segments.slice(0, index + 1).join("/")}`
-          const isLast = index === segments.length - 1
-          const label = getLabel(segment)
+          const href = `/${segments.slice(0, index + 1).join("/")}`;
+          const isLast = index === segments.length - 1;
+          const label = getLabel(segment);
 
           return (
             <React.Fragment key={href}>
@@ -70,9 +70,9 @@ export function Breadcrumbs() {
               </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator />}
             </React.Fragment>
-          )
+          );
         })}
       </BreadcrumbList>
     </Breadcrumb>
-  )
+  );
 }

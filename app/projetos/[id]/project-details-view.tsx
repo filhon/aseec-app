@@ -1,958 +1,1299 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
-import { DashboardProject, ProjectPost } from "@/components/dashboard/data"
-import { ProjectMural } from "@/components/dashboard/project-mural"
-import { ProjectGallery } from "@/components/dashboard/project-gallery"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { useState, useEffect } from "react";
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store";
+import { DashboardProject, ProjectPost } from "@/components/dashboard/data";
+import { ProjectMural } from "@/components/dashboard/project-mural";
+import { ProjectGallery } from "@/components/dashboard/project-gallery";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
-    Calendar as CalendarIcon, MapPin, DollarSign, Users, Award,
-    Edit2, Save, X,
-    CheckCircle2, AlertCircle, Tag, Globe, User,
-    LayoutDashboard, FileText, ChevronDown
-} from "lucide-react"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+  Calendar as CalendarIcon,
+  MapPin,
+  DollarSign,
+  Users,
+  Award,
+  Edit2,
+  Save,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Tag,
+  Globe,
+  User,
+  LayoutDashboard,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-import { FavoriteButton } from "@/components/ui/favorite-button"
-import { usePermissions } from "@/hooks/use-permissions"
-import { getCategories, getTags, updateProject, updateProjectClassification, updateProjectInvestments, addProjectPost } from "@/lib/services/project-service"
-import { Category } from "@/lib/types/database.types"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
+import { FavoriteButton } from "@/components/ui/favorite-button";
+import { usePermissions } from "@/hooks/use-permissions";
+import {
+  getCategories,
+  getTags,
+  updateProject,
+  updateProjectClassification,
+  updateProjectInvestments,
+  addProjectPost,
+} from "@/lib/services/project-service";
+import { Category } from "@/lib/types/database.types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 interface ProjectDetailsViewProps {
-    initialProject: DashboardProject
+  initialProject: DashboardProject;
 }
 
-export function ProjectDetailsView({ initialProject }: ProjectDetailsViewProps) {
-    const [project, setProject] = useState(initialProject)
-    const [dbCategories, setDbCategories] = useState<Category[]>([])
-    const [dbTags, setDbTags] = useState<{ id: string; name: string; color: string }[]>([])
+export function ProjectDetailsView({
+  initialProject,
+}: ProjectDetailsViewProps) {
+  const [project, setProject] = useState(initialProject);
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [dbTags, setDbTags] = useState<
+    { id: string; name: string; color: string }[]
+  >([]);
 
-    useEffect(() => {
-        getCategories().then(setDbCategories).catch(console.error)
-        getTags().then(setDbTags).catch(console.error)
-    }, [])
-    const [feed, setFeed] = useState<ProjectPost[]>(initialProject.feed || [])
-    const { setLabel } = useBreadcrumbStore()
+  useEffect(() => {
+    getCategories().then(setDbCategories).catch(console.error);
+    getTags().then(setDbTags).catch(console.error);
+  }, []);
+  const [feed, setFeed] = useState<ProjectPost[]>(initialProject.feed || []);
+  const { setLabel } = useBreadcrumbStore();
 
-    useEffect(() => {
-        if (project.id && project.title) {
-            setLabel(project.id, project.title)
-        }
-    }, [project.id, project.title, setLabel])
-
-    // Permissions
-    const { canViewFinancials, canEditProjects } = usePermissions()
-
-    // --- State for Editing ---
-    const [isEditingClass, setIsEditingClass] = useState(false)
-    const [isEditingOverview, setIsEditingOverview] = useState(false)
-    const [isEditingBasic, setIsEditingBasic] = useState(false)
-
-    // Forms
-    const [classForm, setClassForm] = useState<{
-        category: string
-        extension: string
-        tags: string[]
-    }>({
-        category: project.category,
-        extension: project.extension,
-        tags: project.tags || []
-    })
-
-    const [overviewForm, setOverviewForm] = useState({
-        description: project.description || '',
-        observations: project.observations || '',
-        reachedPeople: project.reachedPeople || 0
-    })
-
-    const [basicForm, setBasicForm] = useState({
-        responsible: project.responsible,
-        startDate: project.startDate || '',
-        endDate: project.endDate || '',
-        lastVisit: project.lastVisit || '',
-        indication: project.indication || '',
-        status: project.status || 'pendente'
-    })
-
-    // Helper to add auto-post
-    const addAutoPost = async (title: string, content: string) => {
-        try {
-            const dbPost = await addProjectPost(project.id, title, content)
-            const newPost: ProjectPost = {
-                id: dbPost?.id || Math.random().toString(36).substr(2, 9),
-                type: 'update',
-                author: "Sistema",
-                role: "Automático",
-                date: dbPost?.created_at || new Date().toISOString(),
-                title: title,
-                content: content
-            }
-            setFeed(prev => [newPost, ...prev])
-        } catch (e) {
-            console.error("Erro ao salvar post do mural:", e)
-        }
+  useEffect(() => {
+    if (project.id && project.title) {
+      setLabel(project.id, project.title);
     }
+  }, [project.id, project.title, setLabel]);
 
-    // --- Save Handlers with Auto-Feed Logic ---
+  // Permissions
+  const { canViewFinancials, canEditProjects } = usePermissions();
 
-    const handleAddManualPost = async (post: ProjectPost) => {
-        try {
-            const dbPost = await addProjectPost(
-                project.id,
-                post.title,
-                post.content,
-                post.type,
-                post.author,
-                post.role,
-                post.attachments?.map(a => ({
-                    title: a.title,
-                    type: a.type,
-                    url: a.url,
-                    originalUrl: a.originalUrl,
-                    thumbnailUrl: a.thumbnailUrl,
-                }))
-            )
-            const newPost: ProjectPost = {
-                ...post,
-                id: dbPost?.id || post.id,
-                date: dbPost?.created_at || post.date,
-            }
-            setFeed(prev => [newPost, ...prev])
-            toast.success("Publicação adicionada com sucesso!")
-        } catch (e) {
-            console.error("Erro ao adicionar publicação:", e)
-            toast.error("Erro ao adicionar publicação.")
-        }
+  // --- State for Editing ---
+  const [isEditingClass, setIsEditingClass] = useState(false);
+  const [isEditingOverview, setIsEditingOverview] = useState(false);
+  const [isEditingBasic, setIsEditingBasic] = useState(false);
+
+  // Forms
+  const [classForm, setClassForm] = useState<{
+    category: string;
+    extension: string;
+    tags: string[];
+  }>({
+    category: project.category,
+    extension: project.extension,
+    tags: project.tags || [],
+  });
+
+  const [overviewForm, setOverviewForm] = useState({
+    description: project.description || "",
+    observations: project.observations || "",
+    reachedPeople: project.reachedPeople || 0,
+  });
+
+  const [basicForm, setBasicForm] = useState({
+    responsible: project.responsible,
+    startDate: project.startDate || "",
+    endDate: project.endDate || "",
+    lastVisit: project.lastVisit || "",
+    indication: project.indication || "",
+    status: project.status || "pendente",
+  });
+
+  // Helper to add auto-post
+  const addAutoPost = async (title: string, content: string) => {
+    try {
+      const dbPost = await addProjectPost(project.id, title, content);
+      const newPost: ProjectPost = {
+        id: dbPost?.id || Math.random().toString(36).substr(2, 9),
+        type: "update",
+        author: "Sistema",
+        role: "Automático",
+        date: dbPost?.created_at || new Date().toISOString(),
+        title: title,
+        content: content,
+      };
+      setFeed((prev) => [newPost, ...prev]);
+    } catch (e) {
+      console.error("Erro ao salvar post do mural:", e);
     }
+  };
 
-    const handleSaveClass = async () => {
-        const newTags = classForm.tags || []
-        const changes = []
+  // --- Save Handlers with Auto-Feed Logic ---
 
-        if (classForm.category !== project.category) changes.push(`Categoria alterada de "${project.category}" para "${classForm.category}"`)
-        if (classForm.extension !== project.extension) changes.push(`Extensão alterada de "${project.extension}" para "${classForm.extension}"`)
-        if (JSON.stringify(newTags) !== JSON.stringify(project.tags)) changes.push(`Tags atualizadas`)
-
-        if (changes.length > 0) {
-            try {
-                await updateProjectClassification(project.id, classForm.extension, classForm.category, newTags)
-                setProject({
-                    ...project,
-                    category: classForm.category,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    extension: classForm.extension as any,
-                    tags: newTags
-                })
-                await addAutoPost("Atualização de Classificação", changes.join('\n'))
-                toast.success("Classificação salva com sucesso!")
-            } catch (err) {
-                toast.error("Erro ao salvar classificação.")
-                console.error(err)
-                return
-            }
-        }
-        setIsEditingClass(false)
+  const handleAddManualPost = async (post: ProjectPost) => {
+    try {
+      const dbPost = await addProjectPost(
+        project.id,
+        post.title,
+        post.content,
+        post.type,
+        post.author,
+        post.role,
+        post.attachments?.map((a) => ({
+          title: a.title,
+          type: a.type,
+          url: a.url,
+          originalUrl: a.originalUrl,
+          thumbnailUrl: a.thumbnailUrl,
+        })),
+      );
+      const newPost: ProjectPost = {
+        ...post,
+        id: dbPost?.id || post.id,
+        date: dbPost?.created_at || post.date,
+      };
+      setFeed((prev) => [newPost, ...prev]);
+      toast.success("Publicação adicionada com sucesso!");
+    } catch (e) {
+      console.error("Erro ao adicionar publicação:", e);
+      toast.error("Erro ao adicionar publicação.");
     }
+  };
 
-    const handleSaveOverview = async () => {
-        const changes = []
-        if (overviewForm.description !== project.description) changes.push("Descrição do projeto atualizada")
-        if (overviewForm.observations !== project.observations) changes.push("Observações atualizadas")
-        if (overviewForm.reachedPeople !== (project.reachedPeople || 0)) changes.push(`Pessoas impactadas atualizado para ${overviewForm.reachedPeople}`)
+  const handleSaveClass = async () => {
+    const newTags = classForm.tags || [];
+    const changes = [];
 
-        if (changes.length > 0) {
-            try {
-                await updateProject(project.id, {
-                    description: overviewForm.description,
-                    observations: overviewForm.observations,
-                    reached_people: overviewForm.reachedPeople
-                })
-                setProject({
-                    ...project,
-                    description: overviewForm.description,
-                    observations: overviewForm.observations,
-                    reachedPeople: overviewForm.reachedPeople
-                })
-                await addAutoPost("Atualização de Visão Geral", changes.join('\n'))
-                toast.success("Visão geral salva com sucesso!")
-            } catch (err) {
-                toast.error("Erro ao salvar visão geral.")
-                console.error(err)
-                return
-            }
-        }
-        setIsEditingOverview(false)
+    if (classForm.category !== project.category)
+      changes.push(
+        `Categoria alterada de "${project.category}" para "${classForm.category}"`,
+      );
+    if (classForm.extension !== project.extension)
+      changes.push(
+        `Extensão alterada de "${project.extension}" para "${classForm.extension}"`,
+      );
+    if (JSON.stringify(newTags) !== JSON.stringify(project.tags))
+      changes.push(`Tags atualizadas`);
+
+    if (changes.length > 0) {
+      try {
+        await updateProjectClassification(
+          project.id,
+          classForm.extension,
+          classForm.category,
+          newTags,
+        );
+        setProject({
+          ...project,
+          category: classForm.category,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          extension: classForm.extension as any,
+          tags: newTags,
+        });
+        await addAutoPost("Atualização de Classificação", changes.join("\n"));
+        toast.success("Classificação salva com sucesso!");
+      } catch (err) {
+        toast.error("Erro ao salvar classificação.");
+        console.error(err);
+        return;
+      }
     }
+    setIsEditingClass(false);
+  };
 
-    const handleSaveBasic = async () => {
-        const changes = []
-        if (basicForm.responsible !== project.responsible) changes.push(`Responsável alterado para "${basicForm.responsible}"`)
-        if (basicForm.startDate !== project.startDate) changes.push(`Data de início alterada para ${basicForm.startDate}`)
-        if (basicForm.endDate !== project.endDate) changes.push(`Previsão de fim alterada para ${basicForm.endDate}`)
-        if (basicForm.lastVisit !== project.lastVisit) changes.push(`Nova visita registrada em ${basicForm.lastVisit}`)
-        if (basicForm.indication !== project.indication) changes.push(`Indicação atualizada`)
-        if (basicForm.status !== project.status) changes.push(`Status alterado de "${project.status}" para "${basicForm.status}"`)
+  const handleSaveOverview = async () => {
+    const changes = [];
+    if (overviewForm.description !== project.description)
+      changes.push("Descrição do projeto atualizada");
+    if (overviewForm.observations !== project.observations)
+      changes.push("Observações atualizadas");
+    if (overviewForm.reachedPeople !== (project.reachedPeople || 0))
+      changes.push(
+        `Pessoas impactadas atualizado para ${overviewForm.reachedPeople}`,
+      );
 
-        if (changes.length > 0) {
-            try {
-                await updateProject(project.id, {
-                    responsible: basicForm.responsible,
-                    // Handle empty dates properly
-                    start_date: basicForm.startDate === '' ? null : basicForm.startDate,
-                    end_date: basicForm.endDate === '' ? null : basicForm.endDate,
-                    last_visit: basicForm.lastVisit === '' ? null : basicForm.lastVisit,
-                    indication: basicForm.indication,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    status: basicForm.status as any
-                })
-                setProject({
-                    ...project,
-                    responsible: basicForm.responsible,
-                    startDate: basicForm.startDate,
-                    endDate: basicForm.endDate,
-                    lastVisit: basicForm.lastVisit,
-                    indication: basicForm.indication,
-                    status: basicForm.status
-                })
-                await addAutoPost("Atualização de Dados Básicos", changes.join('\n'))
-                toast.success("Dados básicos salvos com sucesso!")
-            } catch (err) {
-                toast.error("Erro ao salvar dados básicos.")
-                console.error(err)
-                return
-            }
-        }
-        setIsEditingBasic(false)
+    if (changes.length > 0) {
+      try {
+        await updateProject(project.id, {
+          description: overviewForm.description,
+          observations: overviewForm.observations,
+          reached_people: overviewForm.reachedPeople,
+        });
+        setProject({
+          ...project,
+          description: overviewForm.description,
+          observations: overviewForm.observations,
+          reachedPeople: overviewForm.reachedPeople,
+        });
+        await addAutoPost("Atualização de Visão Geral", changes.join("\n"));
+        toast.success("Visão geral salva com sucesso!");
+      } catch (err) {
+        toast.error("Erro ao salvar visão geral.");
+        console.error(err);
+        return;
+      }
     }
+    setIsEditingOverview(false);
+  };
 
-    const [isEditingFinancial, setIsEditingFinancial] = useState(false)
-    const [financialForm, setFinancialForm] = useState({
-        requestedValue: project.requestedValue || project.investment,
-        approvedValue: project.approvedValue || project.investment,
-        investmentByYear: [...project.investmentByYear]
-    })
+  const handleSaveBasic = async () => {
+    const changes = [];
+    if (basicForm.responsible !== project.responsible)
+      changes.push(`Responsável alterado para "${basicForm.responsible}"`);
+    if (basicForm.startDate !== project.startDate)
+      changes.push(`Data de início alterada para ${basicForm.startDate}`);
+    if (basicForm.endDate !== project.endDate)
+      changes.push(`Previsão de fim alterada para ${basicForm.endDate}`);
+    if (basicForm.lastVisit !== project.lastVisit)
+      changes.push(`Nova visita registrada em ${basicForm.lastVisit}`);
+    if (basicForm.indication !== project.indication)
+      changes.push(`Indicação atualizada`);
+    if (basicForm.status !== project.status)
+      changes.push(
+        `Status alterado de "${project.status}" para "${basicForm.status}"`,
+      );
 
-    const handleSaveFinancial = async () => {
-        const changes = []
-        if (financialForm.requestedValue !== (project.requestedValue || project.investment)) changes.push(`Valor solicitado atualizado para ${formatCurrency(financialForm.requestedValue)}`)
-        if (financialForm.approvedValue !== (project.approvedValue || project.investment)) changes.push(`Valor aprovado atualizado para ${formatCurrency(financialForm.approvedValue)}`)
-
-        // Check for specific year changes
-        const oldYears = new Map(project.investmentByYear.map(i => [i.year, i.value]))
-        const newYears = new Map(financialForm.investmentByYear.map(i => [i.year, i.value]))
-
-        let historyChanged = false
-        if (oldYears.size !== newYears.size) historyChanged = true
-        else {
-            for (const [year, value] of newYears) {
-                if (oldYears.get(year) !== value) {
-                    historyChanged = true
-                    break
-                }
-            }
-        }
-
-        if (historyChanged) changes.push("Histórico de investimentos atualizado")
-
-        if (changes.length > 0) {
-            try {
-                await updateProjectInvestments(project.id, financialForm.investmentByYear, financialForm.approvedValue, financialForm.requestedValue)
-                setProject({
-                    ...project,
-                    requestedValue: financialForm.requestedValue,
-                    approvedValue: financialForm.approvedValue,
-                    investmentByYear: financialForm.investmentByYear,
-                    investment: financialForm.approvedValue // Sync main investment with approved
-                })
-                await addAutoPost("Atualização Financeira", changes.join('\n'))
-                toast.success("Dados financeiros salvos com sucesso!")
-            } catch (err) {
-                toast.error("Erro ao salvar dados financeiros.")
-                console.error(err)
-                return
-            }
-        }
-        setIsEditingFinancial(false)
+    if (changes.length > 0) {
+      try {
+        await updateProject(project.id, {
+          responsible: basicForm.responsible,
+          // Handle empty dates properly
+          start_date: basicForm.startDate === "" ? null : basicForm.startDate,
+          end_date: basicForm.endDate === "" ? null : basicForm.endDate,
+          last_visit: basicForm.lastVisit === "" ? null : basicForm.lastVisit,
+          indication: basicForm.indication,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: basicForm.status as any,
+        });
+        setProject({
+          ...project,
+          responsible: basicForm.responsible,
+          startDate: basicForm.startDate,
+          endDate: basicForm.endDate,
+          lastVisit: basicForm.lastVisit,
+          indication: basicForm.indication,
+          status: basicForm.status,
+        });
+        await addAutoPost("Atualização de Dados Básicos", changes.join("\n"));
+        toast.success("Dados básicos salvos com sucesso!");
+      } catch (err) {
+        toast.error("Erro ao salvar dados básicos.");
+        console.error(err);
+        return;
+      }
     }
+    setIsEditingBasic(false);
+  };
 
+  const [isEditingFinancial, setIsEditingFinancial] = useState(false);
+  const [financialForm, setFinancialForm] = useState({
+    requestedValue: project.requestedValue || project.investment,
+    approvedValue: project.approvedValue || project.investment,
+    investmentByYear: [...project.investmentByYear],
+  });
 
-
-    // Helper formatter
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return "N/A"
-
-        // Handle YYYY-MM-DD
-        if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = dateString.split('-')
-            return `${day}/${month}/${year}`
-        }
-
-        // Fallback for valid ISO strings or other formats (try to rely on browser locale for now)
-        try {
-            return new Date(dateString).toLocaleDateString('pt-BR')
-        } catch {
-            return dateString
-        }
-    }
-
-    // Mobile Details Toggle
-    const [showMobileDetails, setShowMobileDetails] = useState(false)
-
-    // Progress Calculation
-    const investedAmount = project.paidAmount ?? project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0)
-    const targetAmount = project.approvedValue || project.requestedValue || project.investment || 1
-    const progressValue = Math.min(100, Math.max(0, (investedAmount / targetAmount) * 100))
-
-    return (
-        <div className="min-h-screen bg-transparent space-y-6 pb-16">
-
-            {/* Header / Hero */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                    {/* Previous Navigation Removed */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{project.title}</h1>
-                        <FavoriteButton
-                            id={project.id}
-                            type="project"
-                            title={project.title}
-                            subtitle={project.institution}
-                            className="h-8 w-8"
-                        />
-                        <BadgeStatus status={project.status} />
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
-                        <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {project.municipality}, {project.state} - {project.country}</span>
-                        <span className="flex items-center gap-1.5">
-                            <Award className="h-4 w-4" />
-                            <span>{project.institution}</span>
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile: Toggle Details Row */}
-            <div
-                className="lg:hidden flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setShowMobileDetails(!showMobileDetails)}
-            >
-                <div className="flex items-center gap-6 text-muted-foreground">
-                    <LayoutDashboard className="h-5 w-5 text-primary" />
-                    <FileText className="h-5 w-5" />
-                    <DollarSign className="h-5 w-5" />
-                    <Tag className="h-5 w-5" />
-                    <span className="text-sm font-medium ml-2">Informações do Projeto</span>
-                </div>
-                <ChevronDown className={cn("h-5 w-5 transition-transform duration-200", showMobileDetails && "rotate-180")} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Left Column - Details */}
-                <div className={cn("space-y-6 lg:col-span-1", !showMobileDetails && "hidden lg:block")}>
-
-                    {/* OVERVIEW */}
-                    <ProjectInfoCard
-                        title="Visão Geral"
-                        icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
-                        isEditing={isEditingOverview}
-                        setIsEditing={canEditProjects ? setIsEditingOverview : undefined}
-                        onSave={handleSaveOverview}
-                        hasHistory={true}
-                        editContent={
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Descrição</label>
-                                    <Textarea
-                                        value={overviewForm.description}
-                                        onChange={e => setOverviewForm({ ...overviewForm, description: e.target.value })}
-                                        className="min-h-[100px]"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Observações</label>
-                                    <Textarea
-                                        value={overviewForm.observations}
-                                        onChange={e => setOverviewForm({ ...overviewForm, observations: e.target.value })}
-                                        className="min-h-[60px]"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Pessoas Impactadas</label>
-                                    <Input
-                                        type="number"
-                                        min={0}
-                                        value={overviewForm.reachedPeople}
-                                        onChange={e => setOverviewForm({ ...overviewForm, reachedPeople: parseInt(e.target.value) || 0 })}
-                                    />
-                                </div>
-                            </div>
-                        }
-                    >
-                        <div className="space-y-4">
-                            <div className="text-sm text-muted-foreground leading-relaxed">
-                                {project.description || "Nenhuma descrição disponível para este projeto."}
-                            </div>
-                            {project.reachedPeople ? (
-                                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
-                                    <div className="bg-primary/10 p-2 rounded-full shrink-0">
-                                        <Users className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-bold leading-none">{project.reachedPeople.toLocaleString()}</p>
-                                        <p className="text-xs text-muted-foreground">Pessoas impactadas</p>
-                                    </div>
-                                </div>
-                            ) : null}
-                            {project.observations && (
-                                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-3 rounded-lg text-xs">
-                                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-1.5">
-                                        <AlertCircle className="h-3 w-3" /> Observações
-                                    </h4>
-                                    <p className="text-yellow-700 dark:text-yellow-400 leading-snug">{project.observations}</p>
-                                </div>
-                            )}
-                        </div>
-                    </ProjectInfoCard>
-
-                    {/* BASIC INFO */}
-                    <ProjectInfoCard
-                        title="Informações Básicas"
-                        icon={<FileText className="h-4 w-4 text-primary" />}
-                        isEditing={isEditingBasic}
-                        setIsEditing={canEditProjects ? setIsEditingBasic : undefined}
-                        onSave={handleSaveBasic}
-                        hasHistory={true}
-                        editContent={
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Responsável</label>
-                                    <Input value={basicForm.responsible} onChange={e => setBasicForm({ ...basicForm, responsible: e.target.value })} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="space-y-1 flex flex-col">
-                                        <label className="text-xs font-semibold">Início</label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !basicForm.startDate && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {basicForm.startDate ? (
-                                                        format(new Date(basicForm.startDate + 'T12:00:00'), "dd/MM/yyyy")
-                                                    ) : (
-                                                        <span>Escolha uma data</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={basicForm.startDate ? new Date(basicForm.startDate + 'T12:00:00') : undefined}
-                                                    onSelect={(date) => setBasicForm({ ...basicForm, startDate: date ? format(date, 'yyyy-MM-dd') : '' })}
-                                                    initialFocus
-                                                    locale={ptBR}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    <div className="space-y-1 flex flex-col">
-                                        <label className="text-xs font-semibold">Fim</label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal",
-                                                        !basicForm.endDate && "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {basicForm.endDate ? (
-                                                        format(new Date(basicForm.endDate + 'T12:00:00'), "dd/MM/yyyy")
-                                                    ) : (
-                                                        <span>Escolha uma data</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={basicForm.endDate ? new Date(basicForm.endDate + 'T12:00:00') : undefined}
-                                                    onSelect={(date) => setBasicForm({ ...basicForm, endDate: date ? format(date, 'yyyy-MM-dd') : '' })}
-                                                    initialFocus
-                                                    locale={ptBR}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                </div>
-                                <div className="space-y-1 flex flex-col">
-                                    <label className="text-xs font-semibold">Status do Projeto</label>
-                                    <Select value={basicForm.status} onValueChange={v => setBasicForm({ ...basicForm, status: v as import('@/lib/types/database.types').ProjectStatus })}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecione o status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pendente">Pendente</SelectItem>
-                                            <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                                            <SelectItem value="concluido">Concluído</SelectItem>
-                                            <SelectItem value="cancelado">Cancelado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1 flex flex-col">
-                                    <label className="text-xs font-semibold">Última Visita (Staff)</label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full pl-3 text-left font-normal",
-                                                    !basicForm.lastVisit && "text-muted-foreground"
-                                                )}
-                                            >
-                                                {basicForm.lastVisit ? (
-                                                    format(new Date(basicForm.lastVisit + 'T12:00:00'), "dd/MM/yyyy")
-                                                ) : (
-                                                    <span>Escolha uma data</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={basicForm.lastVisit ? new Date(basicForm.lastVisit + 'T12:00:00') : undefined}
-                                                onSelect={(date) => setBasicForm({ ...basicForm, lastVisit: date ? format(date, 'yyyy-MM-dd') : '' })}
-                                                initialFocus
-                                                locale={ptBR}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Indicação</label>
-                                    <Input value={basicForm.indication || ''} onChange={e => setBasicForm({ ...basicForm, indication: e.target.value })} />
-                                </div>
-                            </div>
-                        }
-                    >
-                        <div className="space-y-4 text-sm">
-                            <div className="grid grid-cols-1 gap-1">
-                                <span className="text-muted-foreground text-xs font-medium uppercase">Responsável</span>
-                                <div className="flex items-center gap-2">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium truncate" title={project.responsible}>{project.responsible}</span>
-                                </div>
-                            </div>
-                            <Separator />
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <span className="text-muted-foreground text-xs font-medium uppercase">Início</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <span>{formatDate(project.startDate)}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span className="text-muted-foreground text-xs font-medium uppercase">Fim Previsto</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <span>{formatDate(project.endDate)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {project.lastVisit && (
-                                <>
-                                    <Separator />
-                                    <div>
-                                        <span className="text-muted-foreground text-xs font-medium uppercase">Última Visita (Staff)</span>
-                                        <div className="flex items-center gap-2 mt-1 text-blue-600 dark:text-blue-400">
-                                            <CalendarIcon className="h-3.5 w-3.5" />
-                                            <span className="font-semibold">{formatDate(project.lastVisit)}</span>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                            {project.indication && (
-                                <>
-                                    <Separator />
-                                    <div>
-                                        <span className="text-muted-foreground text-xs font-medium uppercase">Indicação</span>
-                                        <p className="mt-1 font-medium italic">{project.indication}</p>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        {(project.thanked || feed.some(p => p.type === 'acknowledgment' && new Date(p.date).getFullYear() === new Date().getFullYear())) && (
-                            <>
-                                <Separator className="my-4" />
-                                <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>Agradecimento enviado em {new Date().getFullYear()}</span>
-                                </div>
-                            </>
-                        )}
-                        {!project.thanked && !feed.some(p => p.type === 'acknowledgment' && new Date(p.date).getFullYear() === new Date().getFullYear()) && (
-                            <>
-                                <Separator className="my-4" />
-                                <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>Aguardando agradecimento ({new Date().getFullYear()})</span>
-                                </div>
-                            </>
-                        )}
-                    </ProjectInfoCard>
-
-                    {/* FINANCIAL - Hidden for users without permission */}
-                    {canViewFinancials && (
-                        <ProjectInfoCard
-                            title="Financeiro"
-                            icon={<DollarSign className="h-4 w-4 text-primary" />}
-                            hasHistory={true}
-                            isEditing={isEditingFinancial}
-                            setIsEditing={canEditProjects ? setIsEditingFinancial : undefined}
-                            onSave={handleSaveFinancial}
-                            editContent={
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-xs font-semibold">Histórico de Investimentos</label>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-6 text-xs"
-                                                onClick={() => {
-                                                    setFinancialForm({
-                                                        ...financialForm,
-                                                        investmentByYear: [...financialForm.investmentByYear, { year: new Date().getFullYear() - 1, value: 0 }]
-                                                    })
-                                                }}
-                                            >
-                                                + Adicionar Ano
-                                            </Button>
-                                        </div>
-                                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                                            {financialForm.investmentByYear.sort((a, b) => b.year - a.year).map((item, index) => (
-                                                <div key={index} className="flex items-center gap-2">
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Ano"
-                                                        className="w-24"
-                                                        value={item.year}
-                                                        onChange={(e) => {
-                                                            const newInvestments = [...financialForm.investmentByYear]
-                                                            newInvestments.find(i => i === item)!.year = parseInt(e.target.value) || 0
-                                                            setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
-                                                        }}
-                                                    />
-                                                    <div className="relative w-full">
-                                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="Valor"
-                                                            className="pl-8"
-                                                            value={item.value}
-                                                            onChange={(e) => {
-                                                                const newInvestments = [...financialForm.investmentByYear]
-                                                                newInvestments.find(i => i === item)!.value = parseFloat(e.target.value) || 0
-                                                                setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                        onClick={() => {
-                                                            const newInvestments = financialForm.investmentByYear.filter(i => i !== item)
-                                                            setFinancialForm({ ...financialForm, investmentByYear: newInvestments })
-                                                        }}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                            {financialForm.investmentByYear.length === 0 && (
-                                                <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
-                                                    Nenhum registro histórico.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <Separator />
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold">Valor Solicitado</label>
-                                        <div className="relative w-full">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                            <Input
-                                                type="number"
-                                                className="pl-8"
-                                                value={financialForm.requestedValue}
-                                                onChange={e => setFinancialForm({ ...financialForm, requestedValue: parseFloat(e.target.value) || 0 })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold">Valor Aprovado</label>
-                                        <div className="relative w-full">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">R$</span>
-                                            <Input
-                                                type="number"
-                                                className="pl-8"
-                                                value={financialForm.approvedValue}
-                                                onChange={e => setFinancialForm({ ...financialForm, approvedValue: parseFloat(e.target.value) || 0 })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        >
-                            <CardContent className="space-y-5 p-0">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <span className="text-xs text-muted-foreground uppercase font-semibold">Solicitado</span>
-                                        <p className="text-lg font-bold">
-                                            {formatCurrency(project.requestedValue || project.investment)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <span className="text-xs text-muted-foreground uppercase font-semibold">Aprovado</span>
-                                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                                            {formatCurrency(project.approvedValue || project.investment)}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Investido até o momento</span>
-                                        <span className="font-medium">
-                                            {formatCurrency(investedAmount)}
-                                        </span>
-                                    </div>
-                                    <Progress value={progressValue} className="h-2" />
-                                </div>
-
-                                {project.investmentByYear.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t space-y-2">
-                                        <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Histórico Anual</span>
-                                        <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
-                                            {project.investmentByYear.sort((a, b) => b.year - a.year).map((item) => (
-                                                <div key={item.year} className="flex justify-between text-sm p-1.5 hover:bg-muted/50 rounded-md transition-colors">
-                                                    <span className="text-muted-foreground font-medium">{item.year}</span>
-                                                    <span>{formatCurrency(item.value)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                            </CardContent>
-                        </ProjectInfoCard>
-                    )}
-
-                    {/* CLASSIFICATION */}
-                    <ProjectInfoCard
-                        title="Classificação"
-                        icon={<Tag className="h-4 w-4 text-primary" />}
-                        isEditing={isEditingClass}
-                        setIsEditing={canEditProjects ? setIsEditingClass : undefined}
-                        onSave={handleSaveClass}
-                        hasHistory={true}
-                        editContent={
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Categoria</label>
-                                    <Select value={classForm.category} onValueChange={val => setClassForm({ ...classForm, category: val })}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecione Categoria" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Sem categoria">Sem categoria</SelectItem>
-                                            {dbCategories.map(c => (
-                                                <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold">Extensão</label>
-                                    <Select value={classForm.extension} onValueChange={val => setClassForm({ ...classForm, extension: val })}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecione Extensão" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="parcial">Parcial</SelectItem>
-                                            <SelectItem value="completo">Completo</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold mb-2 block">Tags</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {dbTags.map(tag => {
-                                            const checked = classForm.tags.includes(tag.name)
-                                            return (
-                                                <label key={tag.id} className="flex items-center gap-2 text-xs cursor-pointer bg-muted/30 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                                                    <Checkbox
-                                                        checked={checked}
-                                                        onCheckedChange={c => {
-                                                            const newTags = c
-                                                                ? [...classForm.tags, tag.name]
-                                                                : classForm.tags.filter(t => t !== tag.name);
-                                                            setClassForm({ ...classForm, tags: newTags });
-                                                        }}
-                                                    />
-                                                    <span className="flex items-center gap-1.5 line-clamp-1 break-all flex-1">
-                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color || '#ccc' }} />
-                                                        <span className="truncate">{tag.name}</span>
-                                                    </span>
-                                                </label>
-                                            )
-                                        })}
-                                        {dbTags.length === 0 && (
-                                            <span className="text-xs text-muted-foreground col-span-2">Nenhuma tag cadastrada.</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    >
-                        <div className="space-y-4">
-                            <div>
-                                <span className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Categoria</span>
-                                <Badge variant="secondary">{project.category}</Badge>
-                            </div>
-                            <div>
-                                <span className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">Extensão</span>
-                                <div className="flex items-center gap-2 text-sm">
-                                    <Globe className="h-4 w-4 text-muted-foreground" />
-                                    <span className="capitalize">{project.extension}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Tags</span>
-                                <div className="flex flex-wrap gap-2">
-                                    {project.tags && project.tags.length > 0 ? (
-                                        project.tags.map(tag => (
-                                            <Badge key={tag} variant="outline" className="text-xs font-normal">
-                                                #{tag}
-                                            </Badge>
-                                        ))
-                                    ) : (
-                                        <Badge variant="secondary" className="font-normal text-muted-foreground">Sem tags</Badge>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </ProjectInfoCard>
-
-                    <ProjectGallery feed={feed} />
-
-                </div>
-
-                {/* Right Column - Mural Feed */}
-                <div className="space-y-6 lg:col-span-2">
-                    {/* We pass the FULL controlled feed here */}
-                    <ProjectMural
-                        feed={feed}
-                        onAddPost={handleAddManualPost}
-                        canEdit={canEditProjects}
-                    />
-                </div>
-            </div>
-        </div>
+  const handleSaveFinancial = async () => {
+    const changes = [];
+    if (
+      financialForm.requestedValue !==
+      (project.requestedValue || project.investment)
     )
+      changes.push(
+        `Valor solicitado atualizado para ${formatCurrency(financialForm.requestedValue)}`,
+      );
+    if (
+      financialForm.approvedValue !==
+      (project.approvedValue || project.investment)
+    )
+      changes.push(
+        `Valor aprovado atualizado para ${formatCurrency(financialForm.approvedValue)}`,
+      );
+
+    // Check for specific year changes
+    const oldYears = new Map(
+      project.investmentByYear.map((i) => [i.year, i.value]),
+    );
+    const newYears = new Map(
+      financialForm.investmentByYear.map((i) => [i.year, i.value]),
+    );
+
+    let historyChanged = false;
+    if (oldYears.size !== newYears.size) historyChanged = true;
+    else {
+      for (const [year, value] of newYears) {
+        if (oldYears.get(year) !== value) {
+          historyChanged = true;
+          break;
+        }
+      }
+    }
+
+    if (historyChanged) changes.push("Histórico de investimentos atualizado");
+
+    if (changes.length > 0) {
+      try {
+        await updateProjectInvestments(
+          project.id,
+          financialForm.investmentByYear,
+          financialForm.approvedValue,
+          financialForm.requestedValue,
+        );
+        setProject({
+          ...project,
+          requestedValue: financialForm.requestedValue,
+          approvedValue: financialForm.approvedValue,
+          investmentByYear: financialForm.investmentByYear,
+          investment: financialForm.approvedValue, // Sync main investment with approved
+        });
+        await addAutoPost("Atualização Financeira", changes.join("\n"));
+        toast.success("Dados financeiros salvos com sucesso!");
+      } catch (err) {
+        toast.error("Erro ao salvar dados financeiros.");
+        console.error(err);
+        return;
+      }
+    }
+    setIsEditingFinancial(false);
+  };
+
+  // Helper formatter
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+
+    // Handle YYYY-MM-DD
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateString.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    // Fallback for valid ISO strings or other formats (try to rely on browser locale for now)
+    try {
+      return new Date(dateString).toLocaleDateString("pt-BR");
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Mobile Details Toggle
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
+
+  // Progress Calculation
+  const investedAmount =
+    project.paidAmount ??
+    project.investmentByYear.reduce((acc, curr) => acc + curr.value, 0);
+  const targetAmount =
+    project.approvedValue || project.requestedValue || project.investment || 1;
+  const progressValue = Math.min(
+    100,
+    Math.max(0, (investedAmount / targetAmount) * 100),
+  );
+
+  return (
+    <div className="min-h-screen bg-transparent space-y-6 pb-16">
+      {/* Header / Hero */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          {/* Previous Navigation Removed */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              {project.title}
+            </h1>
+            <FavoriteButton
+              id={project.id}
+              type="project"
+              title={project.title}
+              subtitle={project.institution}
+              className="h-8 w-8"
+            />
+            <BadgeStatus status={project.status} />
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" /> {project.municipality},{" "}
+              {project.state} - {project.country}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Award className="h-4 w-4" />
+              <span>{project.institution}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile: Toggle Details Row */}
+      <div
+        className="lg:hidden flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => setShowMobileDetails(!showMobileDetails)}
+      >
+        <div className="flex items-center gap-6 text-muted-foreground">
+          <LayoutDashboard className="h-5 w-5 text-primary" />
+          <FileText className="h-5 w-5" />
+          <DollarSign className="h-5 w-5" />
+          <Tag className="h-5 w-5" />
+          <span className="text-sm font-medium ml-2">
+            Informações do Projeto
+          </span>
+        </div>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            showMobileDetails && "rotate-180",
+          )}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Details */}
+        <div
+          className={cn(
+            "space-y-6 lg:col-span-1",
+            !showMobileDetails && "hidden lg:block",
+          )}
+        >
+          {/* OVERVIEW */}
+          <ProjectInfoCard
+            title="Visão Geral"
+            icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
+            isEditing={isEditingOverview}
+            setIsEditing={canEditProjects ? setIsEditingOverview : undefined}
+            onSave={handleSaveOverview}
+            hasHistory={true}
+            editContent={
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Descrição</label>
+                  <Textarea
+                    value={overviewForm.description}
+                    onChange={(e) =>
+                      setOverviewForm({
+                        ...overviewForm,
+                        description: e.target.value,
+                      })
+                    }
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Observações</label>
+                  <Textarea
+                    value={overviewForm.observations}
+                    onChange={(e) =>
+                      setOverviewForm({
+                        ...overviewForm,
+                        observations: e.target.value,
+                      })
+                    }
+                    className="min-h-[60px]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">
+                    Pessoas Impactadas
+                  </label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={overviewForm.reachedPeople}
+                    onChange={(e) =>
+                      setOverviewForm({
+                        ...overviewForm,
+                        reachedPeople: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground leading-relaxed">
+                {project.description ||
+                  "Nenhuma descrição disponível para este projeto."}
+              </div>
+              {project.reachedPeople ? (
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                  <div className="bg-primary/10 p-2 rounded-full shrink-0">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold leading-none">
+                      {project.reachedPeople.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Pessoas impactadas
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+              {project.observations && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900 p-3 rounded-lg text-xs">
+                  <h4 className="font-semibold text-yellow-800 dark:text-yellow-500 mb-1 flex items-center gap-1.5">
+                    <AlertCircle className="h-3 w-3" /> Observações
+                  </h4>
+                  <p className="text-yellow-700 dark:text-yellow-400 leading-snug">
+                    {project.observations}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ProjectInfoCard>
+
+          {/* BASIC INFO */}
+          <ProjectInfoCard
+            title="Informações Básicas"
+            icon={<FileText className="h-4 w-4 text-primary" />}
+            isEditing={isEditingBasic}
+            setIsEditing={canEditProjects ? setIsEditingBasic : undefined}
+            onSave={handleSaveBasic}
+            hasHistory={true}
+            editContent={
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Responsável</label>
+                  <Input
+                    value={basicForm.responsible}
+                    onChange={(e) =>
+                      setBasicForm({
+                        ...basicForm,
+                        responsible: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1 flex flex-col">
+                    <label className="text-xs font-semibold">Início</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !basicForm.startDate && "text-muted-foreground",
+                          )}
+                        >
+                          {basicForm.startDate ? (
+                            format(
+                              new Date(basicForm.startDate + "T12:00:00"),
+                              "dd/MM/yyyy",
+                            )
+                          ) : (
+                            <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            basicForm.startDate
+                              ? new Date(basicForm.startDate + "T12:00:00")
+                              : undefined
+                          }
+                          onSelect={(date) =>
+                            setBasicForm({
+                              ...basicForm,
+                              startDate: date ? format(date, "yyyy-MM-dd") : "",
+                            })
+                          }
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1 flex flex-col">
+                    <label className="text-xs font-semibold">Fim</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !basicForm.endDate && "text-muted-foreground",
+                          )}
+                        >
+                          {basicForm.endDate ? (
+                            format(
+                              new Date(basicForm.endDate + "T12:00:00"),
+                              "dd/MM/yyyy",
+                            )
+                          ) : (
+                            <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={
+                            basicForm.endDate
+                              ? new Date(basicForm.endDate + "T12:00:00")
+                              : undefined
+                          }
+                          onSelect={(date) =>
+                            setBasicForm({
+                              ...basicForm,
+                              endDate: date ? format(date, "yyyy-MM-dd") : "",
+                            })
+                          }
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                <div className="space-y-1 flex flex-col">
+                  <label className="text-xs font-semibold">
+                    Status do Projeto
+                  </label>
+                  <Select
+                    value={basicForm.status}
+                    onValueChange={(v) =>
+                      setBasicForm({
+                        ...basicForm,
+                        status:
+                          v as import("@/lib/types/database.types").ProjectStatus,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                      <SelectItem value="concluido">Concluído</SelectItem>
+                      <SelectItem value="cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 flex flex-col">
+                  <label className="text-xs font-semibold">
+                    Última Visita (Staff)
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !basicForm.lastVisit && "text-muted-foreground",
+                        )}
+                      >
+                        {basicForm.lastVisit ? (
+                          format(
+                            new Date(basicForm.lastVisit + "T12:00:00"),
+                            "dd/MM/yyyy",
+                          )
+                        ) : (
+                          <span>Escolha uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          basicForm.lastVisit
+                            ? new Date(basicForm.lastVisit + "T12:00:00")
+                            : undefined
+                        }
+                        onSelect={(date) =>
+                          setBasicForm({
+                            ...basicForm,
+                            lastVisit: date ? format(date, "yyyy-MM-dd") : "",
+                          })
+                        }
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Indicação</label>
+                  <Input
+                    value={basicForm.indication || ""}
+                    onChange={(e) =>
+                      setBasicForm({ ...basicForm, indication: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+            }
+          >
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 gap-1">
+                <span className="text-muted-foreground text-xs font-medium uppercase">
+                  Responsável
+                </span>
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span
+                    className="font-medium truncate"
+                    title={project.responsible}
+                  >
+                    {project.responsible}
+                  </span>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-muted-foreground text-xs font-medium uppercase">
+                    Início
+                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{formatDate(project.startDate)}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-xs font-medium uppercase">
+                    Fim Previsto
+                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{formatDate(project.endDate)}</span>
+                  </div>
+                </div>
+              </div>
+              {project.lastVisit && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                      Última Visita (Staff)
+                    </span>
+                    <div className="flex items-center gap-2 mt-1 text-blue-600 dark:text-blue-400">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      <span className="font-semibold">
+                        {formatDate(project.lastVisit)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+              {project.indication && (
+                <>
+                  <Separator />
+                  <div>
+                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                      Indicação
+                    </span>
+                    <p className="mt-1 font-medium italic">
+                      {project.indication}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {(project.thanked ||
+              feed.some(
+                (p) =>
+                  p.type === "acknowledgment" &&
+                  new Date(p.date).getFullYear() === new Date().getFullYear(),
+              )) && (
+              <>
+                <Separator className="my-4" />
+                <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>
+                    Agradecimento enviado em {new Date().getFullYear()}
+                  </span>
+                </div>
+              </>
+            )}
+            {!project.thanked &&
+              !feed.some(
+                (p) =>
+                  p.type === "acknowledgment" &&
+                  new Date(p.date).getFullYear() === new Date().getFullYear(),
+              ) && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-md bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      Aguardando agradecimento ({new Date().getFullYear()})
+                    </span>
+                  </div>
+                </>
+              )}
+          </ProjectInfoCard>
+
+          {/* FINANCIAL - Hidden for users without permission */}
+          {canViewFinancials && (
+            <ProjectInfoCard
+              title="Financeiro"
+              icon={<DollarSign className="h-4 w-4 text-primary" />}
+              hasHistory={true}
+              isEditing={isEditingFinancial}
+              setIsEditing={canEditProjects ? setIsEditingFinancial : undefined}
+              onSave={handleSaveFinancial}
+              editContent={
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold">
+                        Histórico de Investimentos
+                      </label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs"
+                        onClick={() => {
+                          setFinancialForm({
+                            ...financialForm,
+                            investmentByYear: [
+                              ...financialForm.investmentByYear,
+                              { year: new Date().getFullYear() - 1, value: 0 },
+                            ],
+                          });
+                        }}
+                      >
+                        + Adicionar Ano
+                      </Button>
+                    </div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      {financialForm.investmentByYear
+                        .sort((a, b) => b.year - a.year)
+                        .map((item, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              placeholder="Ano"
+                              className="w-24"
+                              value={item.year}
+                              onChange={(e) => {
+                                const newInvestments = [
+                                  ...financialForm.investmentByYear,
+                                ];
+                                newInvestments.find((i) => i === item)!.year =
+                                  parseInt(e.target.value) || 0;
+                                setFinancialForm({
+                                  ...financialForm,
+                                  investmentByYear: newInvestments,
+                                });
+                              }}
+                            />
+                            <div className="relative w-full">
+                              <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">
+                                R$
+                              </span>
+                              <Input
+                                type="number"
+                                placeholder="Valor"
+                                className="pl-8"
+                                value={item.value}
+                                onChange={(e) => {
+                                  const newInvestments = [
+                                    ...financialForm.investmentByYear,
+                                  ];
+                                  newInvestments.find(
+                                    (i) => i === item,
+                                  )!.value = parseFloat(e.target.value) || 0;
+                                  setFinancialForm({
+                                    ...financialForm,
+                                    investmentByYear: newInvestments,
+                                  });
+                                }}
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                const newInvestments =
+                                  financialForm.investmentByYear.filter(
+                                    (i) => i !== item,
+                                  );
+                                setFinancialForm({
+                                  ...financialForm,
+                                  investmentByYear: newInvestments,
+                                });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      {financialForm.investmentByYear.length === 0 && (
+                        <div className="text-center py-4 text-sm text-muted-foreground border border-dashed rounded-md">
+                          Nenhum registro histórico.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold">
+                      Valor Solicitado
+                    </label>
+                    <div className="relative w-full">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">
+                        R$
+                      </span>
+                      <Input
+                        type="number"
+                        className="pl-8"
+                        value={financialForm.requestedValue}
+                        onChange={(e) =>
+                          setFinancialForm({
+                            ...financialForm,
+                            requestedValue: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold">
+                      Valor Aprovado
+                    </label>
+                    <div className="relative w-full">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">
+                        R$
+                      </span>
+                      <Input
+                        type="number"
+                        className="pl-8"
+                        value={financialForm.approvedValue}
+                        onChange={(e) =>
+                          setFinancialForm({
+                            ...financialForm,
+                            approvedValue: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              }
+            >
+              <CardContent className="space-y-5 p-0">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground uppercase font-semibold">
+                      Solicitado
+                    </span>
+                    <p className="text-lg font-bold">
+                      {formatCurrency(
+                        project.requestedValue || project.investment,
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground uppercase font-semibold">
+                      Aprovado
+                    </span>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(
+                        project.approvedValue || project.investment,
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Investido até o momento
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrency(investedAmount)}
+                    </span>
+                  </div>
+                  <Progress value={progressValue} className="h-2" />
+                </div>
+
+                {project.investmentByYear.length > 0 && (
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">
+                      Histórico Anual
+                    </span>
+                    <div className="space-y-1 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                      {project.investmentByYear
+                        .sort((a, b) => b.year - a.year)
+                        .map((item) => (
+                          <div
+                            key={item.year}
+                            className="flex justify-between text-sm p-1.5 hover:bg-muted/50 rounded-md transition-colors"
+                          >
+                            <span className="text-muted-foreground font-medium">
+                              {item.year}
+                            </span>
+                            <span>{formatCurrency(item.value)}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </ProjectInfoCard>
+          )}
+
+          {/* CLASSIFICATION */}
+          <ProjectInfoCard
+            title="Classificação"
+            icon={<Tag className="h-4 w-4 text-primary" />}
+            isEditing={isEditingClass}
+            setIsEditing={canEditProjects ? setIsEditingClass : undefined}
+            onSave={handleSaveClass}
+            hasHistory={true}
+            editContent={
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Categoria</label>
+                  <Select
+                    value={classForm.category}
+                    onValueChange={(val) =>
+                      setClassForm({ ...classForm, category: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sem categoria">
+                        Sem categoria
+                      </SelectItem>
+                      {dbCategories.map((c) => (
+                        <SelectItem key={c.id} value={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold">Extensão</label>
+                  <Select
+                    value={classForm.extension}
+                    onValueChange={(val) =>
+                      setClassForm({ ...classForm, extension: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione Extensão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                      <SelectItem value="completo">Completo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold mb-2 block">
+                    Tags
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dbTags.map((tag) => {
+                      const checked = classForm.tags.includes(tag.name);
+                      return (
+                        <label
+                          key={tag.id}
+                          className="flex items-center gap-2 text-xs cursor-pointer bg-muted/30 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(c) => {
+                              const newTags = c
+                                ? [...classForm.tags, tag.name]
+                                : classForm.tags.filter((t) => t !== tag.name);
+                              setClassForm({ ...classForm, tags: newTags });
+                            }}
+                          />
+                          <span className="flex items-center gap-1.5 line-clamp-1 break-all flex-1">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: tag.color || "#ccc" }}
+                            />
+                            <span className="truncate">{tag.name}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {dbTags.length === 0 && (
+                      <span className="text-xs text-muted-foreground col-span-2">
+                        Nenhuma tag cadastrada.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <div>
+                <span className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">
+                  Categoria
+                </span>
+                <Badge variant="secondary">{project.category}</Badge>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground uppercase font-semibold mb-1 block">
+                  Extensão
+                </span>
+                <div className="flex items-center gap-2 text-sm">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <span className="capitalize">{project.extension}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">
+                  Tags
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {project.tags && project.tags.length > 0 ? (
+                    project.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="text-xs font-normal"
+                      >
+                        #{tag}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="font-normal text-muted-foreground"
+                    >
+                      Sem tags
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </ProjectInfoCard>
+
+          <ProjectGallery feed={feed} />
+        </div>
+
+        {/* Right Column - Mural Feed */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* We pass the FULL controlled feed here */}
+          <ProjectMural
+            feed={feed}
+            onAddPost={handleAddManualPost}
+            canEdit={canEditProjects}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Moved wrapper component OUTSIDE main component to fix lint error
 interface ProjectInfoCardProps {
-    title: string
-    icon: React.ReactNode
-    children?: React.ReactNode
-    isEditing?: boolean
-    setIsEditing?: (v: boolean) => void
-    onSave?: () => void
-    editContent?: React.ReactNode
-    hasHistory?: boolean
+  title: string;
+  icon: React.ReactNode;
+  children?: React.ReactNode;
+  isEditing?: boolean;
+  setIsEditing?: (v: boolean) => void;
+  onSave?: () => void;
+  editContent?: React.ReactNode;
+  hasHistory?: boolean;
 }
 
-const ProjectInfoCard = ({ title, icon, children, isEditing, setIsEditing, onSave, editContent }: ProjectInfoCardProps) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                {icon}
-                {title}
-            </CardTitle>
-            {setIsEditing && (
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditing(!isEditing)}>
-                    {isEditing ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
-                </Button>
-            )}
-        </CardHeader>
-        <CardContent>
-            {isEditing ? (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {editContent}
-                    <Button className="w-full gap-2" size="sm" onClick={onSave}>
-                        <Save className="h-4 w-4" /> Salvar Alterações
-                    </Button>
-                </div>
-            ) : (
-                children
-            )}
-        </CardContent>
-    </Card>
-)
-
+const ProjectInfoCard = ({
+  title,
+  icon,
+  children,
+  isEditing,
+  setIsEditing,
+  onSave,
+  editContent,
+}: ProjectInfoCardProps) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium flex items-center gap-2">
+        {icon}
+        {title}
+      </CardTitle>
+      {setIsEditing && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground"
+          onClick={() => setIsEditing(!isEditing)}
+        >
+          {isEditing ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <Edit2 className="h-4 w-4" />
+          )}
+        </Button>
+      )}
+    </CardHeader>
+    <CardContent>
+      {isEditing ? (
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {editContent}
+          <Button className="w-full gap-2" size="sm" onClick={onSave}>
+            <Save className="h-4 w-4" /> Salvar Alterações
+          </Button>
+        </div>
+      ) : (
+        children
+      )}
+    </CardContent>
+  </Card>
+);
 
 function BadgeStatus({ status }: { status: string }) {
-    const styles: Record<string, string> = {
-        'concluido': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
-        'em_andamento': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-        'pendente': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-        'cancelado': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
-    }
+  const styles: Record<string, string> = {
+    concluido:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
+    em_andamento:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+    pendente:
+      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
+    cancelado:
+      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
+  };
 
-    const labels: Record<string, string> = {
-        'concluido': 'Concluído',
-        'em_andamento': 'Em Andamento',
-        'pendente': 'Pendente',
-        'cancelado': 'Cancelado',
-    }
+  const labels: Record<string, string> = {
+    concluido: "Concluído",
+    em_andamento: "Em Andamento",
+    pendente: "Pendente",
+    cancelado: "Cancelado",
+  };
 
-    const style = styles[status] || 'bg-gray-100 text-gray-700 border-gray-200';
-    const label = labels[status] || status;
+  const style = styles[status] || "bg-gray-100 text-gray-700 border-gray-200";
+  const label = labels[status] || status;
 
-    return (
-        <Badge variant="outline" className={`border ${style}`}>
-            {label}
-        </Badge>
-    )
+  return (
+    <Badge variant="outline" className={`border ${style}`}>
+      {label}
+    </Badge>
+  );
 }
 
 function formatCurrency(value: number) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(value);
 }
-

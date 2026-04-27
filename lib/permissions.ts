@@ -1,6 +1,6 @@
 /**
  * ASEEC App - Permissions System
- * 
+ *
  * Defines permissions for each user role:
  * - admin: Full access to everything
  * - editor: Can create/edit projects and posts, no settings access
@@ -102,7 +102,10 @@ export const PROTECTED_ROUTES: RouteConfig[] = [
 /**
  * Check if a role has a specific permission
  */
-export function hasPermission(role: UserRole | undefined, permission: Permission): boolean {
+export function hasPermission(
+  role: UserRole | undefined,
+  permission: Permission,
+): boolean {
   if (!role) return false;
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }
@@ -110,25 +113,28 @@ export function hasPermission(role: UserRole | undefined, permission: Permission
 /**
  * Check if a role can access a specific route
  */
-export function canAccessRoute(role: UserRole | undefined, pathname: string): boolean {
+export function canAccessRoute(
+  role: UserRole | undefined,
+  pathname: string,
+): boolean {
   if (!role) return false;
-  
+
   // Find matching route config
-  const routeConfig = PROTECTED_ROUTES.find(route => 
-    pathname === route.path || pathname.startsWith(route.path + "/")
+  const routeConfig = PROTECTED_ROUTES.find(
+    (route) => pathname === route.path || pathname.startsWith(route.path + "/"),
   );
-  
+
   // If no config found, route is public
   if (!routeConfig) return true;
-  
+
   // Check if role is blocked
   if (routeConfig.blockedRoles?.includes(role)) return false;
-  
+
   // Check if role has required permission
   if (routeConfig.requiredPermission) {
     return hasPermission(role, routeConfig.requiredPermission);
   }
-  
+
   return true;
 }
 
@@ -142,10 +148,13 @@ export interface NavItem {
   requiredPermission?: Permission;
 }
 
-export function filterNavItems(items: NavItem[], role: UserRole | undefined): NavItem[] {
+export function filterNavItems(
+  items: NavItem[],
+  role: UserRole | undefined,
+): NavItem[] {
   if (!role) return [];
-  
-  return items.filter(item => {
+
+  return items.filter((item) => {
     if (!item.requiredPermission) return true;
     return hasPermission(role, item.requiredPermission);
   });

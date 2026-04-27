@@ -2,7 +2,7 @@
 
 /**
  * ProtectedRoute Component
- * 
+ *
  * Wrapper component that protects routes based on user permissions.
  * Redirects unauthorized users to the home page.
  */
@@ -66,5 +66,3 @@ export function ProtectedRoute({
   // Render children if authorized
   return <>{children}</>;
 }
-
-

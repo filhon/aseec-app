@@ -46,7 +46,7 @@ export function FavoriteButton({
     } else {
       addItem({ id, type, title, subtitle, image, metadata });
       toast.success("Adicionado aos favoritos", {
-        description: `${title} foi salvo na sua lista.`
+        description: `${title} foi salvo na sua lista.`,
       });
     }
     // Optimistic update
@@ -64,7 +64,7 @@ export function FavoriteButton({
         <Heart
           className={cn(
             "h-4 w-4 transition-colors",
-            favorited ? "fill-red-500 text-red-500" : "text-muted-foreground"
+            favorited ? "fill-red-500 text-red-500" : "text-muted-foreground",
           )}
         />
         {favorited ? "Favorito" : "Favoritar"}
@@ -83,9 +83,9 @@ export function FavoriteButton({
       <Heart
         className={cn(
           "h-5 w-5 transition-all duration-300",
-          favorited 
-            ? "fill-red-500 text-red-500 scale-110" 
-            : "text-muted-foreground hover:text-red-500 hover:scale-110"
+          favorited
+            ? "fill-red-500 text-red-500 scale-110"
+            : "text-muted-foreground hover:text-red-500 hover:scale-110",
         )}
       />
     </Button>

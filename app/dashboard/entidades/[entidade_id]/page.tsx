@@ -1,381 +1,514 @@
-"use client"
+"use client";
 
-import { useMemo, use, useState, useEffect, useRef } from "react"
-import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store"
-import { mockDashboardProjects } from "@/components/dashboard/data"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Building2, MapPin, Users, TrendingUp, LayoutDashboard, Globe, Camera, ChevronDown, ChevronUp } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useMemo, use, useState, useEffect, useRef } from "react";
+import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store";
+import { mockDashboardProjects } from "@/components/dashboard/data";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Building2,
+  MapPin,
+  Users,
+  TrendingUp,
+  LayoutDashboard,
+  Globe,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { FavoriteButton } from "@/components/ui/favorite-button"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { toast } from "sonner"
-
+import { FavoriteButton } from "@/components/ui/favorite-button";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { toast } from "sonner";
 
 // --- Helpers ---
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
-}
+};
 
 const slugify = (text: string) => {
   return text
     .toString()
     .toLowerCase()
-    .normalize('NFD') // Normalizes accents
-    .replace(/[\u0300-\u036f]/g, '') // Removes diacritics
+    .normalize("NFD") // Normalizes accents
+    .replace(/[\u0300-\u036f]/g, "") // Removes diacritics
     .trim()
-    .replace(/\s+/g, '-') // Replaces spaces with -
-    .replace(/[^\w-]+/g, '') // Removes non-word chars
-    .replace(/--+/g, '-') // Replaces multiple - with single -
-}
+    .replace(/\s+/g, "-") // Replaces spaces with -
+    .replace(/[^\w-]+/g, "") // Removes non-word chars
+    .replace(/--+/g, "-"); // Replaces multiple - with single -
+};
 
 const countryCodes: Record<string, string> = {
-    "Brasil": "br",
-    "Moçambique": "mz",
-    "Angola": "ao",
-    "Guiné-Bissau": "gw",
-    "Ucrânia": "ua"
-}
+  Brasil: "br",
+  Moçambique: "mz",
+  Angola: "ao",
+  "Guiné-Bissau": "gw",
+  Ucrânia: "ua",
+};
 
 // Reusing BadgeStatus
 function BadgeStatus({ status }: { status: string }) {
-    const styles: Record<string, string> = {
-        'concluido': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-        'em_andamento': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        'pendente': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-        'cancelado': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    }
+  const styles: Record<string, string> = {
+    concluido:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    em_andamento:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    pendente:
+      "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+    cancelado: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  };
 
-    const labels: Record<string, string> = {
-        'concluido': 'Concluído',
-        'em_andamento': 'Em Andamento',
-        'pendente': 'Pendente',
-        'cancelado': 'Cancelado',
-    }
+  const labels: Record<string, string> = {
+    concluido: "Concluído",
+    em_andamento: "Em Andamento",
+    pendente: "Pendente",
+    cancelado: "Cancelado",
+  };
 
-    const style = styles[status] || 'bg-gray-100 text-gray-700';
-    const label = labels[status] || status;
+  const style = styles[status] || "bg-gray-100 text-gray-700";
+  const label = labels[status] || status;
 
-    return (
-        <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${style}`}>
-            {label}
-        </span>
-    )
+  return (
+    <span
+      className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${style}`}
+    >
+      {label}
+    </span>
+  );
 }
 
-export default function EntityPage({ params }: { params: Promise<{ entidade_id: string }> }) {
-  const router = useRouter()
-  const resolvedParams = use(params)
-  const slug = resolvedParams.entidade_id
-  const [kpiExpanded, setKpiExpanded] = useState(false)
-  
+export default function EntityPage({
+  params,
+}: {
+  params: Promise<{ entidade_id: string }>;
+}) {
+  const router = useRouter();
+  const resolvedParams = use(params);
+  const slug = resolvedParams.entidade_id;
+  const [kpiExpanded, setKpiExpanded] = useState(false);
+
   // Icon Upload State
-  const [entityIcon, setEntityIcon] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [entityIcon, setEntityIcon] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleIconClick = () => {
-      fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   // Find the entity name from the slug
   const entityName = useMemo(() => {
-    const project = mockDashboardProjects.find(p => slugify(p.institution) === slug)
-    return project ? project.institution : null
-  }, [slug])
+    const project = mockDashboardProjects.find(
+      (p) => slugify(p.institution) === slug,
+    );
+    return project ? project.institution : null;
+  }, [slug]);
 
   // Breadcrumbs logic
-  const { setLabel } = useBreadcrumbStore()
+  const { setLabel } = useBreadcrumbStore();
   useEffect(() => {
-      if (entityName) {
-          setLabel('entidades', 'Entidades')
-          setLabel(slug, entityName)
-      }
-  }, [entityName, slug, setLabel])
+    if (entityName) {
+      setLabel("entidades", "Entidades");
+      setLabel(slug, entityName);
+    }
+  }, [entityName, slug, setLabel]);
 
   // Filter projects for this entity
   const filteredProjects = useMemo(() => {
-    if (!entityName) return []
-    return mockDashboardProjects.filter(p => p.institution === entityName)
-  }, [entityName])
+    if (!entityName) return [];
+    return mockDashboardProjects.filter((p) => p.institution === entityName);
+  }, [entityName]);
 
   // Stats
   const stats = useMemo(() => {
-    const totalInvested = filteredProjects.reduce((sum, p) => sum + p.investment, 0)
-    const totalProjects = filteredProjects.length
-    const uniqueCountries = new Set(filteredProjects.map(p => p.country)).size
-    const uniqueMunicipalities = new Set(filteredProjects.map(p => p.municipality)).size
-    
-    return { totalInvested, totalProjects, uniqueCountries, uniqueMunicipalities }
-  }, [filteredProjects])
+    const totalInvested = filteredProjects.reduce(
+      (sum, p) => sum + p.investment,
+      0,
+    );
+    const totalProjects = filteredProjects.length;
+    const uniqueCountries = new Set(filteredProjects.map((p) => p.country))
+      .size;
+    const uniqueMunicipalities = new Set(
+      filteredProjects.map((p) => p.municipality),
+    ).size;
+
+    return {
+      totalInvested,
+      totalProjects,
+      uniqueCountries,
+      uniqueMunicipalities,
+    };
+  }, [filteredProjects]);
 
   // Chart Data
   const chartData = useMemo(() => {
-    const yearsMap: Record<number, number> = {}
-    
-    filteredProjects.forEach(project => {
-      project.investmentByYear.forEach(item => {
-        yearsMap[item.year] = (yearsMap[item.year] || 0) + item.value
-      })
-    })
+    const yearsMap: Record<number, number> = {};
+
+    filteredProjects.forEach((project) => {
+      project.investmentByYear.forEach((item) => {
+        yearsMap[item.year] = (yearsMap[item.year] || 0) + item.value;
+      });
+    });
 
     return Object.entries(yearsMap)
       .map(([year, value]) => ({ year: parseInt(year), value }))
-      .sort((a, b) => a.year - b.year)
-  }, [filteredProjects])
+      .sort((a, b) => a.year - b.year);
+  }, [filteredProjects]);
 
   if (!entityName) {
-      return (
-          <div className="flex flex-col items-center justify-center p-8 text-center h-[50vh]">
-              <h1 className="text-2xl font-bold">Entidade não encontrada</h1>
-              <p className="text-muted-foreground mt-2">Não encontramos nenhum registro para esta entidade.</p>
-              <Button variant="outline" className="mt-4" onClick={() => router.back()}>Voltar</Button>
-          </div>
-      )
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center h-[50vh]">
+        <h1 className="text-2xl font-bold">Entidade não encontrada</h1>
+        <p className="text-muted-foreground mt-2">
+          Não encontramos nenhum registro para esta entidade.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.back()}
+        >
+          Voltar
+        </Button>
+      </div>
+    );
   }
-
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) {
-          // Check file type
-          if (!file.type.match('image/png|image/x-icon|image/svg+xml')) {
-              toast.error("Formato inválido. Use PNG, ICO ou SVG.")
-              return
-          }
-
-          const reader = new FileReader()
-          reader.onload = (event) => {
-              if (event.target?.result) {
-                  setEntityIcon(event.target.result as string)
-                  toast.success("Ícone atualizado com sucesso!")
-              }
-          }
-          reader.readAsDataURL(file)
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type
+      if (!file.type.match("image/png|image/x-icon|image/svg+xml")) {
+        toast.error("Formato inválido. Use PNG, ICO ou SVG.");
+        return;
       }
-  }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setEntityIcon(event.target.result as string);
+          toast.success("Ícone atualizado com sucesso!");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="space-y-8 py-8 animate-in fade-in duration-500 container mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
-             {/* Back Button Removed */}
-            <div className="flex items-center gap-4">
-                <div 
-                    className="relative group bg-muted h-16 w-16 rounded-md flex items-center justify-center cursor-pointer overflow-hidden border border-transparent hover:border-primary/50 transition-all"
-                    onClick={handleIconClick}
-                    title="Alterar ícone da entidade"
-                >
-                    {entityIcon ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={entityIcon} alt={entityName || 'Entidade'} className="h-full w-full object-contain p-2" />
-                    ) : (
-                        <Building2 className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                    )}
-                    
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="h-5 w-5 text-white" />
-                    </div>
-                </div>
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept=".png,.ico,.svg"
-                    onChange={handleFileChange}
+          {/* Back Button Removed */}
+          <div className="flex items-center gap-4">
+            <div
+              className="relative group bg-muted h-16 w-16 rounded-md flex items-center justify-center cursor-pointer overflow-hidden border border-transparent hover:border-primary/50 transition-all"
+              onClick={handleIconClick}
+              title="Alterar ícone da entidade"
+            >
+              {entityIcon ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={entityIcon}
+                  alt={entityName || "Entidade"}
+                  className="h-full w-full object-contain p-2"
                 />
+              ) : (
+                <Building2 className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+              )}
 
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        {entityName}
-                        <FavoriteButton 
-                            id={String(slug)} 
-                            type="entity" 
-                            title={entityName || ''} 
-                            subtitle={`${stats.totalProjects} Projetos`}
-                            className="h-8 w-8 ml-2"
-                        />
-                    </h1>
-                    <p className="text-muted-foreground mt-1">Visão detalhada dos investimentos por entidade.</p>
-                </div>
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="h-5 w-5 text-white" />
+              </div>
             </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".png,.ico,.svg"
+              onChange={handleFileChange}
+            />
+
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                {entityName}
+                <FavoriteButton
+                  id={String(slug)}
+                  type="entity"
+                  title={entityName || ""}
+                  subtitle={`${stats.totalProjects} Projetos`}
+                  className="h-8 w-8 ml-2"
+                />
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Visão detalhada dos investimentos por entidade.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-       {/* Key Metrics / Counters */}
-       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Key Metrics / Counters */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Investimento Total</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Investimento Total
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalInvested)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Soma de todos os projetos</p>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.totalInvested)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Soma de todos os projetos
+            </p>
           </CardContent>
         </Card>
 
         {/* Mobile Toggle Button */}
         <div className="lg:hidden col-span-1 flex justify-center -my-2">
-           <Button variant="ghost" size="sm" onClick={() => setKpiExpanded(!kpiExpanded)} className="text-muted-foreground w-full">
-                {kpiExpanded ? (
-                    <>Ver menos <ChevronUp className="ml-2 h-4 w-4" /></>
-                ) : (
-                    <>Ver mais indicadores <ChevronDown className="ml-2 h-4 w-4" /></>
-                )}
-           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setKpiExpanded(!kpiExpanded)}
+            className="text-muted-foreground w-full"
+          >
+            {kpiExpanded ? (
+              <>
+                Ver menos <ChevronUp className="ml-2 h-4 w-4" />
+              </>
+            ) : (
+              <>
+                Ver mais indicadores <ChevronDown className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
         </div>
 
-        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Projetos Ativos</CardTitle>
-                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{stats.totalProjects}</div>
-                <p className="text-xs text-muted-foreground mt-1">Total de projetos listados</p>
-            </CardContent>
+        <Card
+          className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Projetos Ativos
+            </CardTitle>
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalProjects}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total de projetos listados
+            </p>
+          </CardContent>
         </Card>
 
-        <Card className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Alcance Geográfico</CardTitle>
-                <Globe className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{stats.uniqueCountries} <span className="text-sm font-normal text-muted-foreground">Países</span></div>
-                <p className="text-xs text-muted-foreground mt-1">{stats.uniqueMunicipalities} Municípios atingidos</p>
-            </CardContent>
+        <Card
+          className={`shadow-sm hover:shadow-md transition-shadow ${!kpiExpanded ? "hidden lg:block" : "block animate-in fade-in slide-in-from-top-2"}`}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Alcance Geográfico
+            </CardTitle>
+            <Globe className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats.uniqueCountries}{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                Países
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.uniqueMunicipalities} Municípios atingidos
+            </p>
+          </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-         {/* Investment Curve Chart */}
-         <Card className="lg:col-span-3 shadow-sm border-0 bg-gradient-to-br from-card to-muted/20">
-            <CardHeader>
+        {/* Investment Curve Chart */}
+        <Card className="lg:col-span-3 shadow-sm border-0 bg-gradient-to-br from-card to-muted/20">
+          <CardHeader>
             <CardTitle>Investimento Anual ({entityName})</CardTitle>
             <CardDescription>
-                Evolução do investimento ao longo dos anos nesta entidade.
+              Evolução do investimento ao longo dos anos nesta entidade.
             </CardDescription>
-            </CardHeader>
-            <CardContent className="px-2">
+          </CardHeader>
+          <CardContent className="px-2">
             <div className="h-[300px] w-full">
-                {chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                            <XAxis 
-                                dataKey="year" 
-                                stroke="var(--muted-foreground)" 
-                                fontSize={12} 
-                                tickLine={false} 
-                                axisLine={false}
-                                tick={{ fill: 'var(--muted-foreground)' }}
-                            />
-                            <YAxis 
-                                stroke="var(--muted-foreground)" 
-                                fontSize={12} 
-                                tickLine={false} 
-                                axisLine={false}
-                                tickFormatter={(value) => `R$ ${value / 1000}k`}
-                                tick={{ fill: 'var(--muted-foreground)' }}
-                            />
-                            <Tooltip 
-                                formatter={(value: number) => [formatCurrency(value), 'Investimento']}
-                                labelFormatter={(label) => `Ano: ${label}`}
-                                contentStyle={{ 
-                                    borderRadius: 'var(--radius)', 
-                                    border: '1px solid var(--border)', 
-                                    backgroundColor: 'var(--popover)',
-                                    color: 'var(--popover-foreground)' 
-                                }}
-                            />
-                            <Area 
-                                type="monotone" 
-                                dataKey="value" 
-                                stroke="var(--chart-1)" 
-                                fillOpacity={1} 
-                                fill="url(#colorInvestment)" 
-                                strokeWidth={3} 
-                                dot={{ strokeWidth: 2, r: 4 }} 
-                                activeDot={{ r: 6 }} 
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="h-full flex items-center justify-center text-muted-foreground">
-                        Sem dados históricos para esta entidade.
-                    </div>
-                )}
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="colorInvestment"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="var(--chart-1)"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="var(--chart-1)"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--border)"
+                    />
+                    <XAxis
+                      dataKey="year"
+                      stroke="var(--muted-foreground)"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "var(--muted-foreground)" }}
+                    />
+                    <YAxis
+                      stroke="var(--muted-foreground)"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `R$ ${value / 1000}k`}
+                      tick={{ fill: "var(--muted-foreground)" }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        formatCurrency(value),
+                        "Investimento",
+                      ]}
+                      labelFormatter={(label) => `Ano: ${label}`}
+                      contentStyle={{
+                        borderRadius: "var(--radius)",
+                        border: "1px solid var(--border)",
+                        backgroundColor: "var(--popover)",
+                        color: "var(--popover-foreground)",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="var(--chart-1)"
+                      fillOpacity={1}
+                      fill="url(#colorInvestment)"
+                      strokeWidth={3}
+                      dot={{ strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  Sem dados históricos para esta entidade.
+                </div>
+              )}
             </div>
-            </CardContent>
+          </CardContent>
         </Card>
       </div>
 
-       {/* Project List */}
-       <div className="space-y-4">
-        <h2 className="text-xl font-bold tracking-tight">Projetos - {entityName} ({filteredProjects.length})</h2>
+      {/* Project List */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold tracking-tight">
+          Projetos - {entityName} ({filteredProjects.length})
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map(project => {
-                const code = countryCodes[project.country]
-                return (
-                    <Link key={project.id} href={`/projetos/${project.id}`}>
-                        <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
-                            <FavoriteButton 
-                                id={project.id} 
-                                type="project" 
-                                title={project.title} 
-                                subtitle={project.institution}
-                                className="absolute top-4 right-4 z-10"
-                            />
-                            <CardHeader className="pb-3 pr-12">
-                                <div className="flex items-center gap-2">
-                                    <BadgeStatus status={project.status} />
-                                    <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">{project.category}</span>
-                                </div>
-                                <CardTitle className="mt-2 text-lg group-hover:text-primary transition-colors">{project.title}</CardTitle>
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    {code && <img src={`https://flagcdn.com/w20/${code}.png`} alt={project.country} width={14} className="rounded-sm" />}
-                                    <span className="line-clamp-1">{project.country}</span>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        <span>{project.responsible}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>{project.municipality}, {project.state}</span>
-                                    </div>
-                                    <div className="pt-2 border-t mt-3 flex justify-between items-center">
-                                        <span className="font-semibold text-foreground">{formatCurrency(project.investment)}</span>
-                                        <span className="text-xs bg-secondary px-2 py-1 rounded text-secondary-foreground">{project.extension}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                )
-            })}
+          {filteredProjects.map((project) => {
+            const code = countryCodes[project.country];
+            return (
+              <Link key={project.id} href={`/projetos/${project.id}`}>
+                <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
+                  <FavoriteButton
+                    id={project.id}
+                    type="project"
+                    title={project.title}
+                    subtitle={project.institution}
+                    className="absolute top-4 right-4 z-10"
+                  />
+                  <CardHeader className="pb-3 pr-12">
+                    <div className="flex items-center gap-2">
+                      <BadgeStatus status={project.status} />
+                      <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-0.5 rounded uppercase">
+                        {project.category}
+                      </span>
+                    </div>
+                    <CardTitle className="mt-2 text-lg group-hover:text-primary transition-colors">
+                      {project.title}
+                    </CardTitle>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                      {}
+                      {code && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={`https://flagcdn.com/w20/${code}.png`}
+                          alt={project.country}
+                          width={14}
+                          className="rounded-sm"
+                        />
+                      )}
+                      <span className="line-clamp-1">{project.country}</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{project.responsible}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>
+                          {project.municipality}, {project.state}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t mt-3 flex justify-between items-center">
+                        <span className="font-semibold text-foreground">
+                          {formatCurrency(project.investment)}
+                        </span>
+                        <span className="text-xs bg-secondary px-2 py-1 rounded text-secondary-foreground">
+                          {project.extension}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
-  )
+  );
 }

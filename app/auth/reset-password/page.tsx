@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useEffect, Suspense } from "react"
-import Image from "next/image"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,81 +11,83 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Icons } from "@/components/icons"
-import { Eye, EyeOff, CheckCircle2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import Link from "next/link"
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Icons } from "@/components/icons";
+import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 function ResetPasswordForm() {
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Check for error in URL params
   useEffect(() => {
-    const error = searchParams.get("error")
+    const error = searchParams.get("error");
     if (error) {
-      toast.error("Link de recuperação inválido ou expirado")
+      toast.error("Link de recuperação inválido ou expirado");
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const getStrength = (pass: string) => {
-    let score = 0
-    if (!pass) return 0
+    let score = 0;
+    if (!pass) return 0;
 
-    if (pass.length >= 8) score += 1
-    if (/[A-Z]/.test(pass)) score += 1
-    if (/[0-9]/.test(pass)) score += 1
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
 
-    return score
-  }
+    return score;
+  };
 
-  const strength = getStrength(password)
+  const strength = getStrength(password);
 
   async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("As senhas não coincidem")
-      return
+      toast.error("As senhas não coincidem");
+      return;
     }
 
     if (strength < 2) {
-      toast.error("A senha deve ter pelo menos 8 caracteres com letras maiúsculas e números")
-      return
+      toast.error(
+        "A senha deve ter pelo menos 8 caracteres com letras maiúsculas e números",
+      );
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { error } = await supabase.auth.updateUser({
       password: password,
-    })
+    });
 
     if (error) {
-      setIsLoading(false)
-      toast.error(error.message)
-      return
+      setIsLoading(false);
+      toast.error(error.message);
+      return;
     }
 
-    setIsSuccess(true)
-    toast.success("Senha atualizada com sucesso!")
+    setIsSuccess(true);
+    toast.success("Senha atualizada com sucesso!");
 
     // Redirect to dashboard after 2 seconds
     setTimeout(() => {
-      router.push("/dashboard")
-    }, 2000)
+      router.push("/dashboard");
+    }, 2000);
   }
 
   return (
@@ -97,8 +99,7 @@ function ResetPasswordForm() {
         <CardDescription>
           {isSuccess
             ? "Sua senha foi alterada com sucesso"
-            : "Digite sua nova senha para acessar o sistema"
-          }
+            : "Digite sua nova senha para acessar o sistema"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -153,7 +154,7 @@ function ResetPasswordForm() {
                       strength === 1 && "w-1/4 bg-red-500",
                       strength === 2 && "w-2/4 bg-orange-500",
                       strength === 3 && "w-3/4 bg-yellow-500",
-                      strength === 4 && "w-full bg-green-500"
+                      strength === 4 && "w-full bg-green-500",
                     )}
                   />
                 </div>
@@ -185,7 +186,9 @@ function ResetPasswordForm() {
             </div>
 
             <Button disabled={isLoading || password !== confirmPassword}>
-              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && (
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Atualizar Senha
             </Button>
           </form>
@@ -197,7 +200,7 @@ function ResetPasswordForm() {
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 export default function ResetPasswordPage() {
@@ -230,13 +233,14 @@ export default function ResetPasswordPage() {
             <p className="text-lg">
               &ldquo;Instrumentos de Deus na transformação de vidas.&rdquo;
             </p>
-            <footer className="text-sm">Histórico de Projetos Missionários</footer>
+            <footer className="text-sm">
+              Histórico de Projetos Missionários
+            </footer>
           </blockquote>
         </div>
       </div>
       <div className="p-4 lg:p-8 h-full flex items-center justify-center">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-
           <div className="flex flex-col space-y-2 text-center lg:hidden">
             <Image
               src="/logo-hebron.png"
@@ -249,18 +253,19 @@ export default function ResetPasswordPage() {
             />
           </div>
 
-          <Suspense fallback={
-            <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
-              <CardContent className="flex items-center justify-center py-8">
-                <Icons.spinner className="h-6 w-6 animate-spin" />
-              </CardContent>
-            </Card>
-          }>
+          <Suspense
+            fallback={
+              <Card className="border-0 shadow-none sm:border sm:shadow-lg bg-transparent sm:bg-card">
+                <CardContent className="flex items-center justify-center py-8">
+                  <Icons.spinner className="h-6 w-6 animate-spin" />
+                </CardContent>
+              </Card>
+            }
+          >
             <ResetPasswordForm />
           </Suspense>
-
         </div>
       </div>
     </div>
-  )
+  );
 }

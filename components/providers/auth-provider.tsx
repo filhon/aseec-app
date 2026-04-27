@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -38,8 +44,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
 
   // Public routes that don't need auth state handling
-  const isPublicRoute = pathname?.startsWith("/login") || 
-                        pathname?.startsWith("/auth/");
+  const isPublicRoute =
+    pathname?.startsWith("/login") || pathname?.startsWith("/auth/");
 
   // Fetch profile from database
   const fetchProfile = useCallback(async (userId: string) => {
@@ -49,7 +55,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       .select("*")
       .eq("id", userId)
       .single();
-    
+
     if (data) {
       setProfile(data as Profile);
     }
@@ -62,56 +68,59 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [user?.id, fetchProfile]);
 
-  const handleAuthChange = useCallback((event: AuthChangeEvent, session: Session | null) => {
-    // Update state
-    setSession(session);
-    setUser(session?.user ?? null);
+  const handleAuthChange = useCallback(
+    (event: AuthChangeEvent, session: Session | null) => {
+      // Update state
+      setSession(session);
+      setUser(session?.user ?? null);
 
-    // Fetch profile when user signs in
-    if (session?.user?.id) {
-      fetchProfile(session.user.id);
-    } else {
-      setProfile(null);
-    }
-
-    switch (event) {
-      case "SIGNED_IN":
-        // User just signed in - handled by login form redirect
-        break;
-
-      case "SIGNED_OUT":
-        // User was signed out (could be manual or session expired)
+      // Fetch profile when user signs in
+      if (session?.user?.id) {
+        fetchProfile(session.user.id);
+      } else {
         setProfile(null);
-        if (!isPublicRoute) {
-          toast.info("Sua sessão foi encerrada", {
-            description: "Faça login novamente para continuar.",
-          });
-          router.push("/login");
-        }
-        break;
+      }
 
-      case "TOKEN_REFRESHED":
-        // Token was refreshed successfully - session is still valid
-        console.log("[Auth] Token refreshed successfully");
-        break;
+      switch (event) {
+        case "SIGNED_IN":
+          // User just signed in - handled by login form redirect
+          break;
 
-      case "USER_UPDATED":
-        // User data was updated (e.g., password change)
-        toast.success("Seus dados foram atualizados");
-        if (session?.user?.id) {
-          fetchProfile(session.user.id);
-        }
-        break;
+        case "SIGNED_OUT":
+          // User was signed out (could be manual or session expired)
+          setProfile(null);
+          if (!isPublicRoute) {
+            toast.info("Sua sessão foi encerrada", {
+              description: "Faça login novamente para continuar.",
+            });
+            router.push("/login");
+          }
+          break;
 
-      case "PASSWORD_RECOVERY":
-        // Password recovery email was sent
-        // This is handled by the reset password flow
-        break;
+        case "TOKEN_REFRESHED":
+          // Token was refreshed successfully - session is still valid
+          console.log("[Auth] Token refreshed successfully");
+          break;
 
-      default:
-        break;
-    }
-  }, [isPublicRoute, router, fetchProfile]);
+        case "USER_UPDATED":
+          // User data was updated (e.g., password change)
+          toast.success("Seus dados foram atualizados");
+          if (session?.user?.id) {
+            fetchProfile(session.user.id);
+          }
+          break;
+
+        case "PASSWORD_RECOVERY":
+          // Password recovery email was sent
+          // This is handled by the reset password flow
+          break;
+
+        default:
+          break;
+      }
+    },
+    [isPublicRoute, router, fetchProfile],
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -119,10 +128,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Get initial session
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Fetch profile if session exists
         if (session?.user?.id) {
           await fetchProfile(session.user.id);
@@ -137,7 +148,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initializeAuth();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     // Cleanup subscription on unmount
     return () => {
@@ -146,9 +159,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [handleAuthChange, fetchProfile]);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, isLoading, refreshProfile }}>
+    <AuthContext.Provider
+      value={{ user, session, profile, isLoading, refreshProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
-

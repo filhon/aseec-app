@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get("next") ?? "/dashboard";
-  
+
   // Check if this is a password reset flow
   const type = searchParams.get("type");
 
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     if (!error) {
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
-      
+
       // If this is a password reset, redirect to reset password page
       const redirectPath = type === "recovery" ? "/auth/reset-password" : next;
 

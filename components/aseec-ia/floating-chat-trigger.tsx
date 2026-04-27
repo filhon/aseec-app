@@ -4,7 +4,13 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ChatInterface } from "@/components/aseec-ia/chat-interface";
 
@@ -37,15 +43,20 @@ export function FloatingChatTrigger() {
           <span className="sr-only">Abrir aseecIA</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col gap-0 border-l border-border/40 bg-background/95 backdrop-blur-xl">
+      <SheetContent
+        side="right"
+        className="w-[400px] sm:w-[540px] p-0 flex flex-col gap-0 border-l border-border/40 bg-background/95 backdrop-blur-xl"
+      >
         <VisuallyHidden>
-            <SheetTitle>aseecIA Chat</SheetTitle>
-            <SheetDescription>Chat com a inteligência artificial</SheetDescription>
+          <SheetTitle>aseecIA Chat</SheetTitle>
+          <SheetDescription>
+            Chat com a inteligência artificial
+          </SheetDescription>
         </VisuallyHidden>
-        <ChatInterface 
-            isFloating={true} 
-            initialContext={currentContext} 
-            onClose={() => setIsOpen(false)}
+        <ChatInterface
+          isFloating={true}
+          initialContext={currentContext}
+          onClose={() => setIsOpen(false)}
         />
       </SheetContent>
     </Sheet>

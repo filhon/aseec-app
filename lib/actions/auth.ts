@@ -36,7 +36,7 @@ export async function validateInviteCode(code: string) {
       .from("invite_codes")
       .update({ status: "expired" })
       .eq("id", data.id);
-    
+
     return { success: false, error: "Este código expirou" };
   }
 
@@ -73,14 +73,14 @@ export async function markInviteCodeAsUsed(codeId: string) {
 export async function generateInviteCode(
   createdBy: string,
   invitedName: string,
-  invitedEmail: string
+  invitedEmail: string,
 ) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   // Generate random 6 character code
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
+
   // Expires in 30 days
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
@@ -166,7 +166,10 @@ export async function getUsers() {
   return { success: true, data: data || [] };
 }
 
-export async function updateUserRole(userId: string, role: "admin" | "editor" | "director" | "user") {
+export async function updateUserRole(
+  userId: string,
+  role: "admin" | "editor" | "director" | "user",
+) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -210,9 +213,11 @@ export async function deleteUser(userId: string) {
 export async function getCurrentUser() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) return null;
 
   const { data: profile } = await supabase
@@ -227,7 +232,7 @@ export async function getCurrentUser() {
 export async function signOut() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
-  
+
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
 }

@@ -1,11 +1,11 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 interface SearchStore {
-  isOpen: boolean
-  onOpen: () => void
-  onClose: () => void
-  toggle: () => void
-  setOpen: (open: boolean) => void
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  toggle: () => void;
+  setOpen: (open: boolean) => void;
 }
 
 export const useSearchStore = create<SearchStore>((set) => ({
@@ -14,4 +14,4 @@ export const useSearchStore = create<SearchStore>((set) => ({
   onClose: () => set({ isOpen: false }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setOpen: (open) => set({ isOpen: open }),
-}))
+}));

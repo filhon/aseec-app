@@ -1,6 +1,6 @@
 /**
  * ASEEC App - Database Types
- * 
+ *
  * These types are manually created based on the database schema.
  * For production, generate types using: npx supabase gen types typescript
  */
@@ -9,14 +9,24 @@
 // ENUMS
 // =============================================================================
 
-export type ProjectStatus = 'pendente' | 'em_andamento' | 'concluido' | 'cancelado';
-export type ProjectExtension = 'parcial' | 'completo';
-export type PostType = 'history' | 'testimonial' | 'acknowledgment' | 'report' | 'update' | 'general';
-export type AttachmentType = 'image' | 'video' | 'document';
-export type ReactionType = 'like' | 'prayer';
-export type FavoriteType = 'project' | 'entity';
-export type AIMessageRole = 'user' | 'assistant';
-export type UserRole = 'admin' | 'editor' | 'director' | 'user';
+export type ProjectStatus =
+  | "pendente"
+  | "em_andamento"
+  | "concluido"
+  | "cancelado";
+export type ProjectExtension = "parcial" | "completo";
+export type PostType =
+  | "history"
+  | "testimonial"
+  | "acknowledgment"
+  | "report"
+  | "update"
+  | "general";
+export type AttachmentType = "image" | "video" | "document";
+export type ReactionType = "like" | "prayer";
+export type FavoriteType = "project" | "entity";
+export type AIMessageRole = "user" | "assistant";
+export type UserRole = "admin" | "editor" | "director" | "user";
 
 // =============================================================================
 // BASE TYPES
@@ -164,7 +174,7 @@ export interface ProjectInvestment extends BaseEntity {
 // INVITE CODES
 // =============================================================================
 
-export type InviteCodeStatus = 'pending' | 'used' | 'expired';
+export type InviteCodeStatus = "pending" | "used" | "expired";
 
 export interface InviteCode extends BaseEntity {
   code: string;
@@ -330,83 +340,83 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Omit<Profile, 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Profile, 'id'>>;
+        Insert: Omit<Profile, "created_at" | "updated_at">;
+        Update: Partial<Omit<Profile, "id">>;
       };
       entities: {
         Row: Entity;
-        Insert: Omit<Entity, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Entity, 'id'>>;
+        Insert: Omit<Entity, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Entity, "id">>;
       };
       categories: {
         Row: Category;
-        Insert: Omit<Category, 'id' | 'created_at'>;
-        Update: Partial<Omit<Category, 'id'>>;
+        Insert: Omit<Category, "id" | "created_at">;
+        Update: Partial<Omit<Category, "id">>;
       };
       projects: {
         Row: Project;
-        Insert: Omit<Project, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Project, 'id'>>;
+        Insert: Omit<Project, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Project, "id">>;
       };
       project_posts: {
         Row: ProjectPost;
-        Insert: Omit<ProjectPost, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ProjectPost, 'id'>>;
+        Insert: Omit<ProjectPost, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<ProjectPost, "id">>;
       };
       project_investments: {
         Row: ProjectInvestment;
-        Insert: Omit<ProjectInvestment, 'id' | 'created_at'>;
-        Update: Partial<Omit<ProjectInvestment, 'id'>>;
+        Insert: Omit<ProjectInvestment, "id" | "created_at">;
+        Update: Partial<Omit<ProjectInvestment, "id">>;
       };
       post_attachments: {
         Row: PostAttachment;
-        Insert: Omit<PostAttachment, 'id' | 'created_at'>;
-        Update: Partial<Omit<PostAttachment, 'id'>>;
+        Insert: Omit<PostAttachment, "id" | "created_at">;
+        Update: Partial<Omit<PostAttachment, "id">>;
       };
       project_attachments: {
         Row: ProjectAttachment;
-        Insert: Omit<ProjectAttachment, 'id' | 'created_at'>;
-        Update: Partial<Omit<ProjectAttachment, 'id'>>;
+        Insert: Omit<ProjectAttachment, "id" | "created_at">;
+        Update: Partial<Omit<ProjectAttachment, "id">>;
       };
       post_comments: {
         Row: PostComment;
-        Insert: Omit<PostComment, 'id' | 'created_at'>;
-        Update: Partial<Omit<PostComment, 'id'>>;
+        Insert: Omit<PostComment, "id" | "created_at">;
+        Update: Partial<Omit<PostComment, "id">>;
       };
       post_reactions: {
         Row: PostReaction;
-        Insert: Omit<PostReaction, 'id' | 'created_at'>;
-        Update: Partial<Omit<PostReaction, 'id'>>;
+        Insert: Omit<PostReaction, "id" | "created_at">;
+        Update: Partial<Omit<PostReaction, "id">>;
       };
       user_favorites: {
         Row: UserFavorite;
-        Insert: Omit<UserFavorite, 'id' | 'created_at'>;
-        Update: Partial<Omit<UserFavorite, 'id'>>;
+        Insert: Omit<UserFavorite, "id" | "created_at">;
+        Update: Partial<Omit<UserFavorite, "id">>;
       };
       ai_conversations: {
         Row: AIConversation;
-        Insert: Omit<AIConversation, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<AIConversation, 'id'>>;
+        Insert: Omit<AIConversation, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<AIConversation, "id">>;
       };
       ai_messages: {
         Row: AIMessage;
-        Insert: Omit<AIMessage, 'id' | 'created_at'>;
-        Update: Partial<Omit<AIMessage, 'id'>>;
+        Insert: Omit<AIMessage, "id" | "created_at">;
+        Update: Partial<Omit<AIMessage, "id">>;
       };
       invite_codes: {
         Row: InviteCode;
-        Insert: Omit<InviteCode, 'id' | 'created_at'>;
-        Update: Partial<Omit<InviteCode, 'id'>>;
+        Insert: Omit<InviteCode, "id" | "created_at">;
+        Update: Partial<Omit<InviteCode, "id">>;
       };
       api_usage: {
         Row: APIUsage;
-        Insert: Omit<APIUsage, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<APIUsage, 'id'>>;
+        Insert: Omit<APIUsage, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<APIUsage, "id">>;
       };
       tags: {
         Row: Tag;
-        Insert: Omit<Tag, 'id' | 'created_at'>;
-        Update: Partial<Omit<Tag, 'id'>>;
+        Insert: Omit<Tag, "id" | "created_at">;
+        Update: Partial<Omit<Tag, "id">>;
       };
     };
     Enums: {

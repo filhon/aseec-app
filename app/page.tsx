@@ -1,11 +1,14 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import dynamic from "next/dynamic"
-import { SearchBar } from "@/components/map/search-bar"
-import { Sidebar } from "@/components/map/sidebar"
-import { AppSidebar } from "@/components/layout/app-sidebar"
-import { getProjectsForMap, type ProjectLocation } from "@/lib/services/project-service"
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { SearchBar } from "@/components/map/search-bar";
+import { Sidebar } from "@/components/map/sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import {
+  getProjectsForMap,
+  type ProjectLocation,
+} from "@/lib/services/project-service";
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import("@/components/map/map-view"), {
@@ -15,138 +18,158 @@ const MapView = dynamic(() => import("@/components/map/map-view"), {
       <div className="w-full h-full animate-pulse bg-muted-foreground/10" />
     </div>
   ),
-})
+});
 
-import { searchLocation, AseecData } from "@/lib/search-service"
-import { calculateDistance, formatDistance } from "@/lib/geo-utils"
-import { Button } from "@/components/ui/button"
-import { Sparkles, Navigation } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { toast } from "sonner"
-import { MobileNavbar } from "@/components/layout/mobile-navbar"
+import { searchLocation, AseecData } from "@/lib/search-service";
+import { calculateDistance, formatDistance } from "@/lib/geo-utils";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Navigation } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { toast } from "sonner";
+import { MobileNavbar } from "@/components/layout/mobile-navbar";
 
 export default function HomePage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selectedItems, setSelectedItems] = useState<(ProjectLocation & { distance?: string })[]>([])
-  const [sidebarTitle, setSidebarTitle] = useState("")
-  const [sidebarMode, setSidebarMode] = useState<"nav" | "details">("details")
-  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom: number } | null>(null)
-  const [aseecData, setAseecData] = useState<AseecData | null>(null)
-  const [isLocating, setIsLocating] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<
+    (ProjectLocation & { distance?: string })[]
+  >([]);
+  const [sidebarTitle, setSidebarTitle] = useState("");
+  const [sidebarMode, setSidebarMode] = useState<"nav" | "details">("details");
+  const [flyTo, setFlyTo] = useState<{
+    lat: number;
+    lng: number;
+    zoom: number;
+  } | null>(null);
+  const [aseecData, setAseecData] = useState<AseecData | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   // Real data from Supabase
-  const [projects, setProjects] = useState<ProjectLocation[]>([])
+  const [projects, setProjects] = useState<ProjectLocation[]>([]);
   useEffect(() => {
     async function fetchProjects() {
       try {
-        const data = await getProjectsForMap()
-        setProjects(data)
+        const data = await getProjectsForMap();
+        setProjects(data);
       } catch (error) {
-        console.error("Error fetching projects:", error)
+        console.error("Error fetching projects:", error);
       }
     }
-    fetchProjects()
-  }, [])
+    fetchProjects();
+  }, []);
 
   const handlePinClick = (project: ProjectLocation) => {
-    setSelectedItems([project])
-    setSidebarTitle(project.title)
-    setSidebarMode("details")
-    setAseecData(null)
-    setSidebarOpen(true)
-    setFlyTo({ lat: project.lat, lng: project.lng, zoom: 12 })
-  }
+    setSelectedItems([project]);
+    setSidebarTitle(project.title);
+    setSidebarMode("details");
+    setAseecData(null);
+    setSidebarOpen(true);
+    setFlyTo({ lat: project.lat, lng: project.lng, zoom: 12 });
+  };
 
   const handleClusterClick = (clusterProjects: ProjectLocation[]) => {
-    setSelectedItems(clusterProjects)
-    setSidebarTitle(`${clusterProjects.length} Projetos na Região`)
-    setSidebarMode("details")
-    setAseecData(null)
-    setSidebarOpen(true)
-  }
+    setSelectedItems(clusterProjects);
+    setSidebarTitle(`${clusterProjects.length} Projetos na Região`);
+    setSidebarMode("details");
+    setAseecData(null);
+    setSidebarOpen(true);
+  };
 
   const handleMenuClick = () => {
-    setSidebarTitle("") // No title for menu
-    setSidebarMode("nav")
-    setSidebarOpen(true)
-  }
+    setSidebarTitle(""); // No title for menu
+    setSidebarMode("nav");
+    setSidebarOpen(true);
+  };
 
   const handleSearch = async (query: string) => {
-    const result = await searchLocation(query)
+    const result = await searchLocation(query);
     if (result) {
-      setFlyTo({ lat: result.lat, lng: result.lng, zoom: 10 })
+      setFlyTo({ lat: result.lat, lng: result.lng, zoom: 10 });
 
       // Calculate distances using real projects
-      const projectsWithDist = projects.map(p => {
-        const distKm = calculateDistance(result.lat, result.lng, p.lat, p.lng)
-        return { ...p, distance: formatDistance(distKm), distValue: distKm }
-      })
+      const projectsWithDist = projects
+        .map((p) => {
+          const distKm = calculateDistance(
+            result.lat,
+            result.lng,
+            p.lat,
+            p.lng,
+          );
+          return { ...p, distance: formatDistance(distKm), distValue: distKm };
+        })
         .sort((a, b) => a.distValue - b.distValue)
-        .slice(0, 5) // Show top 5 closest
+        .slice(0, 5); // Show top 5 closest
 
-      setSelectedItems(projectsWithDist)
-      setAseecData(result.aseecData || null)
-      setSidebarTitle(result.title)
-      setSidebarMode("details")
-      setSidebarOpen(true)
+      setSelectedItems(projectsWithDist);
+      setAseecData(result.aseecData || null);
+      setSidebarTitle(result.title);
+      setSidebarMode("details");
+      setSidebarOpen(true);
     }
-  }
+  };
 
   const handleNearMe = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocalização não suportada pelo seu navegador.")
+      toast.error("Geolocalização não suportada pelo seu navegador.");
       return;
     }
 
-    setIsLocating(true)
-    toast.info("Obtendo sua localização...")
+    setIsLocating(true);
+    toast.info("Obtendo sua localização...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, longitude } = position.coords
+        const { latitude, longitude } = position.coords;
 
-        setFlyTo({ lat: latitude, lng: longitude, zoom: 11 })
+        setFlyTo({ lat: latitude, lng: longitude, zoom: 11 });
 
         // Filter projects within 50km using real data
-        const projectsNearby = projects.map(p => {
-          const distKm = calculateDistance(latitude, longitude, p.lat, p.lng)
-          return { ...p, distance: formatDistance(distKm), distValue: distKm }
-        })
-          .filter(p => p.distValue <= 50)
-          .sort((a, b) => a.distValue - b.distValue)
+        const projectsNearby = projects
+          .map((p) => {
+            const distKm = calculateDistance(latitude, longitude, p.lat, p.lng);
+            return {
+              ...p,
+              distance: formatDistance(distKm),
+              distValue: distKm,
+            };
+          })
+          .filter((p) => p.distValue <= 50)
+          .sort((a, b) => a.distValue - b.distValue);
 
         if (projectsNearby.length === 0) {
-          toast.warning("Nenhum projeto encontrado num raio de 50km.")
-          setSidebarOpen(false)
+          toast.warning("Nenhum projeto encontrado num raio de 50km.");
+          setSidebarOpen(false);
         } else {
-          setSelectedItems(projectsNearby)
-          setSidebarTitle("Projetos Próximos a Mim")
-          setSidebarMode("details")
-          setAseecData(null)
-          setSidebarOpen(true)
-          toast.success(`${projectsNearby.length} projetos encontrados próximos a você.`)
+          setSelectedItems(projectsNearby);
+          setSidebarTitle("Projetos Próximos a Mim");
+          setSidebarMode("details");
+          setAseecData(null);
+          setSidebarOpen(true);
+          toast.success(
+            `${projectsNearby.length} projetos encontrados próximos a você.`,
+          );
         }
-        setIsLocating(false)
+        setIsLocating(false);
       },
       (error) => {
-        console.error("Error getting location", error)
-        toast.error("Erro ao obter localização. Verifique as permissões.")
-        setIsLocating(false)
-      }
-    )
-  }
+        console.error("Error getting location", error);
+        toast.error("Erro ao obter localização. Verifique as permissões.");
+        setIsLocating(false);
+      },
+    );
+  };
 
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
+      setIsFullscreen(!!document.fullscreenElement);
+    };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
-  }, [])
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   return (
     <main className="relative h-screen w-full overflow-hidden">
@@ -157,7 +180,10 @@ export default function HomePage() {
         className={sidebarMode === "nav" ? "p-0" : undefined}
         content={
           sidebarMode === "nav" ? (
-            <AppSidebar mode="mobile" onNavigate={() => setSidebarOpen(false)} />
+            <AppSidebar
+              mode="mobile"
+              onNavigate={() => setSidebarOpen(false)}
+            />
           ) : selectedItems.length > 0 ? (
             <div className="space-y-6">
               {aseecData && (
@@ -176,25 +202,40 @@ export default function HomePage() {
                       <p className="font-medium">{aseecData.population}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Religião Pred.</p>
+                      <p className="text-xs text-muted-foreground">
+                        Religião Pred.
+                      </p>
                       <p className="font-medium">{aseecData.religion}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Evangélicos</p>
+                      <p className="text-xs text-muted-foreground">
+                        Evangélicos
+                      </p>
                       <p className="font-medium">{aseecData.evangelicals}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">Não Alcançados</p>
-                      <p className="font-medium text-red-500">{aseecData.unreached}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Não Alcançados
+                      </p>
+                      <p className="font-medium text-red-500">
+                        {aseecData.unreached}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               <div className="space-y-4">
-                {aseecData && <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Projetos Próximos</h4>}
-                {selectedItems.map(project => (
-                  <div key={project.id} className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+                {aseecData && (
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                    Projetos Próximos
+                  </h4>
+                )}
+                {selectedItems.map((project) => (
+                  <div
+                    key={project.id}
+                    className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow"
+                  >
                     {project.latestImage && (
                       <div className="relative h-48 w-full">
                         <Image
@@ -217,16 +258,37 @@ export default function HomePage() {
                       )}
                       <h3 className="font-semibold text-lg">{project.title}</h3>
                       <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                        <p><span className="font-medium text-foreground">Responsável:</span> {project.responsible}</p>
-                        <p><span className="font-medium text-foreground">Endereço:</span> {project.address}</p>
+                        <p>
+                          <span className="font-medium text-foreground">
+                            Responsável:
+                          </span>{" "}
+                          {project.responsible}
+                        </p>
+                        <p>
+                          <span className="font-medium text-foreground">
+                            Endereço:
+                          </span>{" "}
+                          {project.address}
+                        </p>
                       </div>
                       <div className="flex gap-2 mt-4">
-                        <Button className="flex-1" variant="outline" size="sm" asChild>
+                        <Button
+                          className="flex-1"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
                           <Link href={`/projetos/${project.id}`}>
                             Ver Detalhes
                           </Link>
                         </Button>
-                        <Button className="flex-none w-10 px-0" variant="secondary" size="sm" title="Navegar" asChild>
+                        <Button
+                          className="flex-none w-10 px-0"
+                          variant="secondary"
+                          size="sm"
+                          title="Navegar"
+                          asChild
+                        >
                           <a
                             href={`https://www.google.com/maps/dir/?api=1&destination=${project.lat},${project.lng}`}
                             target="_blank"
@@ -261,5 +323,5 @@ export default function HomePage() {
       />
       <MobileNavbar />
     </main>
-  )
+  );
 }

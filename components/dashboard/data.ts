@@ -1,16 +1,26 @@
-export type ProjectStatus = 'concluido' | 'em_andamento' | 'pendente' | 'cancelado';
-export type ProjectExtension = 'parcial' | 'completo';
+export type ProjectStatus =
+  | "concluido"
+  | "em_andamento"
+  | "pendente"
+  | "cancelado";
+export type ProjectExtension = "parcial" | "completo";
 
-export type PostType = 'history' | 'testimonial' | 'acknowledgment' | 'report' | 'update' | 'general';
+export type PostType =
+  | "history"
+  | "testimonial"
+  | "acknowledgment"
+  | "report"
+  | "update"
+  | "general";
 
 export interface ProjectAttachment {
   id: string;
   title: string;
-  type: 'image' | 'video' | 'document';
+  type: "image" | "video" | "document";
   url: string;
   // For Google Drive attachments:
-  originalUrl?: string;   // The original sharing link
-  thumbnailUrl?: string;  // Thumbnail URL for previews
+  originalUrl?: string; // The original sharing link
+  thumbnailUrl?: string; // Thumbnail URL for previews
 }
 
 export interface ProjectPost {
@@ -69,7 +79,6 @@ export interface DashboardProject {
   // Real finance data from integration
   paidAmount?: number;
 
-
   // General project files that might not be in a specific post (optional)
   attachments?: ProjectAttachment[];
   observations?: string;
@@ -94,7 +103,8 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2024, value: 60000 },
       { year: 2025, value: 40000 },
     ],
-    description: "Reforma completa da estrutura da base missionária para atender melhor os alunos e a comunidade local. O projeto inclui a construção de novas salas de aula, renovação da cozinha e refeitório, e melhorias na área de lazer.",
+    description:
+      "Reforma completa da estrutura da base missionária para atender melhor os alunos e a comunidade local. O projeto inclui a construção de novas salas de aula, renovação da cozinha e refeitório, e melhorias na área de lazer.",
     indication: "Diretor Marcos Oliveira",
     startDate: "2023-01-15",
     endDate: "2025-06-30",
@@ -110,10 +120,16 @@ export const mockDashboardProjects: DashboardProject[] = [
         author: "Pr. João Silva",
         role: "Responsável",
         date: "2023-02-10",
-        content: "Demos início às obras de fundação das novas salas de aula. Um marco importante para o projeto!",
+        content:
+          "Demos início às obras de fundação das novas salas de aula. Um marco importante para o projeto!",
         attachments: [
-          { id: "a1", title: "Fundação", type: "image", url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3" }
-        ]
+          {
+            id: "a1",
+            title: "Fundação",
+            type: "image",
+            url: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3",
+          },
+        ],
       },
       {
         id: "p2",
@@ -122,10 +138,16 @@ export const mockDashboardProjects: DashboardProject[] = [
         author: "Equipe Técnica",
         role: "Engenharia",
         date: "2023-06-20",
-        content: "A cobertura do prédio principal foi finalizada hoje. Agora seguiremos para o acabamento interno.",
+        content:
+          "A cobertura do prédio principal foi finalizada hoje. Agora seguiremos para o acabamento interno.",
         attachments: [
-          { id: "a2", title: "Telhado", type: "image", url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3" }
-        ]
+          {
+            id: "a2",
+            title: "Telhado",
+            type: "image",
+            url: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=300&ixlib=rb-4.0.3",
+          },
+        ],
       },
       {
         id: "p3",
@@ -133,8 +155,9 @@ export const mockDashboardProjects: DashboardProject[] = [
         author: "Maria",
         role: "Aluna",
         date: "2024-03-10",
-        content: "A nova sala de aula é maravilhosa, agora temos ar condicionado e cadeiras novas! Muito obrigada a todos que ajudaram.",
-        likes: 12
+        content:
+          "A nova sala de aula é maravilhosa, agora temos ar condicionado e cadeiras novas! Muito obrigada a todos que ajudaram.",
+        likes: 12,
       },
       {
         id: "p4",
@@ -143,15 +166,31 @@ export const mockDashboardProjects: DashboardProject[] = [
         author: "Diretoria",
         role: "Administração",
         date: "2024-01-15",
-        content: "Gostaríamos de agradecer à empresa Parceira LTDA pela doação dos materiais elétricos.",
-      }
+        content:
+          "Gostaríamos de agradecer à empresa Parceira LTDA pela doação dos materiais elétricos.",
+      },
     ],
     attachments: [
-      { id: "doc1", title: "Planta Baixa Aprovada", type: "document", url: "/docs/planta.pdf" },
-      { id: "doc2", title: "Memorial Descritivo", type: "document", url: "/docs/memorial.docx" },
-      { id: "doc3", title: "Orçamento Detalhado", type: "document", url: "/docs/orcamento.xlsx" },
+      {
+        id: "doc1",
+        title: "Planta Baixa Aprovada",
+        type: "document",
+        url: "/docs/planta.pdf",
+      },
+      {
+        id: "doc2",
+        title: "Memorial Descritivo",
+        type: "document",
+        url: "/docs/memorial.docx",
+      },
+      {
+        id: "doc3",
+        title: "Orçamento Detalhado",
+        type: "document",
+        url: "/docs/orcamento.xlsx",
+      },
     ],
-    observations: "Atraso de 2 semanas devido às chuvas em Março de 2024."
+    observations: "Atraso de 2 semanas devido às chuvas em Março de 2024.",
   },
   {
     id: "2",
@@ -171,8 +210,14 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2024, value: 40000 },
     ],
     feed: [
-      { id: "p1", type: "history", author: "Pra. Maria", date: "2023-01-05", content: "Projeto iniciado." }
-    ]
+      {
+        id: "p1",
+        type: "history",
+        author: "Pra. Maria",
+        date: "2023-01-05",
+        content: "Projeto iniciado.",
+      },
+    ],
   },
   {
     id: "3",
@@ -191,7 +236,7 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2023, value: 80000 },
       { year: 2024, value: 120000 },
     ],
-    feed: []
+    feed: [],
   },
   {
     id: "4",
@@ -206,10 +251,8 @@ export const mockDashboardProjects: DashboardProject[] = [
     tags: ["vacinação", "prevenção"],
     status: "pendente",
     extension: "parcial",
-    investmentByYear: [
-      { year: 2024, value: 120000 },
-    ],
-    feed: []
+    investmentByYear: [{ year: 2024, value: 120000 }],
+    feed: [],
   },
   {
     id: "5",
@@ -224,12 +267,17 @@ export const mockDashboardProjects: DashboardProject[] = [
     tags: ["comunidade", "lazer"],
     status: "concluido",
     extension: "parcial",
-    investmentByYear: [
-      { year: 2022, value: 50000 },
-    ],
+    investmentByYear: [{ year: 2022, value: 50000 }],
     feed: [
-      { id: "p1", type: "history", author: "Pedro", date: "2022-12-20", content: "Inauguração do centro comunitário com festa para as crianças." }
-    ]
+      {
+        id: "p1",
+        type: "history",
+        author: "Pedro",
+        date: "2022-12-20",
+        content:
+          "Inauguração do centro comunitário com festa para as crianças.",
+      },
+    ],
   },
   {
     id: "6",
@@ -249,7 +297,7 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2024, value: 100000 },
       { year: 2025, value: 100000 },
     ],
-    feed: []
+    feed: [],
   },
   {
     id: "7",
@@ -264,10 +312,8 @@ export const mockDashboardProjects: DashboardProject[] = [
     tags: ["água", "saneamento"],
     status: "concluido",
     extension: "completo",
-    investmentByYear: [
-      { year: 2023, value: 45000 },
-    ],
-    feed: []
+    investmentByYear: [{ year: 2023, value: 45000 }],
+    feed: [],
   },
   {
     id: "8",
@@ -286,6 +332,6 @@ export const mockDashboardProjects: DashboardProject[] = [
       { year: 2024, value: 250000 },
       { year: 2025, value: 250000 },
     ],
-    feed: []
-  }
+    feed: [],
+  },
 ];

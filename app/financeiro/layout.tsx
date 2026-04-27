@@ -1,16 +1,11 @@
+"use client";
 
-"use client"
-
-import DashboardLayout from "@/app/dashboard/layout"
+import DashboardLayout from "@/app/dashboard/layout";
 
 export default function FinanceiroLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return (
-    <DashboardLayout>
-      {children}
-    </DashboardLayout>
-  )
+  return <DashboardLayout>{children}</DashboardLayout>;
 }

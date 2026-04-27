@@ -1,47 +1,52 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { Label } from "@/components/ui/label"
-import { Icons } from "@/components/icons"
-import { validateInviteCode } from "@/lib/actions/auth"
-import { toast } from "sonner"
+} from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
+import { Icons } from "@/components/icons";
+import { validateInviteCode } from "@/lib/actions/auth";
+import { toast } from "sonner";
 
 interface InviteCodeFormProps {
-  onBack: () => void
-  onSuccess: (code: string, codeId: string, name?: string, email?: string) => void
+  onBack: () => void;
+  onSuccess: (
+    code: string,
+    codeId: string,
+    name?: string,
+    email?: string,
+  ) => void;
 }
 
 export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [value, setValue] = useState("")
+  const [isLoading, setIsLoading] = useState(false);
+  const [value, setValue] = useState("");
 
   async function onSubmit(event: React.FormEvent) {
-    event.preventDefault()
-    setIsLoading(true)
+    event.preventDefault();
+    setIsLoading(true);
 
-    const result = await validateInviteCode(value)
+    const result = await validateInviteCode(value);
 
     if (!result.success) {
-      setIsLoading(false)
-      toast.error(result.error)
-      return
+      setIsLoading(false);
+      toast.error(result.error);
+      return;
     }
 
-    toast.success("Código válido! Prossiga com o cadastro.")
-    
+    toast.success("Código válido! Prossiga com o cadastro.");
+
     onSuccess(
       result.code!,
       result.codeId!,
       result.invitedName || undefined,
-      result.invitedEmail || undefined
-    )
-    setIsLoading(false)
+      result.invitedEmail || undefined,
+    );
+    setIsLoading(false);
   }
 
   return (
@@ -49,7 +54,9 @@ export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
       <form onSubmit={onSubmit}>
         <div className="grid gap-4">
           <div className="grid gap-2 justify-center text-center">
-            <Label htmlFor="otp" className="mb-2">Digite o código de convite</Label>
+            <Label htmlFor="otp" className="mb-2">
+              Digite o código de convite
+            </Label>
             <InputOTP
               maxLength={6}
               value={value}
@@ -69,7 +76,7 @@ export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
               Peça o código ao administrador
             </p>
           </div>
-          
+
           <Button disabled={isLoading || value.length < 6}>
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
@@ -78,10 +85,10 @@ export function InviteCodeForm({ onBack, onSuccess }: InviteCodeFormProps) {
           </Button>
         </div>
       </form>
-      
+
       <Button variant="ghost" onClick={onBack} disabled={isLoading}>
         Voltar para login
       </Button>
     </div>
-  )
+  );
 }
