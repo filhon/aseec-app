@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const FOCUSABLE_SELECTORS =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,8 +23,51 @@ export function Sidebar({
   content,
   className,
 }: SidebarProps) {
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const titleId = "sidebar-title";
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Move focus to the first focusable element on open
+    const firstFocusable =
+      sidebarRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
+    firstFocusable?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const focusable = Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLElement>(
+          FOCUSABLE_SELECTORS,
+        ) ?? [],
+      );
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
     <>
+      {/* Backdrop */}
       <div
         className={cn(
           "absolute inset-0 z-[490] bg-black/40 backdrop-blur-sm transition-opacity duration-300",
@@ -31,7 +78,13 @@ export function Sidebar({
         onClick={onClose}
         aria-hidden="true"
       />
+
+      {/* Panel */}
       <div
+        ref={sidebarRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
         className={cn(
           "absolute top-0 left-0 z-[500] flex h-full w-full max-w-sm flex-col bg-background shadow-xl transition-transform duration-300 ease-in-out md:w-80",
           isOpen ? "translate-x-0" : "-translate-x-full",
@@ -39,12 +92,16 @@ export function Sidebar({
       >
         {title && (
           <div className="flex items-center justify-between border-b p-4 shrink-0">
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <h2 id={titleId} className="text-lg font-semibold">
+              {title}
+            </h2>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
             </Button>
           </div>
         )}
+
         <div className={cn("flex-1 overflow-y-auto p-4", className)}>
           {content || (
             <div className="space-y-4">
@@ -57,6 +114,7 @@ export function Sidebar({
             </div>
           )}
         </div>
+
         {!title && (
           <Button
             variant="ghost"
@@ -65,6 +123,7 @@ export function Sidebar({
             className="absolute top-2 right-2 z-10"
           >
             <X className="h-4 w-4" />
+            <span className="sr-only">Fechar</span>
           </Button>
         )}
       </div>

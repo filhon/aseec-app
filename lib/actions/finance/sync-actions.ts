@@ -304,6 +304,61 @@ export async function searchFinanceProjects(
   }
 }
 
+export async function syncProjectInvestmentsFromApi(): Promise<{
+  updated: number;
+  errors: number;
+}> {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: linkedProjects, error } = await supabase
+    .from("projects")
+    .select("id, financial_project_id")
+    .not("financial_project_id", "is", null);
+
+  if (error || !linkedProjects || linkedProjects.length === 0) {
+    console.warn("[Sync] No linked projects found or DB error:", error);
+    return { updated: 0, errors: 0 };
+  }
+
+  let updated = 0;
+  let errors = 0;
+  const now = new Date().toISOString();
+
+  for (const project of linkedProjects) {
+    try {
+      const paidAmount = await getProjectPaidAmount(
+        project.financial_project_id,
+      );
+      const { error: updateError } = await supabase
+        .from("projects")
+        .update({
+          investment: paidAmount,
+          financial_last_sync: now,
+        })
+        .eq("id", project.id);
+
+      if (updateError) {
+        console.error(
+          `[Sync] Failed to update project ${project.id}:`,
+          updateError,
+        );
+        errors++;
+      } else {
+        updated++;
+      }
+    } catch (e) {
+      console.error(`[Sync] Error syncing project ${project.id}:`, e);
+      errors++;
+    }
+  }
+
+  console.log(
+    `[Sync] Investments sync complete: ${updated} updated, ${errors} errors`,
+  );
+  return { updated, errors };
+}
+
 export async function getProjectPaidAmount(
   financialProjectId?: string | null,
 ): Promise<number> {

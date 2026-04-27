@@ -20,10 +20,15 @@ const MapView = dynamic(() => import("@/components/map/map-view"), {
   ),
 });
 
-import { searchLocation, AseecData } from "@/lib/search-service";
+import {
+  searchLocation,
+  getLocationInsights,
+  type SearchSuggestion,
+  type AseecLocationData,
+} from "@/lib/search-service";
 import { calculateDistance, formatDistance } from "@/lib/geo-utils";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Navigation } from "lucide-react";
+import { Navigation, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -41,8 +46,9 @@ export default function HomePage() {
     lng: number;
     zoom: number;
   } | null>(null);
-  const [aseecData, setAseecData] = useState<AseecData | null>(null);
+  const [aseecData, setAseecData] = useState<AseecLocationData | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Real data from Supabase
   const [projects, setProjects] = useState<ProjectLocation[]>([]);
@@ -82,33 +88,63 @@ export default function HomePage() {
   };
 
   const handleSearch = async (query: string) => {
-    const result = await searchLocation(query);
-    if (result) {
-      setFlyTo({ lat: result.lat, lng: result.lng, zoom: 10 });
-
-      // Calculate distances using real projects
-      const projectsWithDist = projects
-        .map((p) => {
-          const distKm = calculateDistance(
-            result.lat,
-            result.lng,
-            p.lat,
-            p.lng,
-          );
-          return { ...p, distance: formatDistance(distKm), distValue: distKm };
-        })
-        .sort((a, b) => a.distValue - b.distValue)
-        .slice(0, 5); // Show top 5 closest
-
-      setSelectedItems(projectsWithDist);
-      setAseecData(result.aseecData || null);
-      setSidebarTitle(result.title);
-      setSidebarMode("details");
-      setSidebarOpen(true);
+    setIsSearching(true);
+    setAseecData(null);
+    try {
+      const result = await searchLocation(query);
+      if (!result) {
+        toast.error("Nenhum resultado encontrado para essa busca.");
+        return;
+      }
+      setAseecData(result.aseecData ?? null);
+      flyToAndShowNearby(result.lat, result.lng, result.title, 10);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const handleNearMe = () => {
+  const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+    if (suggestion.type === "project" && suggestion.id) {
+      setAseecData(null);
+      const project = projects.find((p) => p.id === suggestion.id);
+      if (project) {
+        setSelectedItems([project]);
+        setSidebarTitle(project.title);
+        setSidebarMode("details");
+        setSidebarOpen(true);
+      }
+      setFlyTo({ lat: suggestion.lat, lng: suggestion.lng, zoom: 14 });
+    } else {
+      // Clear first, fly and show projects immediately, then load insights async
+      setAseecData(null);
+      flyToAndShowNearby(suggestion.lat, suggestion.lng, suggestion.title, 10);
+      getLocationInsights(suggestion.title).then((data) => setAseecData(data));
+    }
+  };
+
+  const flyToAndShowNearby = (
+    lat: number,
+    lng: number,
+    title: string,
+    zoom: number,
+  ) => {
+    setFlyTo({ lat, lng, zoom });
+
+    const projectsWithDist = projects
+      .map((p) => {
+        const distKm = calculateDistance(lat, lng, p.lat, p.lng);
+        return { ...p, distance: formatDistance(distKm), distValue: distKm };
+      })
+      .sort((a, b) => a.distValue - b.distValue)
+      .slice(0, 5);
+
+    setSelectedItems(projectsWithDist);
+    setSidebarTitle(title);
+    setSidebarMode("details");
+    setSidebarOpen(true);
+  };
+
+  const handleNearMe = (radius: number = 50) => {
     if (!navigator.geolocation) {
       toast.error("Geolocalização não suportada pelo seu navegador.");
       return;
@@ -123,7 +159,6 @@ export default function HomePage() {
 
         setFlyTo({ lat: latitude, lng: longitude, zoom: 11 });
 
-        // Filter projects within 50km using real data
         const projectsNearby = projects
           .map((p) => {
             const distKm = calculateDistance(latitude, longitude, p.lat, p.lng);
@@ -133,20 +168,19 @@ export default function HomePage() {
               distValue: distKm,
             };
           })
-          .filter((p) => p.distValue <= 50)
+          .filter((p) => p.distValue <= radius)
           .sort((a, b) => a.distValue - b.distValue);
 
         if (projectsNearby.length === 0) {
-          toast.warning("Nenhum projeto encontrado num raio de 50km.");
+          toast.warning(`Nenhum projeto encontrado num raio de ${radius}km.`);
           setSidebarOpen(false);
         } else {
           setSelectedItems(projectsNearby);
-          setSidebarTitle("Projetos Próximos a Mim");
+          setSidebarTitle(`Projetos Próximos a Mim (${radius}km)`);
           setSidebarMode("details");
-          setAseecData(null);
           setSidebarOpen(true);
           toast.success(
-            `${projectsNearby.length} projetos encontrados próximos a você.`,
+            `${projectsNearby.length} projeto${projectsNearby.length > 1 ? "s" : ""} encontrado${projectsNearby.length > 1 ? "s" : ""} num raio de ${radius}km.`,
           );
         }
         setIsLocating(false);
@@ -310,7 +344,10 @@ export default function HomePage() {
       <SearchBar
         onMenuClick={handleMenuClick}
         onSearch={handleSearch}
-        onNearMeClick={!isLocating ? handleNearMe : undefined}
+        onSuggestionSelect={handleSuggestionSelect}
+        onNearMeClick={handleNearMe}
+        isLocating={isLocating}
+        isSearching={isSearching}
         isHidden={isFullscreen}
       />
 

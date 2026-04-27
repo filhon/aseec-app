@@ -1,151 +1,66 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import { useRef, useCallback, useMemo, useState, useEffect } from "react";
+import Map, { Source, Layer } from "react-map-gl/maplibre";
+import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
+import type { GeoJSONSource } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { RotateCcw, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type ProjectLocation } from "@/lib/services/project-service";
 
-// Fix for default Leaflet marker icons
-const iconUrl = "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png";
-const iconRetinaUrl =
-  "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png";
-const shadowUrl =
-  "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png";
+const MAP_STYLE =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+const DEFAULT_CENTER: [number, number] = [-51.9253, -14.235];
+const DEFAULT_ZOOM = 4;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
-});
+interface MapControlsProps {
+  mapRef: React.RefObject<MapRef | null>;
+}
 
-const createCustomIcon = (color: "blue" | "green") => {
-  const bgColor = color === "blue" ? "bg-blue-500" : "bg-green-500";
-
-  return L.divIcon({
-    className: "custom-pin-icon",
-    html: `
-      <div class="relative flex items-center justify-center w-8 h-8">
-        <span class="absolute inline-flex h-full w-full rounded-full ${bgColor} opacity-30 animate-pulse"></span>
-        <span class="relative inline-flex rounded-full h-4 w-4 ${bgColor} border-2 border-white shadow-md"></span>
-      </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -10],
-  });
-};
-
-const blueIcon = createCustomIcon("blue");
-const greenIcon = createCustomIcon("green");
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createClusterIcon = (cluster: any) => {
-  return L.divIcon({
-    html: `
-      <div class="relative flex items-center justify-center w-12 h-12">
-        <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-20 animate-ping"></span>
-        <span class="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-bold shadow-xl border-2 border-white/20 backdrop-blur-md">
-          ${cluster.getChildCount()}
-        </span>
-      </div>
-    `,
-    className: "custom-cluster-icon",
-    iconSize: [48, 48], // Increased size to accommodate the effect
-    iconAnchor: [24, 24],
-  });
-};
-
-function MapControls({
-  center,
-  zoom,
-  hidden,
-}: {
-  center: [number, number];
-  zoom: number;
-  hidden?: boolean;
-}) {
-  const map = useMap();
-
-  const handleZoomIn = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    map.zoomIn();
-  };
-
-  const handleZoomOut = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    map.zoomOut();
-  };
-
-  const handleReset = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    map.setView(center, zoom, { animate: true });
-  };
-
-  if (hidden) return null;
-
+function MapControls({ mapRef }: MapControlsProps) {
   return (
     <div
-      className="leaflet-bottom leaflet-right mb-24 mr-6 md:mb-6"
-      style={{ pointerEvents: "auto", zIndex: 1000 }}
+      className="absolute bottom-24 right-6 md:bottom-6 flex flex-col gap-2 z-10"
+      style={{ pointerEvents: "auto" }}
     >
-      <div className="flex flex-col gap-2">
+      <Button
+        variant="secondary"
+        size="icon"
+        onClick={() =>
+          mapRef.current?.flyTo({
+            center: DEFAULT_CENTER,
+            zoom: DEFAULT_ZOOM,
+            duration: 1000,
+          })
+        }
+        className="shadow-md h-9 w-9 bg-background/95 backdrop-blur hover:bg-background/100"
+        title="Redefinir visualização"
+      >
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      <div className="flex flex-col rounded-md shadow-md bg-background/95 backdrop-blur overflow-hidden border">
         <Button
-          variant="secondary"
+          variant="ghost"
           size="icon"
-          onClick={handleReset}
-          className="shadow-md h-9 w-9 bg-background/95 backdrop-blur hover:bg-background/100"
-          title="Redefinir visualização"
+          onClick={() => mapRef.current?.zoomIn()}
+          className="h-9 w-9 rounded-none hover:bg-muted border-b"
+          title="Aumentar zoom"
         >
-          <RotateCcw className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
         </Button>
-        <div className="flex flex-col rounded-md shadow-md bg-background/95 backdrop-blur overflow-hidden border">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleZoomIn}
-            className="h-9 w-9 rounded-none hover:bg-muted border-b"
-            title="Aumentar zoom"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleZoomOut}
-            className="h-9 w-9 rounded-none hover:bg-muted"
-            title="Diminuir zoom"
-          >
-            <Minus className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => mapRef.current?.zoomOut()}
+          className="h-9 w-9 rounded-none hover:bg-muted"
+          title="Diminuir zoom"
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
-}
-
-interface MapControllerProps {
-  flyTo?: { lat: number; lng: number; zoom: number } | null;
-}
-
-function MapController({ flyTo }: MapControllerProps) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (flyTo) {
-      map.flyTo([flyTo.lat, flyTo.lng], flyTo.zoom, {
-        duration: 1.5,
-        easeLinearity: 0.25,
-      });
-    }
-  }, [flyTo, map]);
-
-  return null;
 }
 
 interface MapViewProps {
@@ -167,89 +82,192 @@ export default function MapView({
   flyTo,
   hideControls,
 }: MapViewProps) {
-  const [mounted, setMounted] = useState(false);
-
-  // Move hook to top level
-  // Stable style reference to prevent re-renders
-  const mapStyle = useMemo(
-    () => ({ height: "100%", width: "100%", outline: "none", ...style }),
-    [style],
-  );
-
-  // Unique key to force remount on initial load only once
-  const [mapKey] = useState(
-    () => `map-${Math.random().toString(36).substr(2, 9)}`,
-  );
+  const mapRef = useRef<MapRef>(null);
+  const [cursor, setCursor] = useState<string>("grab");
 
   useEffect(() => {
-    // eslint-disable-next-line
-    setMounted(true);
-  }, []);
+    if (!flyTo || !mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [flyTo.lng, flyTo.lat],
+      zoom: flyTo.zoom,
+      duration: 1500,
+      essential: true,
+    });
+  }, [flyTo]);
 
-  if (!mounted) return null;
+  const geojson = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: projects.map((p) => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          coordinates: [p.lng, p.lat],
+        },
+        properties: {
+          id: p.id,
+          type: p.type ?? "blue",
+        },
+      })),
+    }),
+    [projects],
+  );
 
-  const center = [-14.235, -51.9253] as [number, number];
-  const zoom = 4;
+  const handleClick = useCallback(
+    async (e: MapLayerMouseEvent) => {
+      if (!e.features?.length || !mapRef.current) return;
+      const feature = e.features[0];
+
+      if (feature.layer.id === "clusters") {
+        const clusterId = feature.properties?.cluster_id as number;
+        try {
+          const source = mapRef.current.getSource("projects") as GeoJSONSource;
+          const leaves = await source.getClusterLeaves(clusterId, Infinity, 0);
+          const clusterProjects = leaves
+            .map((leaf) => projects.find((p) => p.id === leaf.properties?.id))
+            .filter((p): p is ProjectLocation => !!p);
+          if (clusterProjects.length > 0) onClusterClick(clusterProjects);
+        } catch (err) {
+          console.error("Failed to get cluster leaves", err);
+        }
+      } else if (feature.layer.id === "unclustered-point") {
+        const project = projects.find((p) => p.id === feature.properties?.id);
+        if (project) onPinClick(project);
+      }
+    },
+    [projects, onPinClick, onClusterClick],
+  );
+
+  const onMouseEnter = useCallback(() => setCursor("pointer"), []);
+  const onMouseLeave = useCallback(() => setCursor("grab"), []);
 
   return (
     <div
-      style={{ width: "100%", height: "100%", position: "relative" }}
+      style={{ width: "100%", height: "100%", ...style }}
       className={className}
     >
-      <MapContainer
-        key={mapKey}
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom={true}
-        zoomControl={false}
-        style={mapStyle}
-        className="z-0"
+      <Map
+        ref={mapRef}
+        initialViewState={{
+          longitude: DEFAULT_CENTER[0],
+          latitude: DEFAULT_CENTER[1],
+          zoom: DEFAULT_ZOOM,
+        }}
+        mapStyle={MAP_STYLE}
+        style={{ width: "100%", height: "100%" }}
+        interactiveLayerIds={["clusters", "unclustered-point"]}
+        cursor={cursor}
+        onClick={handleClick}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
-        <MapController flyTo={flyTo} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        />
-
-        <MapControls center={center} zoom={zoom} hidden={hideControls} />
-
-        <MarkerClusterGroup
-          chunkedLoading
-          iconCreateFunction={createClusterIcon}
-          zoomToBoundsOnClick={false}
-          eventHandlers={{
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            clusterclick: (e: any) => {
-              const cluster = e.layer;
-              const markers = cluster.getAllChildMarkers();
-              const clusterProjects: ProjectLocation[] = [];
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              markers.forEach((marker: any) => {
-                const { lat, lng } = marker.getLatLng();
-                const found = projects.find(
-                  (p) =>
-                    Math.abs(p.lat - lat) < 0.0001 &&
-                    Math.abs(p.lng - lng) < 0.0001,
-                );
-                if (found) clusterProjects.push(found);
-              });
-
-              if (clusterProjects.length > 0) {
-                onClusterClick(clusterProjects);
-              }
-            },
-          }}
+        <Source
+          id="projects"
+          type="geojson"
+          data={geojson}
+          cluster={true}
+          clusterMaxZoom={14}
+          clusterRadius={50}
         >
-          {projects.map((project) => (
-            <Marker
-              key={project.id}
-              position={[project.lat, project.lng]}
-              icon={project.type === "blue" ? blueIcon : greenIcon}
-              eventHandlers={{ click: () => onPinClick(project) }}
-            />
-          ))}
-        </MarkerClusterGroup>
-      </MapContainer>
+          {/* Cluster outer glow */}
+          <Layer
+            id="cluster-glow"
+            type="circle"
+            filter={["has", "point_count"]}
+            paint={{
+              "circle-color": "rgba(59, 130, 246, 0.15)",
+              "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                28,
+                10,
+                38,
+                30,
+                48,
+              ],
+              "circle-blur": 0.8,
+            }}
+          />
+          {/* Cluster circles */}
+          <Layer
+            id="clusters"
+            type="circle"
+            filter={["has", "point_count"]}
+            paint={{
+              "circle-color": [
+                "step",
+                ["get", "point_count"],
+                "#3b82f6",
+                10,
+                "#2563eb",
+                30,
+                "#1d4ed8",
+              ],
+              "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                18,
+                10,
+                26,
+                30,
+                34,
+              ],
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+            }}
+          />
+          {/* Cluster count text */}
+          <Layer
+            id="cluster-count"
+            type="symbol"
+            filter={["has", "point_count"]}
+            layout={{
+              "text-field": "{point_count_abbreviated}",
+              "text-size": 12,
+              "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            }}
+            paint={{
+              "text-color": "#ffffff",
+            }}
+          />
+          {/* Individual point outer glow */}
+          <Layer
+            id="unclustered-point-glow"
+            type="circle"
+            filter={["!", ["has", "point_count"]]}
+            paint={{
+              "circle-color": [
+                "case",
+                ["==", ["get", "type"], "green"],
+                "#22c55e",
+                "#3b82f6",
+              ],
+              "circle-radius": 14,
+              "circle-opacity": 0.2,
+              "circle-blur": 0.5,
+            }}
+          />
+          {/* Individual points */}
+          <Layer
+            id="unclustered-point"
+            type="circle"
+            filter={["!", ["has", "point_count"]]}
+            paint={{
+              "circle-color": [
+                "case",
+                ["==", ["get", "type"], "green"],
+                "#22c55e",
+                "#3b82f6",
+              ],
+              "circle-radius": 7,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+            }}
+          />
+        </Source>
+
+        {!hideControls && <MapControls mapRef={mapRef} />}
+      </Map>
     </div>
   );
 }

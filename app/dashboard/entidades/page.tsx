@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { mockDashboardProjects } from "@/components/dashboard/data";
+import { useMemo, useState, useEffect } from "react";
+import {
+  getProjectsForDashboard,
+  type DashboardProject,
+} from "@/lib/services/project-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +43,13 @@ const slugify = (text: string) => {
 
 export default function EntitiesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
+
+  useEffect(() => {
+    getProjectsForDashboard()
+      .then(setProjects)
+      .catch(() => {});
+  }, []);
 
   const entitiesData = useMemo(() => {
     const data: Record<
@@ -47,7 +57,7 @@ export default function EntitiesPage() {
       { totalInvestment: number; projectCount: number; institution: string }
     > = {};
 
-    mockDashboardProjects.forEach((project) => {
+    projects.forEach((project) => {
       if (!data[project.institution]) {
         data[project.institution] = {
           institution: project.institution,
@@ -55,7 +65,8 @@ export default function EntitiesPage() {
           projectCount: 0,
         };
       }
-      data[project.institution].totalInvestment += project.investment;
+      data[project.institution].totalInvestment +=
+        Number(project.investment) || 0;
       data[project.institution].projectCount += 1;
     });
 
@@ -71,7 +82,7 @@ export default function EntitiesPage() {
     }
 
     return results;
-  }, [searchTerm]);
+  }, [projects, searchTerm]);
 
   return (
     <div className="space-y-6 pt-2 pb-8 animate-in fade-in duration-500">

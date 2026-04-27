@@ -42,23 +42,23 @@ Este documento apresenta uma análise exaustiva do estado atual do sistema, sepa
 - **Simulador de Despesas:** Calculadora interativa de parcelamento.
 - **Nota:** Atualmente todas as visualizações financeiras (dashboard) operam com **dados mockados** de demonstração (`generateMockTransactions`, `mockCostCenters` em `lib/services/financial-service.ts` e Mocks UI).
 
----
-
-## 🚧 O que ainda há de ser (A Fazer)
-
-### 1. Módulo Financeiro (Backend e Fluxo Real)
+### 7. Módulo Financeiro (Backend e Fluxo Real)
 
 - **Esquema de Banco de Dados:** Criar tabelas no Supabase para Contas a Pagar, Contas a Receber, Centros de Custo e Transações Financeiras (Atualmente Inexistente).
 - **Integração Real:** Substituir toda a geração de Mocks (`mockFinancialMetrics`, transações) em `app/financeiro/page.tsx` por chamadas reais aos dados inseridos no Supabase.
 - **CRUD de Transações:** Desenvolver os formulários para cadastrar individualmente despesas e receitas, com controle de status (Pendente, Pago).
 - **Importação em Massa:** Criar o mecanismo para upload, validação em linha e persistência de planilhas/CSV diretamente para a base contábil do sistema.
 
-### 2. Módulo de IA e Arquivos
+---
+
+## 🚧 O que ainda há de ser (A Fazer)
+
+### 1. Módulo de IA e Arquivos
 
 - **Integração LLM da ASEEC IA:** Conectar os endpoints da interface do chat à verdadeira API de IA (ex: OpenAI, Anthropic), utilizando o contexto do sistema para responder dúvidas reais sobre os projetos.
 - **Gestão de Anexos no Projeto (Upload):** Garantir que a lógica de upload de fotos e documentos no front-end acesse corretamente, envie as files aos buckets criados (`project-images`, `documents`) e vincule aos relatórios/feed.
 
-### 3. Sistema de Utilitários e Finalização
+### 2. Sistema de Utilitários e Finalização
 
 - **Feedback System:** Implementar a captura de bug reports e sugestões dos usuários (prometido no README mas ainda não estruturado na UI/DB).
 - **Consolidação de Permissões:** O sistema de RBAC deve ser rigorosamente testado nas páginas e nos hooks de interface para renderização condicional (ocultar botões e páginas não-autorizadas).

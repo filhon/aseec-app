@@ -99,36 +99,29 @@ export function GlobalProjectUpdates({
 
   if (variant === "feed") {
     return (
-      <div className="h-full flex flex-col">
-        <div className="flex-1 p-0 flex flex-col min-h-0 bg-transparent">
-          <ScrollArea className="flex-1">
-            <div className="space-y-4">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center p-8 gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">
-                    Carregando feed...
-                  </span>
-                </div>
-              ) : displayedPosts.length > 0 ? (
-                displayedPosts.map((item) => (
-                  <FeedPost
-                    key={`${item.projectId}-${item.id}`}
-                    post={item}
-                    projectTitle={item.projectTitle}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  <p>
-                    Nenhuma atualização encontrada{" "}
-                    {onlyToday ? "para hoje" : ""}.
-                  </p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+      <div className="px-6 py-6 space-y-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">
+              Carregando feed...
+            </span>
+          </div>
+        ) : displayedPosts.length > 0 ? (
+          displayedPosts.map((item) => (
+            <FeedPost
+              key={`${item.projectId}-${item.id}`}
+              post={item}
+              projectTitle={item.projectTitle}
+            />
+          ))
+        ) : (
+          <div className="text-center py-16 text-muted-foreground text-sm">
+            <p>
+              Nenhuma atualização encontrada{onlyToday ? " para hoje" : ""}.
+            </p>
+          </div>
+        )}
       </div>
     );
   }

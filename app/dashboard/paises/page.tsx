@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { mockDashboardProjects } from "@/components/dashboard/data";
+import { useMemo, useState, useEffect } from "react";
+import {
+  getProjectsForDashboard,
+  type DashboardProject,
+} from "@/lib/services/project-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,17 +47,21 @@ const slugify = (text: string) => {
 export default function CountriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false); // For mobile counters
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
+
+  useEffect(() => {
+    getProjectsForDashboard()
+      .then(setProjects)
+      .catch(() => {});
+  }, []);
 
   const stats = useMemo(() => {
-    const uniqueCountries = new Set(mockDashboardProjects.map((p) => p.country))
+    const uniqueCountries = new Set(projects.map((p) => p.country)).size;
+    const uniqueStates = new Set(projects.map((p) => p.state)).size;
+    const uniqueMunicipalities = new Set(projects.map((p) => p.municipality))
       .size;
-    const uniqueStates = new Set(mockDashboardProjects.map((p) => p.state))
-      .size;
-    const uniqueMunicipalities = new Set(
-      mockDashboardProjects.map((p) => p.municipality),
-    ).size;
     return { uniqueCountries, uniqueStates, uniqueMunicipalities };
-  }, []);
+  }, [projects]);
 
   const countriesData = useMemo(() => {
     const data: Record<
@@ -62,16 +69,17 @@ export default function CountriesPage() {
       { totalInvestment: number; projectCount: number; country: string }
     > = {};
 
-    mockDashboardProjects.forEach((project) => {
-      if (!data[project.country]) {
-        data[project.country] = {
-          country: project.country,
+    projects.forEach((project) => {
+      const country = project.country || "Desconhecido";
+      if (!data[country]) {
+        data[country] = {
+          country: country,
           totalInvestment: 0,
           projectCount: 0,
         };
       }
-      data[project.country].totalInvestment += project.investment;
-      data[project.country].projectCount += 1;
+      data[country].totalInvestment += Number(project.investment) || 0;
+      data[country].projectCount += 1;
     });
 
     let results = Object.values(data).sort(
@@ -86,7 +94,7 @@ export default function CountriesPage() {
     }
 
     return results;
-  }, [searchTerm]);
+  }, [projects, searchTerm]);
 
   const countryCodes: Record<string, string> = {
     Brasil: "br",

@@ -2,7 +2,10 @@
 
 import { useMemo, use, useState, useEffect, useRef } from "react";
 import { useBreadcrumbStore } from "@/stores/use-breadcrumb-store";
-import { mockDashboardProjects } from "@/components/dashboard/data";
+import {
+  getProjectsForDashboard,
+  type DashboardProject,
+} from "@/lib/services/project-service";
 import {
   Card,
   CardContent,
@@ -107,10 +110,17 @@ export default function EntityPage({
   const resolvedParams = use(params);
   const slug = resolvedParams.entidade_id;
   const [kpiExpanded, setKpiExpanded] = useState(false);
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
 
   // Icon Upload State
   const [entityIcon, setEntityIcon] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getProjectsForDashboard()
+      .then(setProjects)
+      .catch(() => {});
+  }, []);
 
   const handleIconClick = () => {
     fileInputRef.current?.click();
@@ -118,11 +128,9 @@ export default function EntityPage({
 
   // Find the entity name from the slug
   const entityName = useMemo(() => {
-    const project = mockDashboardProjects.find(
-      (p) => slugify(p.institution) === slug,
-    );
+    const project = projects.find((p) => slugify(p.institution) === slug);
     return project ? project.institution : null;
-  }, [slug]);
+  }, [projects, slug]);
 
   // Breadcrumbs logic
   const { setLabel } = useBreadcrumbStore();
@@ -136,13 +144,13 @@ export default function EntityPage({
   // Filter projects for this entity
   const filteredProjects = useMemo(() => {
     if (!entityName) return [];
-    return mockDashboardProjects.filter((p) => p.institution === entityName);
-  }, [entityName]);
+    return projects.filter((p) => p.institution === entityName);
+  }, [projects, entityName]);
 
   // Stats
   const stats = useMemo(() => {
     const totalInvested = filteredProjects.reduce(
-      (sum, p) => sum + p.investment,
+      (sum, p) => sum + (p.investment ?? 0),
       0,
     );
     const totalProjects = filteredProjects.length;
@@ -446,7 +454,9 @@ export default function EntityPage({
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => {
-            const code = countryCodes[project.country];
+            const code = project.country
+              ? countryCodes[project.country as keyof typeof countryCodes]
+              : null;
             return (
               <Link key={project.id} href={`/projetos/${project.id}`}>
                 <Card className="hover:border-primary/50 transition-colors group cursor-pointer h-full relative">
@@ -473,7 +483,7 @@ export default function EntityPage({
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={`https://flagcdn.com/w20/${code}.png`}
-                          alt={project.country}
+                          alt={project.country || ""}
                           width={14}
                           className="rounded-sm"
                         />
@@ -495,7 +505,7 @@ export default function EntityPage({
                       </div>
                       <div className="pt-2 border-t mt-3 flex justify-between items-center">
                         <span className="font-semibold text-foreground">
-                          {formatCurrency(project.investment)}
+                          {formatCurrency(project.investment ?? 0)}
                         </span>
                         <span className="text-xs bg-secondary px-2 py-1 rounded text-secondary-foreground">
                           {project.extension}

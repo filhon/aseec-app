@@ -17,6 +17,7 @@ import {
   calculateCashFlowFromTransactions,
 } from "@/components/financeiro/data";
 import { getDashboardData, CostCenterBudget } from "./actions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -42,11 +43,13 @@ import {
 } from "@/components/ui/dialog";
 import { CostCenterBudgetChart } from "@/components/financeiro/cost-center-budget-chart";
 import {
+  AlertTriangle,
   Calculator,
   CalendarIcon,
   Search,
   FilterX,
   Filter,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -58,6 +61,7 @@ import { DateRange } from "react-day-picker";
 export default function FinanceiroPage() {
   // Data State
   const [isLoading, setIsLoading] = useState(true);
+  const [isMockData, setIsMockData] = useState(false);
   const [rawTransactions, setRawTransactions] = useState<Transaction[]>([]);
   const [costCenters, setCostCenters] = useState<CostCenterBudget[]>([]);
   const [financialMetrics, setFinancialMetrics] = useState({
@@ -82,14 +86,38 @@ export default function FinanceiroPage() {
   const [simulatedExpense, setSimulatedExpense] =
     useState<SimulatedExpense | null>(null);
 
+  // Investment sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    updated: number;
+    errors: number;
+  } | null>(null);
+
+  const handleSyncInvestments = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/finance/sync-investments", {
+        method: "POST",
+      });
+      const data = await res.json();
+      setSyncResult(data);
+    } catch {
+      setSyncResult({ updated: 0, errors: 1 });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Load data on mount
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
         const result = await getDashboardData();
-        // getDashboardData now always returns success:true with partial data
-        // (individual endpoint failures are logged server-side)
+        const usedMock =
+          result.transactions.length === 0 && result.costCenters.length === 0;
+        setIsMockData(usedMock);
         setRawTransactions(
           result.transactions.length > 0
             ? result.transactions
@@ -103,6 +131,7 @@ export default function FinanceiroPage() {
         setFinancialMetrics(result.metrics);
       } catch (err) {
         console.error("Erro ao carregar dashboard financeiro:", err);
+        setIsMockData(true);
         setRawTransactions(generateMockTransactions());
         setCostCenters(mockCostCenters.map((cc) => ({ ...cc, used: 0 })));
         setFinancialMetrics(mockFinancialMetrics);
@@ -388,6 +417,31 @@ export default function FinanceiroPage() {
 
           {/* Filters Row */}
           <div className="flex items-center gap-2 lg:justify-end">
+            {/* Sync Investments Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncInvestments}
+              disabled={isSyncing}
+              className="gap-2 bg-background"
+              title={
+                syncResult
+                  ? `Última sincronização: ${syncResult.updated} atualizados${syncResult.errors ? `, ${syncResult.errors} erros` : ""}`
+                  : "Sincronizar valores investidos dos projetos com a API financeira"
+              }
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`}
+              />
+              <span className="hidden sm:inline">
+                {isSyncing
+                  ? "Sincronizando..."
+                  : syncResult
+                    ? `${syncResult.updated} atualizados`
+                    : "Sincronizar Investimentos"}
+              </span>
+            </Button>
+
             {/* Simulator Button - Desktop Only (Left of Filters) */}
             <Dialog>
               <DialogTrigger asChild>
@@ -568,6 +622,20 @@ export default function FinanceiroPage() {
             )}
           </div>
         </div>
+
+        {/* Mock data warning */}
+        {!isLoading && isMockData && (
+          <Alert
+            variant="destructive"
+            className="bg-yellow-50 border-yellow-300 text-yellow-800 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300"
+          >
+            <AlertTriangle className="h-4 w-4 !text-yellow-600 dark:!text-yellow-400" />
+            <AlertDescription>
+              Não foi possível conectar à API financeira. Os dados exibidos são
+              ilustrativos e não refletem valores reais.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* KPI Cards */}
         {isLoading ? (

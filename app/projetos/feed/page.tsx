@@ -1,12 +1,10 @@
 "use client";
 
 import { GlobalProjectUpdates } from "@/components/dashboard/global-project-updates";
-import { Button } from "@/components/ui/button";
-import { Heart, X } from "lucide-react";
+import { Heart, X, Globe, Star } from "lucide-react";
 import { useState } from "react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 import { SidebarContent } from "./sidebar-content";
 
@@ -15,101 +13,129 @@ export default function FeedPage() {
   const [activeFilterId, setActiveFilterId] = useState<string | null>(null);
 
   const { getItemsByType } = useFavorites();
-
-  // Get favorited items for the sidebar
   const favProjects = getItemsByType("project");
-
-  // Logic to determine which Project IDs to show
-  // If viewMode is 'all', show all (pass undefined to GlobalProjectUpdates)
-  // If viewMode is 'favorites':
-  //    If activeFilterId is set, show ONLY that project
-  //    If no activeFilterId, show ALL favorited projects
 
   const getFilterIds = () => {
     if (viewMode === "all") return undefined;
-
-    if (activeFilterId) {
-      return [activeFilterId];
-    }
-
-    // Default favorites view: Show posts from ALL favorited projects
+    if (activeFilterId) return [activeFilterId];
     return favProjects.map((p) => p.id);
   };
 
+  const activeProject = activeFilterId
+    ? favProjects.find((p) => p.id === activeFilterId)
+    : null;
+
   return (
-    // Removed fixed height/overflow-hidden for mobile to allow natural scroll. Re-enabled for desktop to keep sidebar layout.
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] md:overflow-hidden">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block w-64 border-r bg-muted/10 p-4 overflow-y-auto">
-        <SidebarContent
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          activeFilterId={activeFilterId}
-          setActiveFilterId={setActiveFilterId}
-          favProjects={favProjects}
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 container mx-auto py-6 lg:py-10">
-        <div className="flex-none pb-4">
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
-                Feed de Notícias
-              </h1>
-              <p className="text-muted-foreground hidden md:block">
-                {viewMode === "all"
-                  ? "Acompanhe todas as atualizações de todos os projetos em tempo real."
-                  : "Atualizações dos seus projetos favoritos."}
-              </p>
-            </div>
-
-            {/* Mobile Favorite Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() =>
-                setViewMode(viewMode === "all" ? "favorites" : "all")
-              }
-            >
-              <Heart
-                className={cn(
-                  "w-6 h-6 text-muted-foreground",
-                  viewMode === "favorites" && "fill-red-500 text-red-500",
-                )}
-              />
-            </Button>
-          </div>
-
-          {activeFilterId && (
-            <div className="flex items-center gap-2 mb-2">
-              <Badge variant="secondary" className="gap-1 pl-2">
-                {favProjects.find((p) => p.id === activeFilterId)?.title}
-                <span
-                  className="ml-1 hover:bg-muted p-0.5 rounded cursor-pointer"
-                  onClick={() => setActiveFilterId(null)}
-                >
-                  <X className="w-3 h-3" />
-                </span>
-              </Badge>
-            </div>
-          )}
+    <div className="flex flex-col md:flex-row">
+      {/* Desktop Sidebar — sticky, scrolls independently */}
+      <div className="hidden md:flex flex-col w-72 border-r bg-muted/5 sticky top-0 self-start h-[calc(100vh-4rem)] shrink-0">
+        <div className="px-5 pt-6 pb-4 border-b">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">
+            Feed
+          </p>
+          <h2 className="font-heading text-lg font-bold text-foreground leading-tight">
+            Atualizações
+          </h2>
         </div>
 
-        <div className="flex-1 min-h-0 pb-6">
-          {/* 
-                    Key is important to force re-render when filters change 
-                    so the component resets its scroll or internal state if needed 
-                 */}
-          <GlobalProjectUpdates
-            key={`${viewMode}-${activeFilterId}`}
-            onlyToday={false}
-            variant="feed"
-            filterIds={getFilterIds()}
+        <div className="flex-1 p-5 overflow-y-auto">
+          <SidebarContent
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            activeFilterId={activeFilterId}
+            setActiveFilterId={setActiveFilterId}
+            favProjects={favProjects}
           />
         </div>
+      </div>
+
+      {/* Main Content — page scrolls naturally */}
+      <div className="flex-1 min-w-0">
+        {/* Page Header — sticky */}
+        <div className="sticky top-0 z-10 px-6 pt-7 pb-5 border-b bg-background">
+          <div className="max-w-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  {viewMode === "favorites" ? (
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  ) : (
+                    <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {viewMode === "all"
+                      ? "Todos os Projetos"
+                      : "Seus Favoritos"}
+                  </span>
+                </div>
+
+                <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight">
+                  {activeProject ? activeProject.title : "Feed de Notícias"}
+                </h1>
+
+                <p className="text-sm text-muted-foreground">
+                  {viewMode === "all"
+                    ? "Acompanhe todas as atualizações em tempo real."
+                    : activeProject
+                      ? `Exibindo atualizações de ${activeProject.title}`
+                      : "Atualizações dos seus projetos favoritos."}
+                </p>
+              </div>
+
+              {/* Mobile: labeled pill toggle */}
+              <button
+                className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-colors hover:bg-muted/50 shrink-0"
+                onClick={() => {
+                  setViewMode(viewMode === "all" ? "favorites" : "all");
+                  setActiveFilterId(null);
+                }}
+              >
+                <Heart
+                  className={cn(
+                    "w-4 h-4",
+                    viewMode === "favorites"
+                      ? "fill-red-500 text-red-500"
+                      : "text-muted-foreground",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-xs",
+                    viewMode === "favorites"
+                      ? "text-red-500"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {viewMode === "favorites" ? "Favoritos" : "Todos"}
+                </span>
+              </button>
+            </div>
+
+            {/* Active project filter chip */}
+            {activeFilterId && (
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-xs text-muted-foreground">
+                  Filtrando:
+                </span>
+                <button
+                  onClick={() => setActiveFilterId(null)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-foreground text-background rounded-full hover:bg-foreground/80 transition-colors"
+                >
+                  {activeProject?.title}
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Feed */}
+        <GlobalProjectUpdates
+          key={`${viewMode}-${activeFilterId}`}
+          onlyToday={false}
+          variant="feed"
+          filterIds={getFilterIds()}
+        />
       </div>
     </div>
   );

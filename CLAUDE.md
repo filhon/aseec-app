@@ -21,22 +21,22 @@ ASEEC is a Next.js 16 / React 19 dashboard for managing missionary projects with
 
 ### Route Structure (`/app`)
 
-| Route | Purpose |
-|-------|---------|
-| `/` | Public landing page |
-| `/login`, `/auth/*` | Auth flows (invite-code-gated signup) |
-| `/dashboard` | Main dashboard with project feed and entity KPIs |
-| `/dashboard/entidades/[id]` | Entity profile with banking info and cost centers |
-| `/dashboard/paises/[id]` | Country-level aggregation |
-| `/projetos` | Project listing |
-| `/projetos/[id]` | Project details with timeline mural |
-| `/projetos/feed` | Global project post feed |
-| `/projetos/novo` | New project creation form |
-| `/financeiro` | Financial dashboard (transactions, charts, budget) |
-| `/busca` | Global search with filters |
-| `/favoritos` | User favorites |
-| `/configuracoes` | User settings |
-| `/aseec-ia` | AI chat assistant |
+| Route                       | Purpose                                            |
+| --------------------------- | -------------------------------------------------- |
+| `/`                         | Public landing page                                |
+| `/login`, `/auth/*`         | Auth flows (invite-code-gated signup)              |
+| `/dashboard`                | Main dashboard with project feed and entity KPIs   |
+| `/dashboard/entidades/[id]` | Entity profile with banking info and cost centers  |
+| `/dashboard/paises/[id]`    | Country-level aggregation                          |
+| `/projetos`                 | Project listing                                    |
+| `/projetos/[id]`            | Project details with timeline mural                |
+| `/projetos/feed`            | Global project post feed                           |
+| `/projetos/novo`            | New project creation form                          |
+| `/financeiro`               | Financial dashboard (transactions, charts, budget) |
+| `/busca`                    | Global search with filters                         |
+| `/favoritos`                | User favorites                                     |
+| `/configuracoes`            | User settings                                      |
+| `/aseec-ia`                 | AI chat assistant                                  |
 
 ### Authentication & Authorization
 
@@ -68,10 +68,12 @@ Storage buckets: `project-images`, `documents`, `entity-icons`.
 ### Key Patterns
 
 **Supabase clients — two variants, use correctly:**
+
 - `lib/supabase/client.ts` — browser client (auto cookie refresh)
 - `lib/supabase/server.ts` — server client (manual cookie handling, use in Server Components and Server Actions)
 
 **State management:**
+
 - Zustand for lightweight UI state: `useSearchStore`, `useBreadcrumbStore`
 - React Context (AuthProvider) for auth + profile only
 - No Redux
@@ -85,6 +87,7 @@ Storage buckets: `project-images`, `documents`, `entity-icons`.
 ### What's Still In Progress
 
 Per `steps.md`:
+
 - Financial DB tables (accounts payable/receivable, cost centers) not yet created in Supabase
 - AI chat backend (LLM connection) not implemented — UI is complete
 - File upload flows need verification end-to-end
